@@ -1,0 +1,211 @@
+(
+  resources: {},
+  entities: {
+    2: (
+      components: {
+        "bevy_asset::handle::Handle<bevy_render::mesh::mesh::Mesh>": (
+          id: Id("8ecbac0f-f545-4473-ad43-e1f4243af51e", 301460893762912284),
+        ),
+        "bevy_asset::handle::Handle<bevy_pbr::pbr_material::StandardMaterial>": (
+          id: Id("7494888b-c082-457b-aacf-517228cc0c22", 9643134895229090174),
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (
+            x: 0.0,
+            y: 0.5,
+            z: 0.0,
+          ),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+          ),
+        ),
+        "bevy_transform::components::global_transform::GlobalTransform": ((
+          matrix3: (
+            x_axis: (
+              x: 1.0,
+              y: 0.0,
+              z: 0.0,
+            ),
+            y_axis: (
+              x: 0.0,
+              y: 1.0,
+              z: 0.0,
+            ),
+            z_axis: (
+              x: 0.0,
+              y: 0.0,
+              z: 1.0,
+            ),
+          ),
+          translation: (
+            x: 0.0,
+            y: 0.5,
+            z: 0.0,
+          ),
+        )),
+        "bevy_render::view::visibility::Visibility": Inherited,
+        "bevy_mod_raycast::RaycastMesh<bevy_component_extras::components::Selectable>": (),
+        "bevy_render::primitives::Aabb": (
+          center: (
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+          ),
+          half_extents: (
+            x: 0.5,
+            y: 0.5,
+            z: 0.5,
+          ),
+        ),
+      },
+    ),
+    3: (
+      components: {
+        "bevy_transform::components::transform::Transform": (
+          translation: (
+            x: 4.0,
+            y: 8.0,
+            z: 4.0,
+          ),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+          ),
+        ),
+        "bevy_transform::components::global_transform::GlobalTransform": ((
+          matrix3: (
+            x_axis: (
+              x: 1.0,
+              y: 0.0,
+              z: 0.0,
+            ),
+            y_axis: (
+              x: 0.0,
+              y: 1.0,
+              z: 0.0,
+            ),
+            z_axis: (
+              x: 0.0,
+              y: 0.0,
+              z: 1.0,
+            ),
+          ),
+          translation: (
+            x: 4.0,
+            y: 8.0,
+            z: 4.0,
+          ),
+        )),
+        "bevy_render::view::visibility::Visibility": Inherited,
+        "bevy_pbr::light::PointLight": (
+          color: Rgba(
+            red: 1.0,
+            green: 1.0,
+            blue: 1.0,
+            alpha: 1.0,
+          ),
+          intensity: 1500.0,
+          range: 20.0,
+          radius: 0.0,
+          shadows_enabled: true,
+          shadow_depth_bias: 0.02,
+          shadow_normal_bias: 0.6,
+        ),
+        "bevy_pbr::bundle::CubemapVisibleEntities": (),
+        "bevy_render::primitives::CubemapFrusta": (),
+      },
+    ),
+    4: (
+      components: {
+        "bevy_render::camera::camera::Camera": (
+          viewport: None,
+          order: 0,
+          is_active: true,
+          hdr: false,
+          msaa_writeback: true,
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (
+            x: -2.0,
+            y: 2.5,
+            z: 5.0,
+          ),
+          rotation: (-0.18551558, -0.22328594, -0.043331567, 0.9559549),
+          scale: (
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+          ),
+        ),
+        "bevy_transform::components::global_transform::GlobalTransform": ((
+          matrix3: (
+            x_axis: (
+              x: 0.8965315,
+              y: 0.0,
+              z: 0.44297996,
+            ),
+            y_axis: (
+              x: 0.16569209,
+              y: 0.9274127,
+              z: -0.3353384,
+            ),
+            z_axis: (
+              x: -0.41082522,
+              y: 0.3740397,
+              z: 0.8314547,
+            ),
+          ),
+          translation: (
+            x: -2.0,
+            y: 2.5,
+            z: 5.0,
+          ),
+        )),
+        "bevy_render::camera::camera::CameraRenderGraph": ("core_3d"),
+        "bevy_render::camera::projection::Projection": Perspective((
+          fov: 0.7853982,
+          aspect_ratio: 1.7777778,
+          near: 0.1,
+          far: 1000.0,
+        )),
+        "bevy_render::view::visibility::VisibleEntities": (),
+        "bevy_render::primitives::Frustum": (),
+        "bevy_core_pipeline::core_3d::camera_3d::Camera3d": (
+          clear_color: Default,
+          depth_load_op: Clear(0.0),
+          depth_texture_usages: (16),
+        ),
+        "bevy_core_pipeline::tonemapping::Tonemapping": TonyMcMapface,
+        "bevy_core_pipeline::tonemapping::DebandDither": Enabled,
+        "bevy_render::view::ColorGrading": (
+          exposure: 0.0,
+          gamma: 1.0,
+          pre_saturation: 1.0,
+          post_saturation: 1.0,
+        ),
+        "bevy_mod_raycast::RaycastSource<bevy_component_extras::components::Selectable>": (
+          cast_method: Screenspace((
+            x: 734.0545,
+            y: 243.5246,
+          )),
+          should_early_exit: true,
+          visibility: MustBeVisibleAndInView,
+        ),
+        "bevy_pbr::light::ClusterConfig": FixedZ(
+          total: 4096,
+          z_slices: 24,
+          z_config: (
+            first_slice_depth: 5.0,
+            far_z_mode: MaxLightRange,
+          ),
+          dynamic_resizing: true,
+        ),
+      },
+    ),
+  },
+)
