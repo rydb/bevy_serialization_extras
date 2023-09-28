@@ -20,10 +20,18 @@ use bevy::render::mesh::shape::*;
 // }
 
 
+/// Wrapper bundle made to tie together everything that composes a "model", in a serializable format
+/// !!! THIS WILL LIKELY BE REFACTORED AWAY WITH ASSETSV2 IN 0.12!!!
+#[derive(Bundle)]
+pub struct ModelBundle {
+    pub model: ModelFlag,
+    pub transform: Transform
+}
 
 
 /// The type of physics an entity should be serialized with, this is set to dynamic by default
 #[derive(Component, Reflect, Clone, Default)]
+#[reflect(Component)]
 pub enum Physics {
     #[default]
     Dynamic,

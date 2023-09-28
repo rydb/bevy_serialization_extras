@@ -1,6 +1,7 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, reflect::TypeData};
 use moonshine_save::prelude::Unload;
 
+use bevy::ecs::component::ComponentId;
 use bevy_rapier3d::prelude::RigidBody;
 //use crate::body::robot::components::PhysicsBundle;
 use bevy::ecs::query::ReadOnlyWorldQuery;
@@ -12,7 +13,61 @@ use crate::physics::components::PhysicsBundle;
 
 use moonshine_save::save::*;
 use super::components::*;
+use std::any::TypeId;
 use std::path::PathBuf;
+use std::collections::HashMap;
+
+/// collects all components in the world, and cross references them with the type registry. If a component is not in the type registry, label it in
+/// the 'serializable check" window
+pub fn list_unserializable(
+    world: &mut World,
+){
+    let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
+    
+
+    //println!("{:?} WORLD", world.components()); //this has stuff in it
+    let type_registry = world.resource::<AppTypeRegistry>();
+    //let world_components = world.components();
+
+
+    //let saved_component_types = enetities_to_save.iter().
+    // let world_types = world.components().iter()
+    // .map(|id| {
+    //     let type_id = id.type_id().unwrap();
+
+    //     return (id.id(), id.name().to_owned())
+    // })
+    // .collect::<HashMap<ComponentId, String>>();
+
+    // for e in enetities_to_save.iter(&world) {
+    // for component in world.entity(e).archetype().components() {
+
+    //     world.components().get_info(component).unwrap();
+
+    // }
+ 
+
+        //println!("component rust type is {:#?}", world_type_map.type_id().unwrap());
+    
+
+    let registered_types = type_registry.read().iter()
+    .map(|id| {
+        let type_id = id.type_id();
+
+        return (type_id, id.type_name().to_owned())
+    })
+    .collect::<HashMap<TypeId, String>>();
+
+    for item in registered_types.keys() {
+        if world_types.contains_key(item) == false {
+            println!("NOT IN TYPE REGISTRY {:#?}", registered_types[item])
+        }
+    }
+    // println!("the following components are registered");
+    // for component in type_registry.read().iter() {
+    //     println!("{:#?}", component)
+    // }
+}
 
 /// collect entities with `ModelFlag` that don't have meshes, and spawn their meshes.  
 pub fn spawn_models(
@@ -24,7 +79,7 @@ pub fn spawn_models(
     //transform_query: Query<&Transform>,
 ) {
     for (e, model, trans) in unspawned_models_query.iter() {
-
+        println!("spawning model");
         let mesh_check: Option<Mesh> = match model.geometry.clone() {
             Geometry::Primitive(variant) => Some(variant.into()), 
             Geometry::Mesh { filename, .. } => {
@@ -137,6 +192,8 @@ pub fn save<Filter: ReadOnlyWorldQuery>(
     // }
     //this is a problematic component that needs to be manually added to everything due to ComputedVisiblityFlags not implementing reflect.
     builder.deny::<ComputedVisibility>(); 
+    //you cant load meshes from handles, you need a wrapper component to save the geometry of the mesh
+    builder.deny::<Handle<Mesh>>();
     // builder.allow::<ModelFlag>();
     // builder.allow::<Serializable>();
 
@@ -144,126 +201,3 @@ pub fn save<Filter: ReadOnlyWorldQuery>(
     let scene = builder.build();
     Saved { scene }
 }
-
-//pub fn save_models()
-
-// fn main() {
-//     App::new()
-//         .add_plugins(DefaultPlugins)
-//         .add_plugins(WorldInspectorPlugin::new())
-//         .add_plugins(SerializationPlugin)
-//         .add_systems(Startup, setup)
-//         .register_type::<FavoriteNumber>()
-//         .register_type::<ModelVariant>()
-//         //.register_type::<Option<Entity>>()
-//         .run();
-// }
-
-// /// set up a simple 3D scene
-// fn setup(
-//     mut commands: Commands,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut materials: ResMut<Assets<StandardMaterial>>,
-// ) {
-//     commands.spawn(
-//     PbrBundle {
-//         mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-//         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-//         ..default()
-//     });
-//     // mark cube to spawn
-//     // commands.spawn(
-//     // (
-
-//     //     Save,
-//     //     FavoriteNumber{favorite_number: 10},
-//     //     ModelVariant::Cube,
-//     // ));
-//     // // cube
-//     // commands.spawn(PbrBundle {
-//     //     mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-//     //     material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-//     //     transform: Transform::from_xyz(0.0, 0.5, 0.0),
-//     //     ..default()
-//     // });
-//     // light
-//     commands.spawn(PointLightBundle {
-//         point_light: PointLight {
-//             intensity: 1500.0,
-//             shadows_enabled: true,
-//             ..default()
-//         },
-//         transform: Transform::from_xyz(4.0, 8.0, 4.0),
-//         ..default()
-//     });
-//     // camera
-//     commands.spawn(Camera3dBundle {
-//         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-//         ..default()
-//     });
-// }
-
-// pub fn check_for_save_keypress(
-//     keys: Res<Input<KeyCode>>,
-// ) -> bool{
-//     if keys.just_pressed(KeyCode::AltRight) {
-//         return true
-//     } else {
-//         return false
-//     }
-// }
-
-// pub fn check_for_load_keypress(
-//     keys: Res<Input<KeyCode>>,
-// ) -> bool{
-//     if keys.just_pressed(KeyCode::AltLeft) {
-//         return true
-//     } else {
-//         return false
-//     }
-// }
-
-// pub fn spawn_unspawned_models(
-//     unspawned_models_querry: Query<(Entity, &ModelVariant), Without<Handle<Mesh>>>,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut materials: ResMut<Assets<StandardMaterial>>,
-//     mut commands: Commands,
-// ) {
-//     for (unspawned_model, variant) in unspawned_models_querry.iter() {
-//         match *variant {
-//             ModelVariant::Cube => {
-//                 commands.entity(unspawned_model).insert(
-
-//                         PbrBundle {
-//                                 mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-//                                 material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-//                                 transform: Transform::from_xyz(0.0, 0.5, 0.0),
-//                                 ..default()
-//                             }
-//                 );
-
-//             }
-//         }
-//     }
-// }
-
-// // pub fn list_components(
-// //     model_querry: Query<(Entity), With<Handle<Mesh>>>,
-// // ){
-// //     for model in model_querry.iter() {
-// //         model.serializable()
-// //     }
-// // }
-
-
-// // pub fn save_into_file(
-// //     path: impl Into<PathBuf>,
-
-// // ) -> SavePipeline  {
-// //     println!("saving scene");
-// //     save::<With<Save>>
-// //     .pipe(into_file(path.into()))
-// //     .pipe(finish)
-// //     .in_set(SaveSet::Save)
-    
-// // }

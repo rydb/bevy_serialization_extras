@@ -5,7 +5,7 @@ use moonshine_save::{
 };
 use bevy::{prelude::*, core_pipeline::core_3d::Camera3dDepthTextureUsage};
 //use crate::urdf::urdf_loader::BevyRobot;
-
+use bevy_component_extras::components::*;
 use super::systems::*;
 use super::components::*;
 /// marks component as a valid candidate for serialization. 
@@ -36,13 +36,14 @@ impl Plugin for SerializationPlugin {
         .register_type::<Camera3dDepthTextureUsage>()
         .register_type::<bevy_mod_raycast::RaycastMethod>()
         .register_type::<bevy_mod_raycast::system_param::RaycastVisibility>()
-        //.register_type::<ComputedVisibilityFlags>()
-        //.register_type::<BevyRobot>()
-        //.register_type::<
+        .register_type::<Physics>()
+        .register_type::<Debug>()
+        .register_type::<Viewer>()
         .add_systems(Update, spawn_models)
         .add_systems(Update, save_into_file(SAVE_PATH).run_if(check_for_save_keypress))
         .add_systems(Update, add_computed_visiblity.after(LoadSet::PostLoad))
         .add_systems(Update, load_from_file(SAVE_PATH).run_if(check_for_load_keypress))
+        .add_systems(PostStartup, list_unserializable)
         //.add_systems(Update, spawn_unspawned_models)
         ;    
     }

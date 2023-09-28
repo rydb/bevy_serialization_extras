@@ -2,9 +2,10 @@
 
 use bevy::prelude::*;
 use bevy_editor_extras::plugins::EditorPlugin;
-use bevy_serialization_extras::plugins::SerializationPlugin;
+use bevy_serialization_extras::{plugins::SerializationPlugin, components::ModelFlag};
 use moonshine_save::save::Save;
 use bevy_component_extras::components::MakeSelectableBundle;
+use bevy_serialization_extras::components::*;
 
 fn main() {
     App::new()
@@ -30,11 +31,13 @@ fn setup(
     // cube
     commands.spawn(
         (
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
-            ..default()
+        ModelBundle {
+            model: ModelFlag {
+                geometry: shape::Cube {size: 1.0}.into(),
+                material: Color::rgb(0.8, 0.7, 0.6).into(),
+                physics: Physics::Fixed
+            },
+            transform: Transform::from_xyz(0.0, 0.5, 0.0)
         },
         Save,
         MakeSelectableBundle::default(),
