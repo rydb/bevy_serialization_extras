@@ -4,7 +4,7 @@
     2: (
       components: {
         "bevy_asset::handle::Handle<bevy_pbr::pbr_material::StandardMaterial>": (
-          id: Id("7494888b-c082-457b-aacf-517228cc0c22", 8415432625683922266),
+          id: Id("7494888b-c082-457b-aacf-517228cc0c22", 16398708293931720559),
         ),
         "bevy_transform::components::transform::Transform": (
           translation: (
@@ -95,7 +95,6 @@
             z: 0.5,
           ),
         ),
-        "bevy_pbr::wireframe::Wireframe": (),
       },
     ),
     3: (
@@ -168,11 +167,11 @@
         ),
         "bevy_transform::components::transform::Transform": (
           translation: (
-            x: -2.0,
+            x: -1.1644306,
             y: 2.5,
-            z: 5.0,
+            z: 2.3342652,
           ),
-          rotation: (-0.1819278, -0.18728691, -0.03532076, 0.9646649),
+          rotation: (-0.25121886, -0.1354465, -0.03552784, 0.95774794),
           scale: (
             x: 1.0,
             y: 1.0,
@@ -182,25 +181,25 @@
         "bevy_transform::components::global_transform::GlobalTransform": ((
           matrix3: (
             x_axis: (
-              x: 0.92735213,
+              x: 0.960784,
               y: 0.0,
-              z: 0.37418988,
+              z: 0.27729774,
             ),
             y_axis: (
-              x: 0.13629079,
-              y: 0.93130946,
-              z: -0.3377685,
+              x: 0.13610686,
+              y: 0.8712537,
+              z: -0.47158444,
             ),
             z_axis: (
-              x: -0.34848657,
-              y: 0.36422896,
-              z: 0.86365175,
+              x: -0.24159668,
+              y: 0.49083292,
+              z: 0.8370867,
             ),
           ),
           translation: (
-            x: -2.0,
+            x: -1.1644306,
             y: 2.5,
-            z: 5.0,
+            z: 2.3342652,
           ),
         )),
         "bevy_render::camera::camera::CameraRenderGraph": ("core_3d"),
@@ -234,8 +233,8 @@
         ),
         "bevy_mod_raycast::RaycastSource<bevy_component_extras::components::Selectable>": (
           cast_method: Screenspace((
-            x: 610.8997,
-            y: 325.3533,
+            x: 329.14603,
+            y: 220.16733,
           )),
           should_early_exit: true,
           visibility: MustBeVisibleAndInView,

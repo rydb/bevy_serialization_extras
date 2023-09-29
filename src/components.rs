@@ -1,7 +1,12 @@
 use bevy::{prelude::*};
 use bevy::render::mesh::shape::*;
-
-
+use crate::traits::Wrapper;
+use bevy_component_extras::components::MakeSelectableBundle;
+use moonshine_save::prelude::Unload;
+use crate::physics::components::PhysicsBundle;
+use bevy_rapier3d::prelude::RigidBody;
+use bevy::ecs::system::SystemState;
+use moonshine_save::prelude::Save;
 /// Component which marks entity as target for serialization/deserialization
 // #[derive(Component, Default, Reflect, Clone)]
 // #[reflect(Component)]
@@ -45,9 +50,111 @@ pub enum Physics {
 pub struct ModelFlag {
     pub geometry: Geometry,
     pub material: StandardMaterial,
-    pub physics: Physics
+    //pub physics: Physics
     //pub thing_type: Transform, 
 
+}
+
+impl Wrapper for ModelFlag {
+    fn serialize(world: &mut World) {
+        let mut system_state: SystemState<(
+            Commands,
+            Query<(Entity, &Handle<Mesh>, &Handle<StandardMaterial>), With<Save>>,
+            ResMut<Assets<Mesh>>,
+            ResMut<Assets<StandardMaterial>>,
+        )> = SystemState::new(world);
+
+        let (
+            mut commands,
+            entities_to_save,
+            mut meshes,
+            mut materials,
+        ) = system_state.get_mut(world);
+
+
+        for (e, mesh_handle, material_handle) in entities_to_save.iter() {
+            let mesh = meshes.get(mesh_handle).unwrap();
+            let material = materials.get(material_handle).unwrap();
+            commands.entity(e).insert(
+                Self {
+                    geometry: mesh.into(),
+                    material: material.into()
+                } 
+            )
+        }
+
+    }
+
+    fn deserialize(world: &mut World) {
+        let mut system_state: SystemState<(
+            Query<(Entity, &ModelFlag, &Transform), Without<Handle<Mesh>>>,
+            Commands,
+            ResMut<Assets<Mesh>>,
+            ResMut<Assets<StandardMaterial>>,
+            Res<AssetServer>,
+            //Query<&Transform>,
+        )> = SystemState::new(world);
+
+        let (
+            unspawned_models_query,
+            mut commands,
+            mut meshes, 
+            mut materials, 
+            asset_server, 
+            //transform_query
+        ) = system_state.get_mut(world);
+
+
+        for (e, model, trans) in unspawned_models_query.iter() {
+            println!("spawning model");
+            let mesh_check: Option<Mesh> = match model.geometry.clone() {
+                Geometry::Primitive(variant) => Some(variant.into()), 
+                Geometry::Mesh { filename, .. } => {
+                    println!("attempting to load mesh: {:#?}", filename);
+                    meshes.get(&asset_server.load(filename))}.cloned()
+            }; 
+            if let Some(mesh) = mesh_check {
+                let mesh_handle = meshes.add(mesh);
+    
+                let material_handle = materials.add(model.material.clone());
+                //(*model).serialize()
+                commands.entity(e)
+                .insert(
+                    (
+                    PbrBundle {
+                        mesh: mesh_handle,
+                        material: material_handle,
+                        transform: *trans,
+                        ..default()
+                    }, // add mesh
+                    MakeSelectableBundle::default(), // makes model selectable 
+                    Unload, // marks entity to unload on deserialize
+                )
+                )
+    
+           
+                ;
+                // match model.physics {
+                //     Physics::Dynamic => {
+                //         commands.entity(e).insert(PhysicsBundle::default());
+                //     },
+                //     Physics::Fixed => {
+                //         commands.entity(e).insert(
+                //             PhysicsBundle {
+                //             rigid_body: RigidBody::Fixed,
+                //             ..default() 
+                //         }
+                //         );
+                //     }
+                // }
+            } else {
+                println!("load attempt failed for this mesh, re-attempting next system call");
+            }
+    
+            
+    
+        }
+    }
 }
 
 impl Default for ModelFlag {
@@ -55,7 +162,7 @@ impl Default for ModelFlag {
         Self {
             geometry: Default::default(),
             material: Default::default(),
-            physics: Default::default(),
+            //physics: Default::default(),
             //transform: Default::default()
         }
     }

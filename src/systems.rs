@@ -9,6 +9,7 @@ use super::components::Geometry;
 use bevy_component_extras::components::*;
 //use crate::urdf::urdf_loader::BevyRobot;
 use crate::physics::components::PhysicsBundle;
+use crate::traits::Wrapper;
 
 
 use moonshine_save::save::*;
@@ -16,6 +17,7 @@ use super::components::*;
 use std::any::TypeId;
 use std::path::PathBuf;
 use std::collections::HashMap;
+
 
 /// collects all components in the world, and cross references them with the type registry. If a component is not in the type registry, label it in
 /// the 'serializable check" window
@@ -25,30 +27,16 @@ pub fn list_unserializable(
     let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
     
 
-    //println!("{:?} WORLD", world.components()); //this has stuff in it
     let type_registry = world.resource::<AppTypeRegistry>();
-    //let world_components = world.components();
 
+    let mut saved_component_types = HashMap::new();
+    for e in enetities_to_save.iter(&world) {
+        for component in world.entity(e).archetype().components() {
 
-    //let saved_component_types = enetities_to_save.iter().
-    // let world_types = world.components().iter()
-    // .map(|id| {
-    //     let type_id = id.type_id().unwrap();
-
-    //     return (id.id(), id.name().to_owned())
-    // })
-    // .collect::<HashMap<ComponentId, String>>();
-
-    // for e in enetities_to_save.iter(&world) {
-    // for component in world.entity(e).archetype().components() {
-
-    //     world.components().get_info(component).unwrap();
-
-    // }
- 
-
-        //println!("component rust type is {:#?}", world_type_map.type_id().unwrap());
-    
+            let comp_info = world.components().get_info(component).unwrap();
+            saved_component_types.insert(comp_info.type_id().unwrap(), comp_info.name().to_owned());
+        }
+    }
 
     let registered_types = type_registry.read().iter()
     .map(|id| {
@@ -58,15 +46,11 @@ pub fn list_unserializable(
     })
     .collect::<HashMap<TypeId, String>>();
 
-    for item in registered_types.keys() {
-        if world_types.contains_key(item) == false {
-            println!("NOT IN TYPE REGISTRY {:#?}", registered_types[item])
+    for item in saved_component_types.keys() {
+        if registered_types.contains_key(item) == false {
+            println!("NOT IN TYPE REGISTRY {:#?}", saved_component_types[item])
         }
     }
-    // println!("the following components are registered");
-    // for component in type_registry.read().iter() {
-    //     println!("{:#?}", component)
-    // }
 }
 
 /// collect entities with `ModelFlag` that don't have meshes, and spawn their meshes.  
@@ -90,13 +74,7 @@ pub fn spawn_models(
             let mesh_handle = meshes.add(mesh);
 
             let material_handle = materials.add(model.material.clone());
-            
-            // if let Ok(trans) = transform_query.get(e) {
-
-            // }
-            // add all components a deserialized model needs to be useful. 
-            
-            
+            //(*model).serialize()
             commands.entity(e)
             .insert(
                 (
@@ -113,19 +91,19 @@ pub fn spawn_models(
 
        
             ;
-            match model.physics {
-                Physics::Dynamic => {
-                    commands.entity(e).insert(PhysicsBundle::default());
-                },
-                Physics::Fixed => {
-                    commands.entity(e).insert(
-                        PhysicsBundle {
-                        rigid_body: RigidBody::Fixed,
-                        ..default() 
-                    }
-                    );
-                }
-            }
+            // match model.physics {
+            //     Physics::Dynamic => {
+            //         commands.entity(e).insert(PhysicsBundle::default());
+            //     },
+            //     Physics::Fixed => {
+            //         commands.entity(e).insert(
+            //             PhysicsBundle {
+            //             rigid_body: RigidBody::Fixed,
+            //             ..default() 
+            //         }
+            //         );
+            //     }
+            // }
         } else {
             println!("load attempt failed for this mesh, re-attempting next system call");
         }
@@ -180,16 +158,8 @@ pub fn save<Filter: ReadOnlyWorldQuery>(
     world: &World,
     serializable_querry: Query<Entity, Filter>,
 ) -> Saved {
-    
-    //let mut world_copy = *world;
-    // query for all components with special serializtion behaviour
-    //let model_mesh_query = world.query_filtered::<Entity, With<Handle<Mesh>>>();
-    
-    let mut builder = DynamicSceneBuilder::from_world(world);
-    
-    // for e in builder.extract_entities(model_mesh_query.iter(&world)) {
 
-    // }
+    let mut builder = DynamicSceneBuilder::from_world(world);
     //this is a problematic component that needs to be manually added to everything due to ComputedVisiblityFlags not implementing reflect.
     builder.deny::<ComputedVisibility>(); 
     //you cant load meshes from handles, you need a wrapper component to save the geometry of the mesh

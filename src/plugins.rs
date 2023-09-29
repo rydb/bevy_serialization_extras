@@ -11,7 +11,7 @@ use super::components::*;
 /// marks component as a valid candidate for serialization. 
 // #[derive(Component)]
 // pub struct Serializable;
-
+use moonshine_save::prelude::Save;
 const SAVE_PATH: &str = "cube.ron";
 
 /// plugin that adds systems/plugins for serialization. 
@@ -39,6 +39,8 @@ impl Plugin for SerializationPlugin {
         .register_type::<Physics>()
         .register_type::<Debug>()
         .register_type::<Viewer>()
+        .register_type::<Selectable>()
+        //.register_type::<Save>()
         .add_systems(Update, spawn_models)
         .add_systems(Update, save_into_file(SAVE_PATH).run_if(check_for_save_keypress))
         .add_systems(Update, add_computed_visiblity.after(LoadSet::PostLoad))

@@ -1,18 +1,22 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
 use bevy::prelude::*;
-use bevy_editor_extras::plugins::EditorPlugin;
 use bevy_serialization_extras::{plugins::SerializationPlugin, components::ModelFlag};
+use bevy_ui_extras::systems::{visualize_left_sidepanel_for, visualize_right_sidepanel_for};
 use moonshine_save::save::Save;
 use bevy_component_extras::components::MakeSelectableBundle;
 use bevy_serialization_extras::components::*;
+use bevy_editor_extras::plugins::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(SerializationPlugin)
-        .add_plugins(EditorPlugin)
+        .add_plugins(SelecterPlugin)
+        .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
+        .add_systems(Update, visualize_right_sidepanel_for::<Save>)
         .run();
 }
 
@@ -35,7 +39,7 @@ fn setup(
             model: ModelFlag {
                 geometry: shape::Cube {size: 1.0}.into(),
                 material: Color::rgb(0.8, 0.7, 0.6).into(),
-                physics: Physics::Fixed
+                //physics: Physics::Fixed
             },
             transform: Transform::from_xyz(0.0, 0.5, 0.0)
         },
