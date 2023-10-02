@@ -55,6 +55,7 @@ use bevy_rapier3d::prelude::*;
 //     }
 // }
 
+
 /// collection of all things required for something to have "physics"
 #[derive(Bundle)]
 pub struct PhysicsBundle {
@@ -66,10 +67,6 @@ pub struct PhysicsBundle {
     pub mass: AdditionalMassProperties, 
     /// friction rules for object. No clue how this works, and this should probably be abstracted away from the user's eyes through a "Material" component/resource?
     pub friction: Friction,
-    /// external forces being applied on a robot. These are not implied(except gravity?), and must be manually set on robot initialization.
-    //external_forces: ExternalForce, 
-    /// velocity of object. A model does not need this object to have a velocity, but `in order to read/write to the object's velocity, you need to have this object`
-    pub velocity: Velocity,
     /// sets weather continous or discrete collision is the collision detection for this model. Continous = more accurate/more slow, discrete = faster/more innacurate
     pub continous_collision_setting: Ccd, 
     /// "for filtering what pair of colliders should have their contacts (or intersection test if at least one of the colliders is a sensor) computed by the narrow-phase. This filtering happens right after the broad-phase, at the beginning of the narrow phase."
@@ -93,10 +90,10 @@ impl Default for PhysicsBundle {
             //     force: (Vec3::new(0.0, 0.0, 0.0)),
             //     torque: (Vec3::new(0.0, 0.0, 0.0))
             //     },
-            velocity: Velocity{
-                linvel: (Vec3::default()),
-                angvel: (Vec3::default()), 
-            },
+            // velocity: Velocity{
+            //     linvel: (Vec3::default()),
+            //     angvel: (Vec3::default()), 
+            // },
             collision_groups: Default::default(),
             solver_groups: Default::default(),
         }
