@@ -6,6 +6,8 @@ use moonshine_save::{
 use bevy::{prelude::*, core_pipeline::core_3d::Camera3dDepthTextureUsage};
 //use crate::urdf::urdf_loader::BevyRobot;
 use bevy_component_extras::components::*;
+use crate::physics::colliders::ColliderFlag;
+
 use super::systems::*;
 use super::components::*;
 /// marks component as a valid candidate for serialization. 
@@ -31,7 +33,8 @@ impl Plugin for SerializationSystems {
         // All wrapper structs that detect normally unserializable things, and make them serializable
         .add_systems(Update,
             (
-                serialize_for::<RigidBodyPhysicsFlag>
+                serialize_for::<RigidBodyPhysicsFlag>,
+                serialize_for::<ColliderFlag>,
             ).before(SaveSet::Save)
         )
         .add_systems(Update,

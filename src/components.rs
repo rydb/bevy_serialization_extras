@@ -4,11 +4,12 @@ use crate::traits::*;
 use bevy_component_extras::components::MakeSelectableBundle;
 use moonshine_save::prelude::Unload;
 use crate::physics::components::PhysicsBundle;
-use bevy_rapier3d::prelude::{RigidBody, AsyncCollider};
+use bevy_rapier3d::prelude::{RigidBody, AsyncCollider, Group, Friction, CoefficientCombineRule, CollisionGroups, SolverGroups};
 use bevy::ecs::system::SystemState;
 use moonshine_save::prelude::Save;
 use bevy_rapier3d::prelude::ComputedColliderShape;
-
+use bevy_rapier3d::prelude::AdditionalMassProperties::Mass;
+use bevy_rapier3d::dynamics::Ccd;
 /// Wrapper bundle made to tie together everything that composes a "model", in a serializable format
 /// !!! THIS WILL LIKELY BE REFACTORED AWAY WITH ASSETSV2 IN 0.12!!!
 #[derive(Bundle)]
@@ -109,18 +110,63 @@ pub enum RigidBodyType {
     Fixed,
     Dynamic,
 }
+
+
+impl Into<RigidBody> for RigidBodyType {
+    fn into(self) -> RigidBody {
+        match self {
+            Self::Fixed => RigidBody::Fixed,
+            Self::Dynamic => RigidBody::Dynamic,
+        }
+    }
+}
+
+#[derive(Reflect, Clone, Default)]
+pub enum FrictionCombineRule {
+    #[default]
+    Average = 0,
+    Min,
+    Multiply,
+    Max,
+}
+
+#[derive(Reflect, Clone, Default)]
+pub struct FrictionModel {
+    friction: f32,
+    friction_combine_rule: FrictionCombineRule,
+}
+impl Into<CoefficientCombineRule> for FrictionCombineRule {
+    fn into(self) -> CoefficientCombineRule {
+        match self {
+            Self::Average => CoefficientCombineRule::Average,
+            Self::Min => CoefficientCombineRule::Min,
+            Self::Multiply => CoefficientCombineRule::Multiply,
+            Self::Max => CoefficientCombineRule::Max,
+        }
+    }
+}
+
+impl Into<Friction> for FrictionModel {
+    fn into(self) -> Friction {
+        Friction { coefficient: (self.friction), combine_rule: (self.friction_combine_rule.into()) }
+    }
+}
+
+
 /// flag for serializing/deserializing rigid bodies
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]
 pub struct RigidBodyPhysicsFlag {
     pub rigidbody: RigidBodyType,
-    pub collider: ColiderType,
-    pub mass: f64,
-    pub friction: f64,
-    pub collision_groups: ???,
-    pub solver_groups: ???,
+    //pub collider_type: ColliderType,
+    pub mass: f32,
+    pub friction: FrictionModel,
+    pub collision_groups: InteractionGroups,
+    pub solver_groups: InteractionGroups,
+    pub continous_collision_enabled: bool,
 
 }
+
 
 impl ECSDeserialize for RigidBodyPhysicsFlag {
     fn deserialize(world: &mut World) {
@@ -136,20 +182,20 @@ impl ECSDeserialize for RigidBodyPhysicsFlag {
     
         for (e, physics_flag) in models_without_physics.iter() {
             commands.entity(e).insert(
-            PhysicsBundle {
-                rigid_body: physics_flag.rigidbody,
-                async_collider: physics_flag.collider,
-                mass: physics_flag.mass,
-                friction: physics_flag.friction,
-                //velocity: physics_flag.velocity,
-                continous_collision_setting: physics_flag.continous_collision_setting,
-                collision_groups: physics_flag.collision_groups,
-                solver_groups: physics_flag.solver_groups,
-            }
-        );
+        PhysicsBundle {
+                    rigid_body: physics_flag.rigidbody.into(),
+                    async_collider: physics_flag.collider_type.into(),
+                    mass: Mass(physics_flag.mass),
+                    friction: physics_flag.friction.into(),
+                    //velocity: physics_flag.velocity,
+                    continous_collision_setting: Ccd { enabled: physics_flag.continous_collision_enabled},
+                    collision_groups: physics_flag.collision_groups.into(),
+                    solver_groups: physics_flag.solver_groups.into(),
+                }
+            );
         system_state.apply(world);
+        }
     }
-}
 }
 impl ECSSerialize for RigidBodyPhysicsFlag {
 
@@ -173,7 +219,9 @@ impl ECSSerialize for RigidBodyPhysicsFlag {
             };
             commands.entity(e).insert(
                 RigidBodyPhysicsFlag {
-                    rigidbody: rigidbody
+                    rigidbody: rigidbody,
+                    collider_type: default(),
+                    mass: 
                 }
             );
         }
