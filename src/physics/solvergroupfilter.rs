@@ -33,7 +33,11 @@ impl From<SolverGroups> for SolverGroupsFlag {
 }
 
 impl ECSSerialize for SolverGroupsFlag {
-    fn serialize_for<T: Component + From<Self>>(world: &mut World) {
+    fn serialize_for<T>(world: &mut World)
+    where
+        T: Component,
+        Self: From<T>    
+    {
         let mut system_state: SystemState<(
             Query<(Entity, &T)>,
             Commands,
@@ -46,7 +50,7 @@ impl ECSSerialize for SolverGroupsFlag {
         for (e, f) in physics_to_serialize.iter() {
             commands.entity(e).insert(
 
-                Self::from(f)
+                Self::from(*f)
             );
         }
         system_state.apply(world);
