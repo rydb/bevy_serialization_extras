@@ -1,4 +1,5 @@
 use bevy::pbr::wireframe::WIREFRAME_SHADER_HANDLE;
+use bevy::reflect::TypeUuid;
 use bevy::transform::commands;
 use bevy::{prelude::*, reflect::TypeData};
 use moonshine_save::prelude::Unload;
@@ -59,14 +60,33 @@ pub fn try_serialize_asset_for<Thing, WrapperThing> (
                 commands.entity(e).insert(
                     WrapperThing::from(thing)
                 );
-                return true
+                //return true
             },
             None => {
-                return false
+                //return false
             }
         }
     }
-    return true;
+    //return true;
+}
+
+pub fn deserialize_wrapper_for<WrapperThing, Thing> (
+    mut things: ResMut<Assets<Thing>>,
+    wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Handle<Thing>>>,
+    asset_server: AssetServer,
+    mut commands: Commands,
+) 
+    where
+        WrapperThing: Component + ECSLoad<Thing>,
+        Thing: Asset + TypeUuid
+{
+    for (e, wrapper_thing) in wrapper_thing_query.iter() {
+        let thing_handle = WrapperThing::load_from(wrapper_thing, things, asset_server);
+    
+        commands.entity(e).insert(
+            thing_handle
+        );
+    }
 }
 
 pub fn deserialize_asset_for<WrapperThing, Thing> (

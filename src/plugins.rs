@@ -37,14 +37,14 @@ impl Plugin for SerializationSystems {
             (
                 serialize_for::<AsyncCollider, ColliderFlag>,
                 try_serialize_asset_for::<StandardMaterial, MaterialFlag>,
-                try_serialize_asset_for::<Mesh, MeshFlag>,
+                //try_serialize_asset_for::<Mesh, MeshFlag>,
             ).before(SaveSet::Save)
         )
         .add_systems(Update,
             (
                 deserialize_for::<ColliderFlag, AsyncCollider>,
                 deserialize_asset_for::<MaterialFlag, StandardMaterial>,
-                deserialize_asset_for::<MeshFlag, Mesh>,
+                deserialize_wrapper_for::<GeometryFlag, Mesh>,
             ).after(LoadSet::PostLoad)
         )
         ;

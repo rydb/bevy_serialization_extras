@@ -1,54 +1,64 @@
-use bevy::prelude::*;
-use bevy::render::mesh::MeshVertexAttribute;
-use bevy::render::mesh::VertexAttributeValues;
+use bevy::{prelude::*, asset::AssetPath};
+use crate::traits::ECSLoad;
 
-#[derive(Debug, Reflect, Clone)]
-
-pub struct MeshAttributeDataWrapper {
-    attribute: MeshVertexAttribute,
-    values: VertexAttributeValues,
-}
-
-#[derive(Debug, Reflect, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
-pub struct MeshVertexAttributeIdWrapper(usize);
-
-#[derive(Reflect, Clone, Default)]
-pub enum PrimitiveTopologyWrapper {
-    PointList = 0,
-    LineList = 1,
-    LineStrip = 2,
-    #[default]
-    TriangleList = 3,
-    TriangleStrip = 4,
-}
-
-#[derive(Component, Reflect, Clone, Default)]
+#[derive(Component, Reflect, Clone)]
+//#[reflect(from_reflect = false)]
 #[reflect(Component)]
-pub struct GeometryFlag{
-    primitive_topology: PrimitiveTopologyWrapper
-    attributes: BtreeMap<MeshVertexAttributeIdWrapper, 
-    // Primitive(MeshPrimitive),
-    // Mesh {
-    //     filename: String,
-    //     scale: Option<Vec3>,
-    // },
+pub enum GeometryFlag{
+    Primitive(MeshPrimitive),
+    Mesh {
+        filename: String,
+        scale: Option<Vec3>,
+    },
 }
 
-
-impl From<&GeometryFlag> for Mesh {
-    fn from(value: &GeometryFlag) -> Self {
-        Self {
-            base_color: value.color,
-            ..default()
-        }
+/// Reflect, and Serialization both require a default implementation of structs. The default GeometryFlag resorts to an "fallback" mesh to
+/// represent failed load attempts. (TODO): add a system that picks up error meshes, and displays them somewhere.
+impl Default for GeometryFlag {
+    fn default() -> Self {
+        Self::Mesh {
+            filename: "fallback.gltf".to_string(),
+            scale: None,
+        }        
     }
 }
 
-impl From<&Mesh> for GeometryFlag {
-    fn from(value: &Mesh) -> Self {
-        Self {
-            color: value.base_color,
-            ..default()
+#[derive(Debug, Clone, PartialEq, Reflect, Copy)]
+#[derive(Component)]
+pub enum MeshPrimitive {
+    Box { size: [f32; 3] },
+    Cylinder { radius: f32, length: f32 },
+    Capsule { radius: f32, length: f32 },
+    Sphere { radius: f32 },
+}
+
+impl ECSLoad<Mesh> for GeometryFlag {
+    fn load_from(value: &Self, mut things: ResMut<Assets<Mesh>>, mut asset_server: AssetServer) -> Handle<Mesh>{
+        match value {
+            Self::Primitive(primitive) => {
+                match primitive {
+                    MeshPrimitive::Box { size } => {
+                        things.add(shape::Box{
+                            min_x: -size[0] * 0.5,
+                            max_x: size[0] * 0.5,
+                            min_y: -size[1] * 0.5,
+                            max_y: size[1] * 0.5,
+                            min_z: -size[2] * 0.5,
+                            max_z: size[2] * 0.5,
+                        }.into())
+                    }
+                    MeshPrimitive::Cylinder { radius, length } => {
+                        things.add(shape::Cylinder{radius: *radius, height: *length, ..default()}.into())
+                    },
+                    MeshPrimitive::Capsule { radius, length } => {
+                        things.add(shape::Capsule{radius: *radius, depth: *length, ..default()}.into())
+                    },
+                    MeshPrimitive::Sphere { radius } => {
+                        things.add(shape::Capsule{radius: *radius, depth: 0.0, ..default()}.into())
+                    },
+                }
+            } 
+            Self::Mesh { filename, scale } => asset_server.load(filename)
         }
     }
 }
