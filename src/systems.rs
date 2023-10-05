@@ -1,3 +1,5 @@
+use bevy::pbr::wireframe::WIREFRAME_SHADER_HANDLE;
+use bevy::transform::commands;
 use bevy::{prelude::*, reflect::TypeData};
 use moonshine_save::prelude::Unload;
 
@@ -5,33 +7,102 @@ use bevy::ecs::component::ComponentId;
 use bevy_rapier3d::prelude::RigidBody;
 //use crate::body::robot::components::PhysicsBundle;
 use bevy::ecs::query::ReadOnlyWorldQuery;
-use super::components::Geometry;
 use bevy_component_extras::components::*;
 //use crate::urdf::urdf_loader::BevyRobot;
 use crate::physics::components::PhysicsBundle;
 use crate::traits::*;
-
+use bevy::ecs::system::SystemState;
 
 use moonshine_save::save::*;
 use super::components::*;
 use std::any::TypeId;
 use std::path::PathBuf;
 use std::collections::HashMap;
-
+use bevy::asset::Asset;
 
 
 ///Takes a component that is ECSSerializable, and manages serialization for it.
-pub fn serialize_for<T: ECSSerialize>(
-    world: &mut World,
-) {
-    T::serialize(world);
+// pub fn serialize_for<T: ECSSerialize>(
+//     world: &mut World,
+// ) {
+//     T::serialize(world);
+// }
+
+pub fn serialize_for<Thing, WrapperThing>(
+    thing_query: Query<(Entity, &Thing)>,
+    mut commands: Commands,
+)
+    where
+        Thing: Component,
+        WrapperThing: Component + for<'a> From<&'a Thing>  
+{
+    for (e, f) in thing_query.iter() {
+        commands.entity(e).insert(
+
+            WrapperThing::from(f)
+        );
+    }
 }
 
-pub fn deserialize_for<T: ECSDeserialize>(
-    world: &mut World,
-) {
-   T::deserialize(world)
+pub fn try_serialize_asset_for<Thing, WrapperThing> (
+    things: ResMut<Assets<Thing>>,
+    thing_query: Query<(Entity, &Handle<Thing>)>,
+    mut commands: Commands,
+)// -> bool
+    where
+        Thing: Asset,
+        WrapperThing: Component + for<'a> From<&'a Thing> 
+{
+    for (e, thing_handle) in thing_query.iter() {
+        match things.get(thing_handle) {
+            Some(thing) => {
+                commands.entity(e).insert(
+                    WrapperThing::from(thing)
+                );
+                return true
+            },
+            None => {
+                return false
+            }
+        }
+    }
+    return true;
 }
+
+pub fn deserialize_asset_for<WrapperThing, Thing> (
+    mut things: ResMut<Assets<Thing>>,
+    wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Handle<Thing>>>,
+    mut commands: Commands,
+) 
+    where
+        WrapperThing: Component,
+        Thing: Asset + for<'a> From<&'a WrapperThing>,
+{
+    for (e, wrapper_thing) in wrapper_thing_query.iter() {
+        let thing = Thing::from(wrapper_thing);
+        let thing_handle = things.add(thing);
+
+        commands.entity(e).insert(
+            thing_handle
+        );
+    }
+}
+
+pub fn deserialize_for<WrapperThing, Thing>(
+    wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Thing>>,
+    mut commands: Commands,
+) 
+    where
+        Thing: Component + for<'a> From<&'a WrapperThing>,
+        WrapperThing: Component  
+{
+    for (e, f) in wrapper_thing_query.iter() {
+        commands.entity(e).insert(
+            Thing::from(f)
+        );
+    }
+}
+
 
 /// collects all components in the world, and cross references them with the type registry. If a component is not in the type registry, label it in
 /// the 'serializable check" window

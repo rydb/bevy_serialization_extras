@@ -12,11 +12,12 @@ use bevy_rapier3d::prelude::AdditionalMassProperties::Mass;
 use bevy_rapier3d::dynamics::Ccd;
 /// Wrapper bundle made to tie together everything that composes a "model", in a serializable format
 /// !!! THIS WILL LIKELY BE REFACTORED AWAY WITH ASSETSV2 IN 0.12!!!
-#[derive(Bundle)]
-pub struct ModelBundle {
-    pub model: ModelFlag,
-    pub transform: Transform
-}
+// #[derive(Bundle)]
+// pub struct ModelBundle {
+//     pub mesh: GeometryFlag,
+//     pub material: MaterialFlag,
+//     pub transform: Transform
+// }
 
 
 /// The type of physics an entity should be serialized with, this is set to dynamic by default
@@ -29,78 +30,78 @@ pub enum Physics {
 }
 /// component which flags entity as a model for spawning purposes. !!!TREAT THIS AS READ ONLY!!!
 /// (TODO) reimplement this to 
-#[derive(Component, Reflect, Clone, Default)]
-#[reflect(Component)]
-pub struct ModelFlag {
-    pub geometry: Geometry,
-    pub material: StandardMaterial,
-    //pub physics: Physics
-    //pub thing_type: Transform, 
+// #[derive(Component, Reflect, Clone, Default)]
+// #[reflect(Component)]
+// pub struct ModelFlag {
+//     pub geometry: Geometry,
+//     pub material: StandardMaterial,
+//     //pub physics: Physics
+//     //pub thing_type: Transform, 
 
-}
 
-impl ECSDeserialize for ModelFlag {
-    fn deserialize(
-        world: &mut World,
-        //system_param: SystemState<()>
+
+// impl ECSDeserialize for ModelFlag {
+//     fn deserialize(
+//         world: &mut World,
+//         //system_param: SystemState<()>
     
-    ) {
-        let mut system_state: SystemState<(
-            Query<(Entity, &ModelFlag, &Transform), Without<Handle<Mesh>>>,
-            Commands,
-            ResMut<Assets<Mesh>>,
-            ResMut<Assets<StandardMaterial>>,
-            Res<AssetServer>,
-            //Query<&Transform>,
-        )> = SystemState::new(world);
+//     ) {
+//         let mut system_state: SystemState<(
+//             Query<(Entity, &ModelFlag, &Transform), Without<Handle<Mesh>>>,
+//             Commands,
+//             ResMut<Assets<Mesh>>,
+//             ResMut<Assets<StandardMaterial>>,
+//             Res<AssetServer>,
+//             //Query<&Transform>,
+//         )> = SystemState::new(world);
 
-        let (
-            unspawned_models_query,
-            mut commands,
-            mut meshes, 
-            mut materials, 
-            asset_server, 
-            //transform_query
-        ) = system_state.get_mut(world);
+//         let (
+//             unspawned_models_query,
+//             mut commands,
+//             mut meshes, 
+//             mut materials, 
+//             asset_server, 
+//             //transform_query
+//         ) = system_state.get_mut(world);
 
 
-        for (e, model, trans) in unspawned_models_query.iter() {
-            println!("spawning model");
-            let mesh_check: Option<Mesh> = match model.geometry.clone() {
-                Geometry::Primitive(variant) => Some(variant.into()), 
-                Geometry::Mesh { filename, .. } => {
-                    println!("attempting to load mesh: {:#?}", filename);
-                    meshes.get(&asset_server.load(filename))}.cloned()
-            }; 
-            if let Some(mesh) = mesh_check {
-                let mesh_handle = meshes.add(mesh);
+//         for (e, model, trans) in unspawned_models_query.iter() {
+//             println!("spawning model");
+//             let mesh_check: Option<Mesh> = match model.geometry.clone() {
+//                 Geometry::Primitive(variant) => Some(variant.into()), 
+//                 Geometry::Mesh { filename, .. } => {
+//                     println!("attempting to load mesh: {:#?}", filename);
+//                     meshes.get(&asset_server.load(filename))}.cloned()
+//             }; 
+//             if let Some(mesh) = mesh_check {
+//                 let mesh_handle = meshes.add(mesh);
     
-                let material_handle = materials.add(model.material.clone());
-                //(*model).serialize()
-                commands.entity(e)
-                .insert(
-                    (
-                    PbrBundle {
-                        mesh: mesh_handle,
-                        material: material_handle,
-                        transform: *trans,
-                        ..default()
-                    }, // add mesh
-                    MakeSelectableBundle::default(), // makes model selectable 
-                    Unload, // marks entity to unload on deserialize
-                )
-                )
+//                 let material_handle = materials.add(model.material.clone());
+//                 //(*model).serialize()
+//                 commands.entity(e)
+//                 .insert(
+//                     (
+//                     PbrBundle {
+//                         mesh: mesh_handle,
+//                         material: material_handle,
+//                         transform: *trans,
+//                         ..default()
+//                     }, // add mesh
+//                     MakeSelectableBundle::default(), // makes model selectable 
+//                     Unload, // marks entity to unload on deserialize
+//                 )
+//                 )
     
            
-                ;
+//                 ;
 
-            } else {
-                println!("load attempt failed for this mesh, re-attempting next system call");
-            }
-        }
-        system_state.apply(world);
-    }
-}
+//             } else {
+//                 println!("load attempt failed for this mesh, re-attempting next system call");
+//             }
+//         }
+//         system_state.apply(world);
+//     }
+// }
 
 
 
@@ -154,86 +155,55 @@ impl Into<Friction> for FrictionModel {
 
 
 /// flag for serializing/deserializing rigid bodies
-#[derive(Component, Reflect, Clone, Default)]
-#[reflect(Component)]
-pub struct RigidBodyPhysicsFlag {
-    pub rigidbody: RigidBodyType,
-    //pub collider_type: ColliderType,
-    pub mass: f32,
-    pub friction: FrictionModel,
-    pub collision_groups: InteractionGroups,
-    pub solver_groups: InteractionGroups,
-    pub continous_collision_enabled: bool,
+// #[derive(Component, Reflect, Clone, Default)]
+// #[reflect(Component)]
+// pub struct RigidBodyPhysicsFlag {
+//     pub rigidbody: RigidBodyType,
+//     //pub collider_type: ColliderType,
+//     pub mass: f32,
+//     pub friction: FrictionModel,
+//     pub collision_groups: InteractionGroups,
+//     pub solver_groups: InteractionGroups,
+//     pub continous_collision_enabled: bool,
 
-}
+// }
 
 
-impl ECSDeserialize for RigidBodyPhysicsFlag {
-    fn deserialize(world: &mut World) {
-        let mut system_state: SystemState<(
-            Query<(Entity, &RigidBodyPhysicsFlag), With<Handle<Mesh>>>,
-            Commands,
-        )> = SystemState::new(world);
+// impl ECSDeserialize for RigidBodyPhysicsFlag {
+//     fn deserialize(world: &mut World) {
+//         let mut system_state: SystemState<(
+//             Query<(Entity, &RigidBodyPhysicsFlag), With<Handle<Mesh>>>,
+//             Commands,
+//         )> = SystemState::new(world);
 
-        let (
-            models_without_physics,
-            mut commands,
-        ) = system_state.get_mut(world);
+//         let (
+//             models_without_physics,
+//             mut commands,
+//         ) = system_state.get_mut(world);
     
-        for (e, physics_flag) in models_without_physics.iter() {
-            commands.entity(e).insert(
-        PhysicsBundle {
-                    rigid_body: physics_flag.rigidbody.into(),
-                    async_collider: physics_flag.collider_type.into(),
-                    mass: Mass(physics_flag.mass),
-                    friction: physics_flag.friction.into(),
-                    //velocity: physics_flag.velocity,
-                    continous_collision_setting: Ccd { enabled: physics_flag.continous_collision_enabled},
-                    collision_groups: physics_flag.collision_groups.into(),
-                    solver_groups: physics_flag.solver_groups.into(),
-                }
-            );
-        system_state.apply(world);
-        }
-    }
-}
-impl ECSSerialize for RigidBodyPhysicsFlag {
-
-    fn serialize(world: &mut World) {
-        let mut system_state: SystemState<(
-            Query<(Entity, &RigidBody)>,
-            Commands,
-        )> = SystemState::new(world);
-        let (
-            physics_to_serialize,
-            mut commands,
-        ) = system_state.get_mut(world);
-    
-        for (e, physics) in physics_to_serialize.iter() {
-            let rigidbody = match *physics {
-                RigidBody::Fixed => RigidBodyType::Fixed,
-                RigidBody::Dynamic => RigidBodyType::Dynamic,
-                _ => panic!("Kinematic based rigid bodies aren't implemented for serialization make an issue to fix this.")
-                // RigidBody::KinematicPositionBased => RigidBodyType::Fixed,
-                // RigidBody::KinematicVelocityBased => RigidBodyType::Fixed,
-            };
-            commands.entity(e).insert(
-                RigidBodyPhysicsFlag {
-                    rigidbody: rigidbody,
-                    collider_type: default(),
-                    mass: 
-                }
-            );
-        }
-        system_state.apply(world);
-
-    }
-}
+//         for (e, physics_flag) in models_without_physics.iter() {
+//             commands.entity(e).insert(
+//         PhysicsBundle {
+//                     rigid_body: physics_flag.rigidbody.into(),
+//                     async_collider: physics_flag.collider_type.into(),
+//                     mass: Mass(physics_flag.mass),
+//                     friction: physics_flag.friction.into(),
+//                     //velocity: physics_flag.velocity,
+//                     continous_collision_setting: Ccd { enabled: physics_flag.continous_collision_enabled},
+//                     collision_groups: physics_flag.collision_groups.into(),
+//                     solver_groups: physics_flag.solver_groups.into(),
+//                 }
+//             );
+//         system_state.apply(world);
+//         }
+//     }
+// }
+// }
 /// geometry type. Should only be set once and left unedited. 
 #[derive(Component, Reflect, Clone)]
 //#[reflect(from_reflect = false)]
 #[reflect(Component)]
-pub enum Geometry{
+pub enum GeometryFlag{
     Primitive(MeshPrimitive),
     Mesh {
         filename: String,
@@ -243,7 +213,7 @@ pub enum Geometry{
 
 /// Reflect, and Serialization both require a default implementation of structs. The default GeometryFlag resorts to an "fallback" mesh to
 /// represent failed load attempts. (TODO): add a system that picks up error meshes, and displays them somewhere.
-impl Default for Geometry {
+impl Default for GeometryFlag {
     fn default() -> Self {
         Self::Mesh {
             filename: "fallback.gltf".to_string(),
@@ -261,17 +231,17 @@ pub enum MeshPrimitive {
     Sphere { radius: f32 },
 }
 
-impl From<Cube> for Geometry {
+impl From<Cube> for GeometryFlag {
     fn from(value: Cube) -> Self {
-        return Geometry::Primitive(
+        return GeometryFlag::Primitive(
             MeshPrimitive::Box { size: [value.size, value.size, value.size] }
         )
     }
 }
 
-impl From<Plane> for Geometry {
+impl From<Plane> for GeometryFlag {
     fn from(value: Plane) -> Self {
-        return Geometry::Primitive(
+        return GeometryFlag::Primitive(
             MeshPrimitive::Box { size: [value.size, 1.0, value.size]} 
         )
     }
@@ -297,25 +267,25 @@ impl Into<Mesh> for MeshPrimitive {
 }
 
 
-impl From<&urdf_rs::Geometry> for Geometry {
+impl From<&urdf_rs::Geometry> for GeometryFlag {
     fn from(geom: &urdf_rs::Geometry) -> Self {
         match geom {
-            urdf_rs::Geometry::Box { size } => Geometry::Primitive(MeshPrimitive::Box {
+            urdf_rs::Geometry::Box { size } => GeometryFlag::Primitive(MeshPrimitive::Box {
                 size: (**size).map(|f| f as f32),
             }),
             urdf_rs::Geometry::Cylinder { radius, length } => {
-                Geometry::Primitive(MeshPrimitive::Cylinder {
+                GeometryFlag::Primitive(MeshPrimitive::Cylinder {
                     radius: *radius as f32,
                     length: *length as f32,
                 })
             }
             urdf_rs::Geometry::Capsule { radius, length } => {
-                Geometry::Primitive(MeshPrimitive::Capsule {
+                GeometryFlag::Primitive(MeshPrimitive::Capsule {
                     radius: *radius as f32,
                     length: *length as f32,
                 })
             }
-            urdf_rs::Geometry::Sphere { radius } => Geometry::Primitive(MeshPrimitive::Sphere {
+            urdf_rs::Geometry::Sphere { radius } => GeometryFlag::Primitive(MeshPrimitive::Sphere {
                 radius: *radius as f32,
             }),
             urdf_rs::Geometry::Mesh { filename, scale } => {
@@ -323,7 +293,7 @@ impl From<&urdf_rs::Geometry> for Geometry {
                 let scale = scale
                     .clone()
                     .and_then(|s| Some(Vec3::from_array(s.map(|v| v as f32))));
-                Geometry::Mesh {
+                GeometryFlag::Mesh {
                     filename: filename.clone(),
                     scale,
                 }
@@ -332,7 +302,7 @@ impl From<&urdf_rs::Geometry> for Geometry {
     }
 }
 
-impl From<&str> for Geometry {
+impl From<&str> for GeometryFlag {
     fn from(value: &str) -> Self {
         Self::Mesh {
             filename: value.to_string(),

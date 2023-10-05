@@ -1,4 +1,5 @@
 
+use bevy_rapier3d::prelude::AsyncCollider;
 use moonshine_save::{
     prelude::{SavePlugin, LoadPlugin, load_from_file, LoadSet}, save::SaveSet,
     //save::*,
@@ -6,7 +7,8 @@ use moonshine_save::{
 use bevy::{prelude::*, core_pipeline::core_3d::Camera3dDepthTextureUsage};
 //use crate::urdf::urdf_loader::BevyRobot;
 use bevy_component_extras::components::*;
-use crate::physics::colliders::ColliderFlag;
+use rapier3d::prelude::ColliderFlags;
+use crate::physics::{colliders::ColliderFlag, material::MaterialFlag};
 
 use super::systems::*;
 use super::components::*;
@@ -33,13 +35,16 @@ impl Plugin for SerializationSystems {
         // All wrapper structs that detect normally unserializable things, and make them serializable
         .add_systems(Update,
             (
-                serialize_for::<RigidBodyPhysicsFlag>,
-                serialize_for::<ColliderFlag>,
+                serialize_for::<AsyncCollider, ColliderFlag>,
+                try_serialize_asset_for::<StandardMaterial, MaterialFlag>,
+                try_serialize_asset_for::<Mesh, MeshFlag>,
             ).before(SaveSet::Save)
         )
         .add_systems(Update,
             (
-                deserialize_for::<ModelFlag>
+                deserialize_for::<ColliderFlag, AsyncCollider>,
+                deserialize_asset_for::<MaterialFlag, StandardMaterial>,
+                deserialize_asset_for::<MeshFlag, Mesh>,
             ).after(LoadSet::PostLoad)
         )
         ;
@@ -72,7 +77,8 @@ impl Plugin for SerializationPlugin {
         .register_type::<Debug>()
         .register_type::<Viewer>()
         .register_type::<Selectable>()
-        .register_type::<RigidBodyPhysicsFlag>()
+        .register_type::<ColliderFlag>()
+        //.register_type::<RigidBodyPhysicsFlag>()
         //.register_type::<Save>()
         .add_systems(Update, save_into_file(SAVE_PATH).run_if(check_for_save_keypress))
         .add_systems(Update, add_computed_visiblity.after(LoadSet::PostLoad))
