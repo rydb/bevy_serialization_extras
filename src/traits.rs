@@ -2,8 +2,10 @@ use bevy::asset::Asset;
 use bevy::{prelude::*, ecs::world};
 use bevy::ecs::system::{SystemState, SystemParam};
 
+
+
 pub trait ECSLoad<T: Asset> {
-    fn load_from(value: &Self, things: ResMut<Assets<T>>, asset_server: AssetServer) -> Handle<T>;
+    fn deserialize_wrapper(value: &Self) -> Result<T, String>;
 }
 
 // Denotes that a wrapper component can be serialized from the Bevy ECS world.

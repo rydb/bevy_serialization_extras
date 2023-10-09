@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::AsyncCollider;
-use bevy::ecs::system::SystemState;
 
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]

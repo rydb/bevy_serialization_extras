@@ -23,3 +23,12 @@ impl From<&StandardMaterial> for MaterialFlag {
         }
     }
 }
+
+impl From<Color> for MaterialFlag {
+    fn from(value: Color) -> Self {
+        Self {
+            color: value,
+            ..default()
+        }
+    }
+}

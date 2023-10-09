@@ -11,7 +11,7 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 bevy = { version = "0.11"}
 rand = "0.8.5"
-bevy_mod_raycast = "0.13.1"
+bevy_mod_raycast = "0.14"
 bevy-inspector-egui = "0.19.0"
 rapier3d = "0.17.2"
 bevy_rapier3d = "0.22.0"
@@ -21,10 +21,10 @@ bevy_flycam = { git = "https://github.com/sburris0/bevy_flycam.git", rev = "4ed8
 thiserror = "1.0.40"
 glam = "0.24.0"
 ron = "0.8.0"
-bevy_egui = "0.21.0"
+bevy_egui = "0.22"
 bevy_window = "0.11.0"
 egui = "0.23.0"
-moonshine-save = { git = "https://github.com/Zeenobit/moonshine_save", rev="0ad1b69f966c344159c38c1033d458bf01c3c219"}
+moonshine-save = "0.3.2"
 bevy_component_extras = "0.1"
 
 [dev-dependencies]

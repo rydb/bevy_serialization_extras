@@ -1,23 +1,18 @@
 use bevy::{prelude::*};
-use bevy::render::mesh::shape::*;
-use crate::traits::*;
-use bevy_component_extras::components::MakeSelectableBundle;
-use moonshine_save::prelude::Unload;
-use crate::physics::components::PhysicsBundle;
 use bevy_rapier3d::prelude::{RigidBody, AsyncCollider, Group, Friction, CoefficientCombineRule, CollisionGroups, SolverGroups};
-use bevy::ecs::system::SystemState;
-use moonshine_save::prelude::Save;
-use bevy_rapier3d::prelude::ComputedColliderShape;
-use bevy_rapier3d::prelude::AdditionalMassProperties::Mass;
-use bevy_rapier3d::dynamics::Ccd;
+use crate::physics::mesh::GeometryFlag;
+use crate::physics::material::MaterialFlag;
 /// Wrapper bundle made to tie together everything that composes a "model", in a serializable format
 /// !!! THIS WILL LIKELY BE REFACTORED AWAY WITH ASSETSV2 IN 0.12!!!
-// #[derive(Bundle)]
-// pub struct ModelBundle {
-//     pub mesh: GeometryFlag,
-//     pub material: MaterialFlag,
-//     pub transform: Transform
-// }
+#[derive(Bundle, Default)]
+pub struct ModelBundle {
+    pub mesh: GeometryFlag,
+    pub material: MaterialFlag,
+    pub visibility: Visibility,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
+
+}
 
 
 /// The type of physics an entity should be serialized with, this is set to dynamic by default
@@ -28,8 +23,8 @@ pub enum Physics {
     Dynamic,
     Fixed,
 }
-/// component which flags entity as a model for spawning purposes. !!!TREAT THIS AS READ ONLY!!!
-/// (TODO) reimplement this to 
+// /// component which flags entity as a model for spawning purposes. !!!TREAT THIS AS READ ONLY!!!
+// /// (TODO) reimplement this to 
 // #[derive(Component, Reflect, Clone, Default)]
 // #[reflect(Component)]
 // pub struct ModelFlag {
@@ -105,56 +100,26 @@ pub enum Physics {
 
 
 
-#[derive(Reflect, Clone, Default)]
-pub enum RigidBodyType {
-    #[default]
-    Fixed,
-    Dynamic,
-}
+// #[derive(Reflect, Clone, Default)]
+// pub enum RigidBodyType {
+//     #[default]
+//     Fixed,
+//     Dynamic,
+// }
 
 
-impl Into<RigidBody> for RigidBodyType {
-    fn into(self) -> RigidBody {
-        match self {
-            Self::Fixed => RigidBody::Fixed,
-            Self::Dynamic => RigidBody::Dynamic,
-        }
-    }
-}
-
-#[derive(Reflect, Clone, Default)]
-pub enum FrictionCombineRule {
-    #[default]
-    Average = 0,
-    Min,
-    Multiply,
-    Max,
-}
-
-#[derive(Reflect, Clone, Default)]
-pub struct FrictionModel {
-    friction: f32,
-    friction_combine_rule: FrictionCombineRule,
-}
-impl Into<CoefficientCombineRule> for FrictionCombineRule {
-    fn into(self) -> CoefficientCombineRule {
-        match self {
-            Self::Average => CoefficientCombineRule::Average,
-            Self::Min => CoefficientCombineRule::Min,
-            Self::Multiply => CoefficientCombineRule::Multiply,
-            Self::Max => CoefficientCombineRule::Max,
-        }
-    }
-}
-
-impl Into<Friction> for FrictionModel {
-    fn into(self) -> Friction {
-        Friction { coefficient: (self.friction), combine_rule: (self.friction_combine_rule.into()) }
-    }
-}
+// impl Into<RigidBody> for RigidBodyType {
+//     fn into(self) -> RigidBody {
+//         match self {
+//             Self::Fixed => RigidBody::Fixed,
+//             Self::Dynamic => RigidBody::Dynamic,
+//         }
+//     }
+// }
 
 
-/// flag for serializing/deserializing rigid bodies
+
+// /// flag for serializing/deserializing rigid bodies
 // #[derive(Component, Reflect, Clone, Default)]
 // #[reflect(Component)]
 // pub struct RigidBodyPhysicsFlag {
@@ -199,115 +164,115 @@ impl Into<Friction> for FrictionModel {
 //     }
 // }
 // }
-/// geometry type. Should only be set once and left unedited. 
-#[derive(Component, Reflect, Clone)]
-//#[reflect(from_reflect = false)]
-#[reflect(Component)]
-pub enum GeometryFlag{
-    Primitive(MeshPrimitive),
-    Mesh {
-        filename: String,
-        scale: Option<Vec3>,
-    },
-}
+// /// geometry type. Should only be set once and left unedited. 
+// #[derive(Component, Reflect, Clone)]
+// //#[reflect(from_reflect = false)]
+// #[reflect(Component)]
+// pub enum GeometryFlag{
+//     Primitive(MeshPrimitive),
+//     Mesh {
+//         filename: String,
+//         scale: Option<Vec3>,
+//     },
+// }
 
-/// Reflect, and Serialization both require a default implementation of structs. The default GeometryFlag resorts to an "fallback" mesh to
-/// represent failed load attempts. (TODO): add a system that picks up error meshes, and displays them somewhere.
-impl Default for GeometryFlag {
-    fn default() -> Self {
-        Self::Mesh {
-            filename: "fallback.gltf".to_string(),
-            scale: None,
-        }        
-    }
-}
+// /// Reflect, and Serialization both require a default implementation of structs. The default GeometryFlag resorts to an "fallback" mesh to
+// /// represent failed load attempts. (TODO): add a system that picks up error meshes, and displays them somewhere.
+// impl Default for GeometryFlag {
+//     fn default() -> Self {
+//         Self::Mesh {
+//             filename: "fallback.gltf".to_string(),
+//             scale: None,
+//         }        
+//     }
+// }
 
-#[derive(Debug, Clone, PartialEq, Reflect, Copy)]
-#[derive(Component)]
-pub enum MeshPrimitive {
-    Box { size: [f32; 3] },
-    Cylinder { radius: f32, length: f32 },
-    Capsule { radius: f32, length: f32 },
-    Sphere { radius: f32 },
-}
+// #[derive(Debug, Clone, PartialEq, Reflect, Copy)]
+// #[derive(Component)]
+// pub enum MeshPrimitive {
+//     Box { size: [f32; 3] },
+//     Cylinder { radius: f32, length: f32 },
+//     Capsule { radius: f32, length: f32 },
+//     Sphere { radius: f32 },
+// }
 
-impl From<Cube> for GeometryFlag {
-    fn from(value: Cube) -> Self {
-        return GeometryFlag::Primitive(
-            MeshPrimitive::Box { size: [value.size, value.size, value.size] }
-        )
-    }
-}
+// impl From<Cube> for GeometryFlag {
+//     fn from(value: Cube) -> Self {
+//         return GeometryFlag::Primitive(
+//             MeshPrimitive::Box { size: [value.size, value.size, value.size] }
+//         )
+//     }
+// }
 
-impl From<Plane> for GeometryFlag {
-    fn from(value: Plane) -> Self {
-        return GeometryFlag::Primitive(
-            MeshPrimitive::Box { size: [value.size, 1.0, value.size]} 
-        )
-    }
-}
+// impl From<Plane> for GeometryFlag {
+//     fn from(value: Plane) -> Self {
+//         return GeometryFlag::Primitive(
+//             MeshPrimitive::Box { size: [value.size, 1.0, value.size]} 
+//         )
+//     }
+// }
 
-impl Into<Mesh> for MeshPrimitive {
-    fn into(self) -> Mesh {
-        match self {
-            Self::Box { size } => 
-                shape::Box{
-                    min_x: -size[0] * 0.5,
-                    max_x: size[0] * 0.5,
-                    min_y: -size[1] * 0.5,
-                    max_y: size[1] * 0.5,
-                    min_z: -size[2] * 0.5,
-                    max_z: size[2] * 0.5,
-                }.into(),
-            Self::Cylinder { radius, length } => shape::Cylinder{radius: radius, height: length, ..default()}.into(),
-            Self::Capsule { radius, length } => shape::Capsule{radius: radius, depth: length, ..default()}.into(),
-            Self::Sphere { radius } => shape::Capsule{radius: radius, depth: 0.0, ..default()}.into(),
-        }
-    }
-}
+// impl Into<Mesh> for MeshPrimitive {
+//     fn into(self) -> Mesh {
+//         match self {
+//             Self::Box { size } => 
+//                 shape::Box{
+//                     min_x: -size[0] * 0.5,
+//                     max_x: size[0] * 0.5,
+//                     min_y: -size[1] * 0.5,
+//                     max_y: size[1] * 0.5,
+//                     min_z: -size[2] * 0.5,
+//                     max_z: size[2] * 0.5,
+//                 }.into(),
+//             Self::Cylinder { radius, length } => shape::Cylinder{radius: radius, height: length, ..default()}.into(),
+//             Self::Capsule { radius, length } => shape::Capsule{radius: radius, depth: length, ..default()}.into(),
+//             Self::Sphere { radius } => shape::Capsule{radius: radius, depth: 0.0, ..default()}.into(),
+//         }
+//     }
+// }
 
 
-impl From<&urdf_rs::Geometry> for GeometryFlag {
-    fn from(geom: &urdf_rs::Geometry) -> Self {
-        match geom {
-            urdf_rs::Geometry::Box { size } => GeometryFlag::Primitive(MeshPrimitive::Box {
-                size: (**size).map(|f| f as f32),
-            }),
-            urdf_rs::Geometry::Cylinder { radius, length } => {
-                GeometryFlag::Primitive(MeshPrimitive::Cylinder {
-                    radius: *radius as f32,
-                    length: *length as f32,
-                })
-            }
-            urdf_rs::Geometry::Capsule { radius, length } => {
-                GeometryFlag::Primitive(MeshPrimitive::Capsule {
-                    radius: *radius as f32,
-                    length: *length as f32,
-                })
-            }
-            urdf_rs::Geometry::Sphere { radius } => GeometryFlag::Primitive(MeshPrimitive::Sphere {
-                radius: *radius as f32,
-            }),
-            urdf_rs::Geometry::Mesh { filename, scale } => {
-                //println!("filename for mesh is {:#?}", filename);
-                let scale = scale
-                    .clone()
-                    .and_then(|s| Some(Vec3::from_array(s.map(|v| v as f32))));
-                GeometryFlag::Mesh {
-                    filename: filename.clone(),
-                    scale,
-                }
-            }
-        }
-    }
-}
+// impl From<&urdf_rs::Geometry> for GeometryFlag {
+//     fn from(geom: &urdf_rs::Geometry) -> Self {
+//         match geom {
+//             urdf_rs::Geometry::Box { size } => GeometryFlag::Primitive(MeshPrimitive::Box {
+//                 size: (**size).map(|f| f as f32),
+//             }),
+//             urdf_rs::Geometry::Cylinder { radius, length } => {
+//                 GeometryFlag::Primitive(MeshPrimitive::Cylinder {
+//                     radius: *radius as f32,
+//                     length: *length as f32,
+//                 })
+//             }
+//             urdf_rs::Geometry::Capsule { radius, length } => {
+//                 GeometryFlag::Primitive(MeshPrimitive::Capsule {
+//                     radius: *radius as f32,
+//                     length: *length as f32,
+//                 })
+//             }
+//             urdf_rs::Geometry::Sphere { radius } => GeometryFlag::Primitive(MeshPrimitive::Sphere {
+//                 radius: *radius as f32,
+//             }),
+//             urdf_rs::Geometry::Mesh { filename, scale } => {
+//                 //println!("filename for mesh is {:#?}", filename);
+//                 let scale = scale
+//                     .clone()
+//                     .and_then(|s| Some(Vec3::from_array(s.map(|v| v as f32))));
+//                 GeometryFlag::Mesh {
+//                     filename: filename.clone(),
+//                     scale,
+//                 }
+//             }
+//         }
+//     }
+// }
 
-impl From<&str> for GeometryFlag {
-    fn from(value: &str) -> Self {
-        Self::Mesh {
-            filename: value.to_string(),
-            scale: None,
-        }
-    }
-}
+// impl From<&str> for GeometryFlag {
+//     fn from(value: &str) -> Self {
+//         Self::Mesh {
+//             filename: value.to_string(),
+//             scale: None,
+//         }
+//     }
+// }
 

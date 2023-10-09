@@ -2,7 +2,7 @@
 
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::RigidBody;
-use bevy_serialization_extras::{plugins::SerializationPlugin, components::ModelFlag, physics::components::PhysicsBundle};
+use bevy_serialization_extras::{plugins::SerializationPlugin, physics::{components::PhysicsBundle, mesh::GeometryFlag}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use moonshine_save::save::Save;
 use bevy_component_extras::components::MakeSelectableBundle;
@@ -37,15 +37,14 @@ fn setup(
     commands.spawn(
         (
         ModelBundle {
-            model: ModelFlag {
-                geometry: shape::Cube {size: 1.0}.into(),
-                material: Color::rgb(0.8, 0.7, 0.6).into(),
-            },
-            transform: Transform::from_xyz(0.0, 0.5, 0.0)
+            mesh: shape::Cube {size: 1.0}.into(),
+            material: Color::GREEN.into(),
+            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            ..default()
         },
-        PhysicsBundle::default(),
+        //PhysicsBundle::default(),
         Save,
-        MakeSelectableBundle::default(),
+        //MakeSelectableBundle::default(),
 ));
     // light
     commands.spawn(

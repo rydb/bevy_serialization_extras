@@ -73,7 +73,7 @@ pub fn try_serialize_asset_for<Thing, WrapperThing> (
 pub fn deserialize_wrapper_for<WrapperThing, Thing> (
     mut things: ResMut<Assets<Thing>>,
     wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Handle<Thing>>>,
-    asset_server: AssetServer,
+    asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) 
     where
@@ -81,11 +81,22 @@ pub fn deserialize_wrapper_for<WrapperThing, Thing> (
         Thing: Asset + TypeUuid
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        let thing_handle = WrapperThing::load_from(wrapper_thing, things, asset_server);
+        let thing_fetch_attempt = WrapperThing::deserialize_wrapper(wrapper_thing);
     
-        commands.entity(e).insert(
-            thing_handle
-        );
+        match thing_fetch_attempt {
+            Ok(thing) => {
+               let thing_handle = things.add(thing);
+                commands.entity(e).insert(
+                    thing_handle
+                );
+            }
+            Err(file_path) => {
+                let thing_handle: Handle<Thing> = asset_server.load(file_path);
+                commands.entity(e).insert(
+                    thing_handle
+                );
+            }
+        }
     }
 }
 
@@ -150,10 +161,21 @@ pub fn list_unserializable(
         return (type_id, id.type_name().to_owned())
     })
     .collect::<HashMap<TypeId, String>>();
-
+    
+    println!("Listing imports required for adding unregistered types to type registry: ");
     for item in saved_component_types.keys() {
         if registered_types.contains_key(item) == false {
-            println!("NOT IN TYPE REGISTRY {:#?}", saved_component_types[item])
+            println!("use {:#}", saved_component_types[item])
+        }
+    }
+    println!("listing .register_type::<T>'s for unregistered types. copy and paste this into app  ");
+    for item in saved_component_types.keys() {
+        if registered_types.contains_key(item) == false {
+            println!(".register_type::<{:#}>()", 
+            saved_component_types[item].split("::")
+            .collect::<Vec<_>>()
+            .last()
+            .unwrap())
         }
     }
 }
@@ -180,13 +202,13 @@ pub fn check_for_load_keypress(
     }
 }
 
-pub fn save_into_file(path: impl Into<PathBuf>) -> SavePipeline {
+// pub fn save_into_file(path: impl Into<PathBuf>) -> SavePipeline {
     
-    save::<With<Save>>
-        .pipe(into_file(path.into()))
-        .pipe(finish)
-        .in_set(SaveSet::Save)
-}
+//     save::<With<Save>>
+//         .pipe(into_file(path.into()))
+//         .pipe(finish)
+//         .in_set(SaveSet::Save)
+// }
 
 
 /// as a hot fix to deal with ComputedVisiblityFlags not being accessible by the type registry. This system manually adds ComputedVisibility to all Entities

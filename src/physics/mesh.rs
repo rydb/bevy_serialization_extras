@@ -1,5 +1,6 @@
 use bevy::{prelude::*, asset::AssetPath};
 use crate::traits::ECSLoad;
+use crate::physics::mesh::shape::Cube;
 
 #[derive(Component, Reflect, Clone)]
 //#[reflect(from_reflect = false)]
@@ -32,13 +33,40 @@ pub enum MeshPrimitive {
     Sphere { radius: f32 },
 }
 
+// impl Into<Mesh> for MeshPrimitive {
+//     fn into(self) -> Mesh {
+//         match self {
+//             Self::Box { size } => 
+//                 shape::Box{
+//                     min_x: -size[0] * 0.5,
+//                     max_x: size[0] * 0.5,
+//                     min_y: -size[1] * 0.5,
+//                     max_y: size[1] * 0.5,
+//                     min_z: -size[2] * 0.5,
+//                     max_z: size[2] * 0.5,
+//                 }.into(),
+//             Self::Cylinder { radius, length } => shape::Cylinder{radius: radius, height: length, ..default()}.into(),
+//             Self::Capsule { radius, length } => shape::Capsule{radius: radius, depth: length, ..default()}.into(),
+//             Self::Sphere { radius } => shape::Capsule{radius: radius, depth: 0.0, ..default()}.into(),
+//         }
+//     }
+// }
+
+impl From<Cube> for GeometryFlag {
+    fn from(value: Cube) -> Self {
+        return GeometryFlag::Primitive(
+            MeshPrimitive::Box { size: [value.size, value.size, value.size] }
+        )
+    }
+}
+
 impl ECSLoad<Mesh> for GeometryFlag {
-    fn load_from(value: &Self, mut things: ResMut<Assets<Mesh>>, mut asset_server: AssetServer) -> Handle<Mesh>{
+    fn deserialize_wrapper(value: &Self) -> Result<Mesh, String>{
         match value {
             Self::Primitive(primitive) => {
                 match primitive {
                     MeshPrimitive::Box { size } => {
-                        things.add(shape::Box{
+                        return Ok(shape::Box{
                             min_x: -size[0] * 0.5,
                             max_x: size[0] * 0.5,
                             min_y: -size[1] * 0.5,
@@ -48,17 +76,17 @@ impl ECSLoad<Mesh> for GeometryFlag {
                         }.into())
                     }
                     MeshPrimitive::Cylinder { radius, length } => {
-                        things.add(shape::Cylinder{radius: *radius, height: *length, ..default()}.into())
+                        Ok(shape::Cylinder{radius: *radius, height: *length, ..default()}.into())
                     },
                     MeshPrimitive::Capsule { radius, length } => {
-                        things.add(shape::Capsule{radius: *radius, depth: *length, ..default()}.into())
+                        Ok(shape::Capsule{radius: *radius, depth: *length, ..default()}.into())
                     },
                     MeshPrimitive::Sphere { radius } => {
-                        things.add(shape::Capsule{radius: *radius, depth: 0.0, ..default()}.into())
+                        Ok(shape::Capsule{radius: *radius, depth: 0.0, ..default()}.into())
                     },
                 }
             } 
-            Self::Mesh { filename, scale } => asset_server.load(filename)
+            Self::Mesh { filename, scale } => Err(filename.to_string())
         }
     }
 }
