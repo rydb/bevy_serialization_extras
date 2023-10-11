@@ -1,5 +1,6 @@
-use bevy::{prelude::*, asset::AssetPath};
-use crate::traits::ECSLoad;
+
+use bevy::prelude::*;
+use crate::traits::Unwrap;
 use crate::physics::mesh::shape::Cube;
 
 #[derive(Component, Reflect, Clone)]
@@ -33,24 +34,24 @@ pub enum MeshPrimitive {
     Sphere { radius: f32 },
 }
 
-// impl Into<Mesh> for MeshPrimitive {
-//     fn into(self) -> Mesh {
-//         match self {
-//             Self::Box { size } => 
-//                 shape::Box{
-//                     min_x: -size[0] * 0.5,
-//                     max_x: size[0] * 0.5,
-//                     min_y: -size[1] * 0.5,
-//                     max_y: size[1] * 0.5,
-//                     min_z: -size[2] * 0.5,
-//                     max_z: size[2] * 0.5,
-//                 }.into(),
-//             Self::Cylinder { radius, length } => shape::Cylinder{radius: radius, height: length, ..default()}.into(),
-//             Self::Capsule { radius, length } => shape::Capsule{radius: radius, depth: length, ..default()}.into(),
-//             Self::Sphere { radius } => shape::Capsule{radius: radius, depth: 0.0, ..default()}.into(),
-//         }
-//     }
-// }
+impl Into<Mesh> for MeshPrimitive {
+    fn into(self) -> Mesh {
+        match self {
+            Self::Box { size } => 
+                shape::Box{
+                    min_x: -size[0] * 0.5,
+                    max_x: size[0] * 0.5,
+                    min_y: -size[1] * 0.5,
+                    max_y: size[1] * 0.5,
+                    min_z: -size[2] * 0.5,
+                    max_z: size[2] * 0.5,
+                }.into(),
+            Self::Cylinder { radius, length } => shape::Cylinder{radius: radius, height: length, ..default()}.into(),
+            Self::Capsule { radius, length } => shape::Capsule{radius: radius, depth: length, ..default()}.into(),
+            Self::Sphere { radius } => shape::Capsule{radius: radius, depth: 0.0, ..default()}.into(),
+        }
+    }
+}
 
 impl From<Cube> for GeometryFlag {
     fn from(value: Cube) -> Self {
@@ -60,10 +61,10 @@ impl From<Cube> for GeometryFlag {
     }
 }
 
-impl ECSLoad<Mesh> for GeometryFlag {
-    fn deserialize_wrapper(value: &Self) -> Result<Mesh, String>{
+impl Unwrap<&GeometryFlag> for Mesh {
+    fn unwrap(value: &GeometryFlag) -> Result<Self, String>{
         match value {
-            Self::Primitive(primitive) => {
+            GeometryFlag::Primitive(primitive) => {
                 match primitive {
                     MeshPrimitive::Box { size } => {
                         return Ok(shape::Box{
@@ -86,7 +87,7 @@ impl ECSLoad<Mesh> for GeometryFlag {
                     },
                 }
             } 
-            Self::Mesh { filename, scale } => Err(filename.to_string())
+            GeometryFlag::Mesh { filename, .. } => Err(filename.to_string())
         }
     }
 }

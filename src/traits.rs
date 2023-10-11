@@ -4,8 +4,8 @@ use bevy::ecs::system::{SystemState, SystemParam};
 
 
 
-pub trait ECSLoad<T: Asset> {
-    fn deserialize_wrapper(value: &Self) -> Result<T, String>;
+pub trait Unwrap<T>: Sized {
+    fn unwrap(value: T) -> Result<Self, String>;
 }
 
 // Denotes that a wrapper component can be serialized from the Bevy ECS world.

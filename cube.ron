@@ -3,12 +3,6 @@
   entities: {
     2: (
       components: {
-        "bevy_asset::handle::Handle<bevy_render::mesh::mesh::Mesh>": (
-          id: Id("8ecbac0f-f545-4473-ad43-e1f4243af51e", 2761942323633464203),
-        ),
-        "bevy_asset::handle::Handle<bevy_pbr::pbr_material::StandardMaterial>": (
-          id: Id("7494888b-c082-457b-aacf-517228cc0c22", 17988088807590162613),
-        ),
         "bevy_transform::components::transform::Transform": (
           translation: (
             x: 0.0,
@@ -52,9 +46,9 @@
         )),
         "bevy_serialization_extras::physics::material::MaterialFlag": (
           color: Rgba(
-            red: 0.0,
-            green: 1.0,
-            blue: 0.0,
+            red: 0.2509804,
+            green: 0.0,
+            blue: 1.0,
             alpha: 1.0,
           ),
         ),

@@ -1,33 +1,14 @@
-use bevy::pbr::wireframe::WIREFRAME_SHADER_HANDLE;
 use bevy::reflect::TypeUuid;
-use bevy::transform::commands;
-use bevy::{prelude::*, reflect::TypeData};
-use moonshine_save::prelude::Unload;
+use bevy::prelude::*;
 
-use bevy::ecs::component::ComponentId;
-use bevy_rapier3d::prelude::RigidBody;
-//use crate::body::robot::components::PhysicsBundle;
-use bevy::ecs::query::ReadOnlyWorldQuery;
-use bevy_component_extras::components::*;
 //use crate::urdf::urdf_loader::BevyRobot;
-use crate::physics::components::PhysicsBundle;
 use crate::traits::*;
-use bevy::ecs::system::SystemState;
 
 use moonshine_save::save::*;
-use super::components::*;
 use std::any::TypeId;
-use std::path::PathBuf;
 use std::collections::HashMap;
 use bevy::asset::Asset;
 
-
-///Takes a component that is ECSSerializable, and manages serialization for it.
-// pub fn serialize_for<T: ECSSerialize>(
-//     world: &mut World,
-// ) {
-//     T::serialize(world);
-// }
 
 pub fn serialize_for<Thing, WrapperThing>(
     thing_query: Query<(Entity, &Thing)>,
@@ -77,11 +58,11 @@ pub fn deserialize_wrapper_for<WrapperThing, Thing> (
     mut commands: Commands,
 ) 
     where
-        WrapperThing: Component + ECSLoad<Thing>,
-        Thing: Asset + TypeUuid
+        WrapperThing: Component,
+        Thing: Asset + TypeUuid + for<'a> Unwrap<&'a WrapperThing>,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        let thing_fetch_attempt = WrapperThing::deserialize_wrapper(wrapper_thing);
+        let thing_fetch_attempt = Thing::unwrap(wrapper_thing);
     
         match thing_fetch_attempt {
             Ok(thing) => {
@@ -202,17 +183,6 @@ pub fn check_for_load_keypress(
     }
 }
 
-// pub fn save_into_file(path: impl Into<PathBuf>) -> SavePipeline {
-    
-//     save::<With<Save>>
-//         .pipe(into_file(path.into()))
-//         .pipe(finish)
-//         .in_set(SaveSet::Save)
-// }
-
-
-/// as a hot fix to deal with ComputedVisiblityFlags not being accessible by the type registry. This system manually adds ComputedVisibility to all Entities
-/// which don't have one
 pub fn add_computed_visiblity(
     computed_visiblity_query: Query<Entity, Without<ComputedVisibility>>,
     mut commands: Commands,
@@ -223,20 +193,3 @@ pub fn add_computed_visiblity(
     }
 }
 
-pub fn save<Filter: ReadOnlyWorldQuery>(
-    world: &World,
-    serializable_querry: Query<Entity, Filter>,
-) -> Saved {
-
-    let mut builder = DynamicSceneBuilder::from_world(world);
-    //this is a problematic component that needs to be manually added to everything due to ComputedVisiblityFlags not implementing reflect.
-    builder.deny::<ComputedVisibility>(); 
-    //you cant load meshes from handles, you need a wrapper component to save the geometry of the mesh
-    builder.deny::<Handle<Mesh>>();
-    // builder.allow::<ModelFlag>();
-    // builder.allow::<Serializable>();
-
-    builder.extract_entities(serializable_querry.iter());
-    let scene = builder.build();
-    Saved { scene }
-}

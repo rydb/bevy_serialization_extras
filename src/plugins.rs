@@ -1,63 +1,104 @@
 
+use std::marker::PhantomData;
+
 use bevy_rapier3d::prelude::{AsyncCollider, RigidBody};
 use moonshine_save::{
     prelude::{SavePlugin, LoadPlugin, load_from_file, LoadSet}, save::{SaveSet, save_default},
     //save::*,
 };
-use bevy::{prelude::*, core_pipeline::core_3d::Camera3dDepthTextureUsage};
+use bevy::{asset::Asset, reflect::TypeUuid};
+use bevy::{prelude::*, core_pipeline::core_3d::Camera3dDepthTextureUsage, reflect::GetTypeRegistration};
 //use crate::urdf::urdf_loader::BevyRobot;
 use bevy_component_extras::components::*;
-use rapier3d::prelude::ColliderFlags;
-use crate::physics::{colliders::ColliderFlag, material::MaterialFlag, mesh::MeshPrimitive};
+use crate::{physics::{colliders::ColliderFlag, material::MaterialFlag, mesh::MeshPrimitive}, traits::Unwrap};
 use crate::physics::mesh::GeometryFlag;
 use crate::physics::rigidbodies::RigidBodyFlag;
-// use bevy_rapier3d::dynamics::rigid_body::RigidBody;
-// use bevy_rapier3d::geometry::collider::Friction;
-// use bevy_rapier3d::geometry::collider::SolverGroups;
-// use bevy_rapier3d::geometry::collider::CollisionGroups;
-//use moonshine_save::save::Save;
-
 
 use super::systems::*;
 use super::components::*;
-/// marks component as a valid candidate for serialization. 
-// #[derive(Component)]
-// pub struct Serializable;
-use moonshine_save::prelude::Save;
 const SAVE_PATH: &str = "cube.ron";
 
-/// plugin that manages serialization of bevy things.
-/// if it exists, and you want it to serialize. Ensure its: 
-/// 
-/// 1. its in the type registry
-/// 2. If it can be Serialized + Deserialized, it has a wrapper type which implements [`ECSSerialize`]
-/// for two way serializaiton
-/// 3. if it can only be Deserialized(things that rely on Handle<T> for example), it implements
-/// [`ECSDeserialize`]
+#[derive(Default)]
+pub struct SerializeComponentFor<T, U> {
+    thing: PhantomData<fn() -> T>,
+    wrapper_thing: PhantomData<fn() -> U>,
+}
 
-pub struct SerializationSystems;
-
-impl Plugin for SerializationSystems {
+impl<T, U> Plugin for SerializeComponentFor<T, U>
+    where
+        T: 'static + Component + for<'a> From<&'a U>,
+        U: 'static + Component + GetTypeRegistration  + for<'a> From<&'a T> {
     fn build(&self, app: &mut App) {
         app
-        // All wrapper structs that detect normally unserializable things, and make them serializable
-        .add_systems(Update,
+        .register_type::<U>()
+        .add_systems(PreUpdate,
             (
-                serialize_for::<AsyncCollider, ColliderFlag>,
-                serialize_for::<RigidBody, RigidBodyFlag>,
-                try_serialize_asset_for::<StandardMaterial, MaterialFlag>,
-                //try_serialize_asset_for::<Mesh, MeshFlag>,
+             serialize_for::<T, U>,
             ).before(SaveSet::Save)
         )
-        .add_systems(Update,
+        .add_systems(Update, 
             (
-                deserialize_for::<ColliderFlag, AsyncCollider>,
-                deserialize_for::<RigidBodyFlag, RigidBody>,
-                deserialize_asset_for::<MaterialFlag, StandardMaterial>,
-                deserialize_wrapper_for::<GeometryFlag, Mesh>,
-            )//.after(LoadSet::PostLoad)
+                deserialize_for::<U, T>
+            ).after(LoadSet::PostLoad)
         )
         ;
+    }
+} 
+#[derive(Default)]
+pub struct SerializeAssetFor<T, U> {
+    thing: PhantomData<fn() -> T>,
+    wrapper_thing: PhantomData<fn() -> U>,
+}
+
+impl<T, U> Plugin for SerializeAssetFor<T, U>
+    where
+        T: 'static + Asset + for<'a> From<&'a U>,
+        U: 'static + Component + GetTypeRegistration  + for<'a> From<&'a T> {
+    fn build(&self, app: &mut App) {
+        app
+        .register_type::<U>()
+        .add_systems(PreUpdate,
+            (
+             try_serialize_asset_for::<T, U>,
+            ).before(SaveSet::Save)
+        )
+        .add_systems(Update, 
+            (
+                deserialize_asset_for::<U, T>
+            ).after(LoadSet::PostLoad)
+        )
+        ;
+    }
+} 
+
+pub struct DeserializeAssetFrom<U, T> {
+    wrapper_thing: PhantomData<fn() -> U>,
+    thing: PhantomData<fn() -> T>,
+}
+
+impl<U, T> Plugin for DeserializeAssetFrom<U, T>
+    where
+        U: 'static + Component + GetTypeRegistration,
+        T: 'static + Asset + TypeUuid + for<'a> Unwrap<&'a U>,
+ {
+    fn build(&self, app: &mut App) {
+        app
+        .register_type::<U>()
+        .add_systems(Update, 
+            (
+                deserialize_wrapper_for::<U, T>
+            ).after(LoadSet::PostLoad)
+        )
+        ;
+    }
+} 
+
+impl<U, T> Default for DeserializeAssetFrom<U, T> {
+    fn default() -> Self {
+        Self {
+            wrapper_thing: PhantomData,
+            thing: PhantomData,
+        }
     }
 }
 
@@ -69,12 +110,15 @@ impl Plugin for SerializationPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_plugins(
-            (SavePlugin, LoadPlugin, SerializationSystems)
+            (
+                SavePlugin,
+                LoadPlugin,
+            )
         )
-        //.register_type::<ModelFlag>()
-        //.register_type::<Geometry>()
-        //.register_type::<MeshPrimitive>()
-        //.register_type::<SerializeType>()
+        .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
+        .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
+        .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
+
         .register_type::<Option<Entity>>()
         .register_type::<[f32; 3]>()
         .register_type::<Option<Handle<Image>>>()
@@ -104,6 +148,8 @@ impl Plugin for SerializationPlugin {
         .add_systems(PreUpdate, 
             save_default()
             .exclude_component::<ComputedVisibility>()
+            .exclude_component::<Handle<StandardMaterial>>()
+            .exclude_component::<Handle<Mesh>>()
             .into_file("cube.ron")
             .run_if(check_for_save_keypress)
         )
