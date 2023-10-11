@@ -18,6 +18,8 @@ impl From<&ColliderFlag> for AsyncCollider {
 
 impl From<&AsyncCollider> for ColliderFlag {
     fn from(value: &AsyncCollider) -> Self {
-        return Self::Async;
+        match value {
+            _ => Self::Async
+        } 
     }
 }

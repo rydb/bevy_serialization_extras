@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::{RigidBody, AsyncCollider, Group, Friction, CoefficientCombineRule, CollisionGroups, SolverGroups};
+use bevy_rapier3d::prelude::{Friction, CoefficientCombineRule};
 
 #[derive(Reflect, Clone, Default)]
 pub enum FrictionCombineRule {

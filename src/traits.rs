@@ -1,25 +1,11 @@
-use bevy::asset::Asset;
-use bevy::{prelude::*, ecs::world};
-use bevy::ecs::system::{SystemState, SystemParam};
-
-
+use bevy::{prelude::App, reflect::GetTypeRegistration};
 
 pub trait Unwrap<T>: Sized {
     fn unwrap(value: T) -> Result<Self, String>;
 }
 
-// Denotes that a wrapper component can be serialized from the Bevy ECS world.
-// serializability implies deserializability
-// pub trait ECSSerialize: ECSDeserialize + Component + Sized {
-//     fn serialize_for<T: Component>(world: &mut World) 
-//     where 
-//         T: Component,
-//         Self: From<T>
-//     ;
-// }
-
-// /// Denotes that a wrapper component can be deserialized into a Bevy ECS world.
-// pub trait ECSDeserialize: Component {
-//     //fn deserialize<T: SystemParam>(world: &mut World, system_param: SystemState<T>);
-//     fn deserialize(world: &mut World);
-// }
+/// trait for recursively type registering all fields of a struct into the type registry
+pub trait RecursiveTypeRegister<T: GetTypeRegistration> {
+    /// takes all fields for this component, and registers them.
+    fn register_types_all(app: &mut App) -> App;
+}

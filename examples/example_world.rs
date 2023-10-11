@@ -15,7 +15,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(SerializationPlugin)
         .add_plugins(SelecterPlugin)
-        //.add_plugins(ManageSerializationFor::<AsyncCollider, ColliderFlag>::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(Update, visualize_right_sidepanel_for::<Save>)

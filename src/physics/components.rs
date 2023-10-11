@@ -4,58 +4,6 @@ use std::convert::From;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-
-
-
-
-
-
-
-/// bundle for all things a singular model would need. More complex models will their own bundles
-// #[derive(Bundle, Default)]
-// pub struct ModelBundle {
-//     pub pbr_bundle: PbrBundle,
-//     pub physics: PhysicsBundle,
-//     pub selection_enabler: MakeSelectableBundle,
-//     pub serializer_type: SerializeType,
-// }
-
-// impl ModelBundle {
-    
-//     pub fn new(
-//         mesh_handle: Handle<Mesh>,
-//         material_handle: Handle<StandardMaterial>,
-//         transform: Transform,
-//         category: SerializeType,
-
-//         // model_collision_groups: Option<CollisionGroups>,
-//         // model_solver_groups: Option<SolverGroups>,
-//     ) -> Self {
-//         return Self {
-//             pbr_bundle: PbrBundle {
-//                 mesh: mesh_handle,
-//                 material: material_handle,
-//                 transform: transform,
-//                 ..default()
-//             },
-//             physics: PhysicsBundle::default(),
-//             selection_enabler: MakeSelectableBundle::default(),
-//             serializer_type: category,
-//             // model: ModelFlag {
-//             //     geometry: geometry,
-//             //     material: material,
-//             //     transform: model_position,
-//             //     ..default()
-
-//             // },
-//             // collision_groups: model_collision_groups.unwrap_or_default(),
-//             // solver_groups: model_solver_groups.unwrap_or_default(),
-//             ..default()
-//         }
-//     }
-// }
-
-
 /// collection of all things required for something to have "physics"
 #[derive(Bundle)]
 pub struct PhysicsBundle {
@@ -99,54 +47,6 @@ impl Default for PhysicsBundle {
         }
     }
 }
-/// Bundle that contains everything a model to simulate interacting with physics.
-///
-///  Use ```new()``` to initialize this more easily.
-// #[derive(Bundle)]
-// pub struct ModelBundle {
-//     /// root model of robot. Stuff like wheels should probably attach to this. 
-//     model : ModelFlag, 
-//     //physics: PhysicsBundle,
-//     // add bundle for making this model selectable
-//     //selectable_bundle: MakeSelectableBundle,
-//     // marks model as serializable by 
-//     // save: Save,
-
-// }
-
-// impl Default for ModelBundle {
-//     fn default() -> Self{
-//         Self {
-//             model: ModelFlag::default(),
-//             //physics: PhysicsBundle::default(),
-//             //selectable_bundle: MakeSelectableBundle::default(),
-//         }
-//     }
-// }
-
-// impl ModelBundle {
-    
-//     pub fn new(
-//         geometry: Geometry,
-//         model_position: Transform,
-//         material: StandardMaterial,
-//         // model_collision_groups: Option<CollisionGroups>,
-//         // model_solver_groups: Option<SolverGroups>,
-//     ) -> Self {
-//         return Self {
-//             model: ModelFlag {
-//                 geometry: geometry,
-//                 material: material,
-//                 transform: model_position,
-//                 ..default()
-
-//             },
-//             // collision_groups: model_collision_groups.unwrap_or_default(),
-//             // solver_groups: model_solver_groups.unwrap_or_default(),
-//             ..default()
-//         }
-//     }
-// }
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy", derive(Component))]

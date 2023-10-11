@@ -46,8 +46,8 @@
         )),
         "bevy_serialization_extras::physics::material::MaterialFlag": (
           color: Rgba(
-            red: 0.2509804,
-            green: 0.0,
+            red: 1.0,
+            green: 1.0,
             blue: 1.0,
             alpha: 1.0,
           ),
