@@ -1,14 +1,14 @@
 
 use std::marker::PhantomData;
-
+use bevy::core_pipeline::core_3d::Camera3dDepthTextureUsage;
 use bevy_rapier3d::prelude::AsyncCollider;
 use moonshine_save::{
     prelude::{SavePlugin, LoadPlugin, load_from_file, LoadSet}, save::{SaveSet, save_default},
 };
 use bevy::{asset::Asset, reflect::TypeUuid};
 use bevy::{prelude::*, reflect::GetTypeRegistration};
-use crate::{physics::{colliders::ColliderFlag, material::MaterialFlag}, traits::Unwrap};
-use crate::physics::mesh::GeometryFlag;
+use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
+use crate::wrappers::mesh::GeometryFlag;
 
 use super::systems::*;
 const SAVE_PATH: &str = "cube.ron";
@@ -22,10 +22,15 @@ pub struct SerializeComponentFor<T, U> {
 impl<T, U> Plugin for SerializeComponentFor<T, U>
     where
         T: 'static + Component + for<'a> From<&'a U>,
-        U: 'static + Component + GetTypeRegistration  + for<'a> From<&'a T> {
+        U: 'static + Component + ManagedTypeRegistration  + for<'a> From<&'a T> {
     fn build(&self, app: &mut App) {
+        
+        let type_registry = app.world.resource::<AppTypeRegistry>();
+        for registration in U::get_all_type_registrations().into_iter() {
+            type_registry.write().add_registration(registration)
+        }
         app
-        .register_type::<U>()
+        
         .add_systems(PreUpdate,
             (
              serialize_for::<T, U>,
@@ -73,12 +78,17 @@ pub struct DeserializeAssetFrom<U, T> {
 
 impl<U, T> Plugin for DeserializeAssetFrom<U, T>
     where
-        U: 'static + Component + GetTypeRegistration,
+        U: 'static + Component + ManagedTypeRegistration,
         T: 'static + Asset + TypeUuid + for<'a> Unwrap<&'a U>,
  {
     fn build(&self, app: &mut App) {
+
+        
+        let type_registry = app.world.resource::<AppTypeRegistry>();
+        for registration in U::get_all_type_registrations().into_iter() {
+            type_registry.write().add_registration(registration)
+        }
         app
-        .register_type::<U>()
         .add_systems(Update, 
             (
                 deserialize_wrapper_for::<U, T>
@@ -96,6 +106,8 @@ impl<U, T> Default for DeserializeAssetFrom<U, T> {
         }
     }
 }
+
+
 
 /// plugin that adds systems/plugins for serialization. 
 /// `!!!THINGS THAT NEED TO BE SERIALIZED STILL MUST IMPLEMENT .register_type::<T>() IN ORDER TO BE USED!!!`
@@ -115,19 +127,15 @@ impl Plugin for SerializationPlugin {
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
 
         // .register_type::<Option<Entity>>()
-        // .register_type::<[f32; 3]>()
-        // .register_type::<AlphaMode>()
-        // .register_type::<ParallaxMappingMethod>()
-        // .register_type::<Camera3dDepthTextureUsage>()
-        // .register_type::<bevy_mod_raycast::RaycastMethod>()
+        .register_type::<[f32; 3]>()
+        .register_type::<AlphaMode>()
+        .register_type::<ParallaxMappingMethod>()
+        .register_type::<Camera3dDepthTextureUsage>()
+        //.register_type::<bevy_mod_raycast::RaycastMethod>()
         // .register_type::<bevy_mod_raycast::system_param::RaycastVisibility>()
         // .register_type::<Debug>()
         // .register_type::<Viewer>()
         // .register_type::<Selectable>()
-        // .register_type::<ColliderFlag>()
-        // .register_type::<MaterialFlag>()
-        // .register_type::<RigidBodyFlag>()
-        // .register_type::<MeshPrimitive>()
         .add_systems(PreUpdate, 
             save_default()
             .exclude_component::<ComputedVisibility>()
@@ -139,7 +147,7 @@ impl Plugin for SerializationPlugin {
         //.add_systems(Update, save_into_file(SAVE_PATH).run_if(check_for_save_keypress))
         .add_systems(Update, add_computed_visiblity.after(LoadSet::PostLoad))
         .add_systems(Update, load_from_file(SAVE_PATH).run_if(check_for_load_keypress))
-        .add_systems(PostStartup, list_unserializable)
+        .add_systems(Update, list_unserializable.run_if(check_for_save_keypress))
         ;    
     }
 }

@@ -1,7 +1,6 @@
 use bevy::reflect::TypeUuid;
 use bevy::prelude::*;
 
-//use crate::urdf::urdf_loader::BevyRobot;
 use crate::traits::*;
 
 use moonshine_save::save::*;
@@ -151,6 +150,7 @@ pub fn list_unserializable(
     }
     println!("listing .register_type::<T>'s for unregistered types. copy and paste this into app  ");
     for item in saved_component_types.keys() {
+        //println!("listing component types marked to save {:#?}", saved_component_types[item]);
         if registered_types.contains_key(item) == false {
             println!(".register_type::<{:#}>()", 
             saved_component_types[item].split("::")
