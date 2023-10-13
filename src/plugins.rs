@@ -1,5 +1,5 @@
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::Camera3dDepthTextureUsage;
 use bevy_rapier3d::prelude::AsyncCollider;
 use moonshine_save::{
@@ -12,7 +12,7 @@ use crate::wrappers::mesh::GeometryFlag;
 
 use super::systems::*;
 const SAVE_PATH: &str = "cube.ron";
-
+use super::resources::*;
 #[derive(Default)]
 pub struct SerializeComponentFor<T, U> {
     thing: PhantomData<fn() -> T>,
@@ -24,7 +24,12 @@ impl<T, U> Plugin for SerializeComponentFor<T, U>
         T: 'static + Component + for<'a> From<&'a U>,
         U: 'static + Component + ManagedTypeRegistration  + for<'a> From<&'a T> {
     fn build(&self, app: &mut App) {
-        
+        type L = SerializeSkipList;
+        let mut skip_list = app.world
+            .get_resource_or_insert_with::<L>(| |L::default());
+
+        skip_list.skipped_components.push(TypeId::of::<T>());
+
         let type_registry = app.world.resource::<AppTypeRegistry>();
         for registration in U::get_all_type_registrations().into_iter() {
             type_registry.write().add_registration(registration)
@@ -55,6 +60,12 @@ impl<T, U> Plugin for SerializeAssetFor<T, U>
         T: 'static + Asset + for<'a> From<&'a U>,
         U: 'static + Component + GetTypeRegistration  + for<'a> From<&'a T> {
     fn build(&self, app: &mut App) {
+        type L = SerializeSkipList;
+        let mut skip_list = app.world
+            .get_resource_or_insert_with::<L>(| |L::default());
+
+        skip_list.skipped_components.push(TypeId::of::<Handle<T>>());
+
         app
         .register_type::<U>()
         .add_systems(PreUpdate,
@@ -82,7 +93,11 @@ impl<U, T> Plugin for DeserializeAssetFrom<U, T>
         T: 'static + Asset + TypeUuid + for<'a> Unwrap<&'a U>,
  {
     fn build(&self, app: &mut App) {
+        type L = SerializeSkipList;
+        let mut skip_list = app.world
+            .get_resource_or_insert_with::<L>(| |L::default());
 
+        skip_list.skipped_components.push(TypeId::of::<Handle<T>>());
         
         let type_registry = app.world.resource::<AppTypeRegistry>();
         for registration in U::get_all_type_registrations().into_iter() {
@@ -116,15 +131,19 @@ pub struct SerializationPlugin;
 impl Plugin for SerializationPlugin {
     fn build(&self, app: &mut App) {
         app
+        .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
+        .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
+        .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
+        ;
+
+        app//.insert_resource(SerializeSkipList::default())
         .add_plugins(
             (
                 SavePlugin,
                 LoadPlugin,
             )
         )
-        .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
-        .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
-        .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
+
 
         // .register_type::<Option<Entity>>()
         .register_type::<[f32; 3]>()
@@ -136,12 +155,9 @@ impl Plugin for SerializationPlugin {
         // .register_type::<Debug>()
         // .register_type::<Viewer>()
         // .register_type::<Selectable>()
-        .add_systems(PreUpdate, 
-            save_default()
-            .exclude_component::<ComputedVisibility>()
-            .exclude_component::<Handle<StandardMaterial>>()
-            .exclude_component::<Handle<Mesh>>()
-            .into_file("cube.ron")
+        .add_systems(PreUpdate,
+            //save_pipline 
+            modified_save_pipeline()
             .run_if(check_for_save_keypress)
         )
         //.add_systems(Update, save_into_file(SAVE_PATH).run_if(check_for_save_keypress))

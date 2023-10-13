@@ -10,22 +10,12 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 bevy = { version = "0.11"}
-#rand = "0.8.5"
-bevy_mod_raycast = "0.14"
-bevy-inspector-egui = "0.20.0"
-#rapier3d = "0.17.2"
 bevy_rapier3d = "0.22.0"
-bevy_obj = "0.11.0"
 #urdf-rs = "0.7.1"
-#bevy_flycam = { git = "https://github.com/sburris0/bevy_flycam.git", rev = "4ed8bcebac4210f30c7d757c3fd2fba7a1d275e2"  }
-#thiserror = "1.0.40"
 glam = "0.24.0"
 ron = "0.8.0"
-#bevy_egui = "0.22"
-#bevy_window = "0.11.0"
-#egui = "0.23.0"
-moonshine-save = "0.3.2"
-bevy_component_extras = "0.1"
+moonshine-save = { git = "https://github.com/rydb/moonshine_save", rev="b6fb1b0b287c8ea0808a8f0db2d095446b086731"}
+
 strum = "0.25"
 strum_macros = "*"
 
@@ -33,3 +23,8 @@ strum_macros = "*"
 bevy = {version = "0.11", features = ["dynamic_linking"]}
 bevy_ui_extras = "0.2"
 bevy_editor_extras = "*"
+bevy_mod_raycast = "0.14"
+bevy-inspector-egui = "0.20.0"
+bevy_component_extras = "0.1"
+bevy_egui = "0.22"
+egui = "0.23"

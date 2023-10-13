@@ -3,3 +3,4 @@ pub mod plugins;
 pub mod wrappers;
 pub mod bundles;
 pub mod traits;
+pub mod resources;

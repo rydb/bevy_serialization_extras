@@ -1,13 +1,41 @@
 use bevy::reflect::TypeUuid;
 use bevy::prelude::*;
 
+use crate::resources::{SerializeSkipList, SaveFile};
 use crate::traits::*;
 
 use moonshine_save::save::*;
 use std::any::TypeId;
 use std::collections::HashMap;
 use bevy::asset::Asset;
+use bevy::ecs::query::ReadOnlyWorldQuery;
+use std::marker::PhantomData;
+use bevy::ecs::schedule::SystemConfigs;
 
+pub fn modified_save_pipeline(
+    exclude_list: Res<SerializeSkipList>,
+    save_file: Res<SaveFile>,
+) -> SystemConfigs  {
+    let mut save_pipeline = save_default();
+    for typeid in exclude_list.skipped_components.iter() {
+        save_pipeline.scene.components.deny_by_id(*typeid);
+    }
+    save_pipeline
+    .exclude_component::<ComputedVisibility>()
+    .into_file(save_file.path.to_string())
+}
+
+// pub fn save_without_excluded(
+//     //exclude_list: &Vec<TypeId>,
+//     //save_pipeline: SavePipelineBuilder<With<Save>>, 
+// ) -> SavePipelineBuilder<With<Save>> {
+//     let mut new_save_pipeline = save_pipeline;
+
+//     for typeid in exclude_list.iter() {
+//         new_save_pipeline.scene.components.deny_by_id(typeid.clone());
+//     }
+//     new_save_pipeline
+// }
 
 pub fn serialize_for<Thing, WrapperThing>(
     thing_query: Query<(Entity, &Thing)>,
