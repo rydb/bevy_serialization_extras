@@ -156,8 +156,14 @@ impl Plugin for SerializationPlugin {
         // .register_type::<Viewer>()
         // .register_type::<Selectable>()
         .add_systems(PreUpdate,
-            //save_pipline 
-            modified_save_pipeline()
+            save_default()
+            .exclude_component::<ComputedVisibility>()
+            .exclude_component::<Handle<StandardMaterial>>()
+            .exclude_component::<Handle<Mesh>>()
+            .exclude_component::<AsyncCollider>()
+            .into_file(SAVE_PATH) 
+            
+            //modified_save_pipeline()
             .run_if(check_for_save_keypress)
         )
         //.add_systems(Update, save_into_file(SAVE_PATH).run_if(check_for_save_keypress))
