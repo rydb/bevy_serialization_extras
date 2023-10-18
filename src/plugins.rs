@@ -3,12 +3,14 @@ use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::Camera3dDepthTextureUsage;
 use bevy_rapier3d::prelude::AsyncCollider;
 use moonshine_save::{
-    prelude::{SavePlugin, LoadPlugin, load_from_file, LoadSet}, save::{SaveSet, save_default},
+    prelude::{SavePlugin, LoadPlugin, load_from_file, LoadSet}, save::SaveSet,
 };
 use bevy::{asset::Asset, reflect::TypeUuid};
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
+use moonshine_save::prelude::save_default_with;
+use moonshine_save::prelude::SaveFilter;
 
 use super::systems::*;
 const SAVE_PATH: &str = "cube.ron";
@@ -24,11 +26,12 @@ impl<T, U> Plugin for SerializeComponentFor<T, U>
         T: 'static + Component + for<'a> From<&'a U>,
         U: 'static + Component + ManagedTypeRegistration  + for<'a> From<&'a T> {
     fn build(&self, app: &mut App) {
-        type L = SerializeSkipList;
+        type L = SerializeFilter;
         let mut skip_list = app.world
             .get_resource_or_insert_with::<L>(| |L::default());
 
-        skip_list.skipped_components.push(TypeId::of::<T>());
+
+        skip_list.filter.components.deny_by_id(TypeId::of::<T>());
 
         let type_registry = app.world.resource::<AppTypeRegistry>();
         for registration in U::get_all_type_registrations().into_iter() {
@@ -60,11 +63,12 @@ impl<T, U> Plugin for SerializeAssetFor<T, U>
         T: 'static + Asset + for<'a> From<&'a U>,
         U: 'static + Component + GetTypeRegistration  + for<'a> From<&'a T> {
     fn build(&self, app: &mut App) {
-        type L = SerializeSkipList;
+        type L = SerializeFilter;
         let mut skip_list = app.world
             .get_resource_or_insert_with::<L>(| |L::default());
 
-        skip_list.skipped_components.push(TypeId::of::<Handle<T>>());
+        skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
+
 
         app
         .register_type::<U>()
@@ -93,11 +97,11 @@ impl<U, T> Plugin for DeserializeAssetFrom<U, T>
         T: 'static + Asset + TypeUuid + for<'a> Unwrap<&'a U>,
  {
     fn build(&self, app: &mut App) {
-        type L = SerializeSkipList;
+        type L = SerializeFilter;
         let mut skip_list = app.world
             .get_resource_or_insert_with::<L>(| |L::default());
 
-        skip_list.skipped_components.push(TypeId::of::<Handle<T>>());
+        skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
         
         let type_registry = app.world.resource::<AppTypeRegistry>();
         for registration in U::get_all_type_registrations().into_iter() {
@@ -156,14 +160,8 @@ impl Plugin for SerializationPlugin {
         // .register_type::<Viewer>()
         // .register_type::<Selectable>()
         .add_systems(PreUpdate,
-            save_default()
-            .exclude_component::<ComputedVisibility>()
-            .exclude_component::<Handle<StandardMaterial>>()
-            .exclude_component::<Handle<Mesh>>()
-            .exclude_component::<AsyncCollider>()
-            .into_file(SAVE_PATH) 
-            
-            //modified_save_pipeline()
+            save_default_with(save_filter)
+            .into_file(SAVE_PATH)             
             .run_if(check_for_save_keypress)
         )
         //.add_systems(Update, save_into_file(SAVE_PATH).run_if(check_for_save_keypress))
@@ -172,4 +170,8 @@ impl Plugin for SerializationPlugin {
         .add_systems(Update, list_unserializable.run_if(check_for_save_keypress))
         ;    
     }
+}
+
+fn save_filter(f: Res<SerializeFilter>) -> SaveFilter {
+    f.filter.clone()
 }

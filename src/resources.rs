@@ -1,11 +1,9 @@
-use std::any::TypeId;
-
 use bevy::prelude::Resource;
+use moonshine_save::save::SaveFilter;
 
 #[derive(Resource, Default)]
-pub struct SerializeSkipList {
-    /// componnets to be skipped during serialization. This should include components with wrapper equivilents. 
-    pub skipped_components: Vec<TypeId>
+pub struct SerializeFilter {
+    pub filter: SaveFilter
 }
 
 #[derive(Resource)]

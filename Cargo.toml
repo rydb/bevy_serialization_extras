@@ -10,14 +10,17 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 bevy = { version = "0.11"}
-bevy_rapier3d = "0.22.0"
+bevy_rapier3d = "0.22"
 #urdf-rs = "0.7.1"
-glam = "0.24.0"
-ron = "0.8.0"
-moonshine-save = { git = "https://github.com/rydb/moonshine_save", rev="b6fb1b0b287c8ea0808a8f0db2d095446b086731"}
+glam = "0.24"
+ron = "0.8"
+moonshine-save = "0.3.3"
+bevy_egui = "0.22"
+egui = "0.23"
+egui_extras = "0.23"
 
 strum = "0.25"
-strum_macros = "*"
+strum_macros = "0.25"
 
 [dev-dependencies]
 bevy = {version = "0.11", features = ["dynamic_linking"]}
@@ -26,5 +29,3 @@ bevy_editor_extras = "*"
 bevy_mod_raycast = "0.14"
 bevy-inspector-egui = "0.20.0"
 bevy_component_extras = "0.1"
-bevy_egui = "0.22"
-egui = "0.23"
