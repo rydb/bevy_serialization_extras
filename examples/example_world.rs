@@ -1,7 +1,7 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, ui::list_unserializable_window};
+use bevy_serialization_extras::{plugins::SerializationPlugin, ui::{list_unserializable_window, visualize_serializable, spawn_unserializable_window}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use moonshine_save::save::Save;
 use bevy_editor_extras::plugins::*;
@@ -18,7 +18,7 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
-        .add_systems(Update, list_unserializable_window)
+        .add_systems(Update, (spawn_unserializable_window,  visualize_serializable))
         .run();
 }
 
