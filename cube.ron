@@ -47,8 +47,8 @@
         "bevy_serialization_extras::wrappers::material::MaterialFlag": (
           color: Rgba(
             red: 0.0,
-            green: 0.26666668,
-            blue: 1.0,
+            green: 1.0,
+            blue: 0.0,
             alpha: 1.0,
           ),
         ),

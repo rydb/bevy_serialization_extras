@@ -2,9 +2,6 @@ use bevy::reflect::TypeUuid;
 use bevy::prelude::*;
 use crate::traits::*;
 
-use moonshine_save::save::*;
-use std::any::TypeId;
-use std::collections::HashMap;
 use bevy::asset::Asset;
 
 pub fn serialize_for<Thing, WrapperThing>(
@@ -115,71 +112,53 @@ pub fn deserialize_for<WrapperThing, Thing>(
 
 /// collects all components in the world, and cross references them with the type registry. If a component is not in the type registry, label it in
 /// the 'serializable check" window
-pub fn list_unserializable(
-    world: &mut World,
-){
-    let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
+// pub fn list_unserializable(
+//     world: &mut World,
+// ){
+//     let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
     
 
-    let type_registry = world.resource::<AppTypeRegistry>();
+//     let type_registry = world.resource::<AppTypeRegistry>();
 
-    let mut saved_component_types = HashMap::new();
-    for e in enetities_to_save.iter(&world) {
-        for component in world.entity(e).archetype().components() {
+//     let mut saved_component_types = HashMap::new();
+//     for e in enetities_to_save.iter(&world) {
+//         for component in world.entity(e).archetype().components() {
 
-            let comp_info = world.components().get_info(component).unwrap();
-            saved_component_types.insert(comp_info.type_id().unwrap(), comp_info.name().to_owned());
-        }
-    }
+//             let comp_info = world.components().get_info(component).unwrap();
+//             saved_component_types.insert(comp_info.type_id().unwrap(), comp_info.name().to_owned());
+//         }
+//     }
 
-    let registered_types = type_registry.read().iter()
-    .map(|id| {
-        let type_id = id.type_id();
+//     let registered_types = type_registry.read().iter()
+//     .map(|id| {
+//         let type_id = id.type_id();
 
-        return (type_id, id.type_name().to_owned())
-    })
-    .collect::<HashMap<TypeId, String>>();
+//         return (type_id, id.type_name().to_owned())
+//     })
+//     .collect::<HashMap<TypeId, String>>();
     
-    println!("Listing imports required for adding unregistered types to type registry: ");
-    for item in saved_component_types.keys() {
-        if registered_types.contains_key(item) == false {
-            println!("use {:#}", saved_component_types[item])
-        }
-    }
-    println!("listing .register_type::<T>'s for unregistered types. copy and paste this into app  ");
-    for item in saved_component_types.keys() {
-        //println!("listing component types marked to save {:#?}", saved_component_types[item]);
-        if registered_types.contains_key(item) == false {
-            println!(".register_type::<{:#}>()", 
-            saved_component_types[item].split("::")
-            .collect::<Vec<_>>()
-            .last()
-            .unwrap())
-        }
-    }
-}
+//     println!("Listing imports required for adding unregistered types to type registry: ");
+//     for item in saved_component_types.keys() {
+//         if registered_types.contains_key(item) == false {
+//             println!("use {:#}", saved_component_types[item])
+//         }
+//     }
+//     println!("listing .register_type::<T>'s for unregistered types. copy and paste this into app  ");
+//     for item in saved_component_types.keys() {
+//         //println!("listing component types marked to save {:#?}", saved_component_types[item]);
+//         if registered_types.contains_key(item) == false {
+//             println!(".register_type::<{:#}>()", 
+//             saved_component_types[item].split("::")
+//             .collect::<Vec<_>>()
+//             .last()
+//             .unwrap())
+//         }
+//     }
+// }
 
 
 
-pub fn check_for_save_keypress(
-    keys: Res<Input<KeyCode>>,
-) -> bool{
-    if keys.just_pressed(KeyCode::AltRight) {
-        return true
-    } else {
-        return false
-    }
-}
 
-pub fn check_for_load_keypress(
-    keys: Res<Input<KeyCode>>,
-) -> bool{
-    if keys.just_pressed(KeyCode::AltLeft) {
-        return true
-    } else {
-        return false
-    }
-}
 
 pub fn add_computed_visiblity(
     computed_visiblity_query: Query<Entity, Without<ComputedVisibility>>,
