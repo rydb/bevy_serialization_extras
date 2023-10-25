@@ -1,21 +1,26 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
+use std::path::PathBuf;
+
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_serialization_extras::{plugins::SerializationPlugin, ui::spawn_unserializable_window, resources::{SaveRequest, LoadRequest}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
+use egui::TextEdit;
 use moonshine_save::save::Save;
 use bevy_editor_extras::plugins::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
 use bevy_serialization_extras::ui::*;
-
-const SAVE_PATH: &str = "cube.ron";
+use std::env;
+const SAVES_LOCATION: &str = "assets/saves";
 
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+
+    .insert_resource(SetSaveFile{name: "cube".to_owned()})
+    .add_plugins(DefaultPlugins.set(WindowPlugin {exit_condition: bevy::window::ExitCondition::OnPrimaryClosed, ..Default::default()}))
         .add_plugins(SerializationPlugin)
         .add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
@@ -24,7 +29,7 @@ fn main() {
         .add_systems(Update, spawn_unserializable_window)
         .add_systems(Update, manage_serialization_ui)
         .add_systems(Update, check_for_save_keypress)
-        .add_systems(Update, check_for_load_keypress)
+        //.add_systems(Update, check_for_load_keypress)
         .run();
 }
 
@@ -83,41 +88,55 @@ pub fn check_for_save_keypress(
     keys: Res<Input<KeyCode>>,
     mut commands: Commands,
 
-) {
-    if keys.just_pressed(KeyCode::AltRight) {
-        commands.insert_resource(SaveRequest {path: SAVE_PATH.to_string()})
+){
+    if keys.just_pressed(KeyCode::AltLeft) {
+        commands.insert_resource(SaveRequest {path: SAVES_LOCATION.to_owned() + "/" + "red.ron"})
     } 
 }
 
-pub fn check_for_load_keypress(
-    keys: Res<Input<KeyCode>>,
-    mut commands: Commands,
-){
-    if keys.just_pressed(KeyCode::AltLeft) {
-        commands.insert_resource(LoadRequest {path: SAVE_PATH.to_string()})
-    } 
+#[derive(Resource, Default)]
+pub struct SetSaveFile {
+    pub name: String,
 }
 
 pub fn save_file_selection(
-    world: &mut World,
+    mut primary_window_query: Query<&mut EguiContext, With<PrimaryWindow>>,
+    mut save_file_textbox: ResMut<SetSaveFile>,
+    mut commands: Commands,
 
 ) {
-    if let Ok(egui_context_check) = world
-        .query_filtered::<&mut EguiContext, &PrimaryWindow>()
-        .get_single(world) 
-    {
-        let menu_name = "Select a sample save to load";
-        // if let Some(asset_server)  = world.get_resource::<AssetServer>() {
-        //     asset_server.
-        // } 
-
-        let mut egui_context = egui_context_check.clone();
-        
-
+    for mut context in primary_window_query.iter_mut() {
+        let menu_name = "Select a save to load";
+        let mut saves_path = PathBuf::default();
+        if let Ok(path_check) = env::current_dir()  {
+            saves_path = path_check;
+            saves_path.push(SAVES_LOCATION)
+        }
         egui::TopBottomPanel::bottom(menu_name)
-        .show(egui_context.get_mut(), |ui| {
-                //ui.heading(menu_name);
-                ui.button("save_1")
+        .show(context.get_mut(), |ui| {
+                ui.label("Save File: (push enter to save, leave out .ron)");
+                let textbox = ui.add(TextEdit::singleline(&mut save_file_textbox.name));
+                if textbox.changed() {
+                    println!("textbox changed!");
+                }
+                if let Ok(folder) = saves_path.read_dir(){
+                    for file_check in folder {
+                        match file_check {
+                            Ok(file) => {
+                                let file_name = file.file_name().to_str().unwrap().to_owned();
+                                if ui.button(&file_name).clicked() {
+                                    commands.insert_resource(
+                                        LoadRequest {
+                                            path: SAVES_LOCATION.to_owned() + "/" + &file_name
+                                        }
+                                    )
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    
+                };
             }
     
     );

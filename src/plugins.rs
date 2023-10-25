@@ -154,12 +154,8 @@ impl Plugin for SerializationPlugin {
         .register_type::<AlphaMode>()
         .register_type::<ParallaxMappingMethod>()
         .register_type::<Camera3dDepthTextureUsage>()
-        //.register_type::<bevy_mod_raycast::RaycastMethod>()
-        // .register_type::<bevy_mod_raycast::system_param::RaycastVisibility>()
-        // .register_type::<Debug>()
-        // .register_type::<Viewer>()
-        // .register_type::<Selectable>()
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))
+        .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<LoadRequest>()))
         .add_systems(Update, 
             save_default_with(save_filter)
             .into_file_on_request::<SaveRequest>()             
