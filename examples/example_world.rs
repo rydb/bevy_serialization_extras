@@ -19,7 +19,7 @@ const SAVES_LOCATION: &str = "assets/saves";
 fn main() {
     App::new()
 
-    .insert_resource(SetSaveFile{name: "cube".to_owned()})
+    .insert_resource(SetSaveFile{name: "red".to_owned()})
     .add_plugins(DefaultPlugins.set(WindowPlugin {exit_condition: bevy::window::ExitCondition::OnPrimaryClosed, ..Default::default()}))
         .add_plugins(SerializationPlugin)
         .add_plugins(SelecterPlugin)
@@ -114,11 +114,32 @@ pub fn save_file_selection(
         }
         egui::TopBottomPanel::bottom(menu_name)
         .show(context.get_mut(), |ui| {
-                ui.label("Save File: (push enter to save, leave out .ron)");
-                let textbox = ui.add(TextEdit::singleline(&mut save_file_textbox.name));
-                if textbox.changed() {
-                    println!("textbox changed!");
-                }
+                ui.group(|ui| {
+                    ui.label("Save File: (push enter to save, leave out .ron)");
+                    ui.add(TextEdit::singleline(&mut save_file_textbox.name));
+
+                    ui.horizontal(|ui| {
+                        if ui.button("save").clicked() {
+                            commands.insert_resource(
+                                SaveRequest {
+                                    path: SAVES_LOCATION.to_owned() + "/" + &save_file_textbox.name + ".ron"
+                                }
+                            )
+                        }
+                        if ui.button("load").clicked() {
+                            commands.insert_resource(
+                                LoadRequest {
+                                    path: SAVES_LOCATION.to_owned() + "/" + &save_file_textbox.name + ".ron"
+                                }
+                            )
+                        }
+                        
+                    });
+
+
+                });
+
+
                 if let Ok(folder) = saves_path.read_dir(){
                     for file_check in folder {
                         match file_check {
@@ -126,9 +147,12 @@ pub fn save_file_selection(
                                 let file_name = file.file_name().to_str().unwrap().to_owned();
                                 if ui.button(&file_name).clicked() {
                                     commands.insert_resource(
-                                        LoadRequest {
-                                            path: SAVES_LOCATION.to_owned() + "/" + &file_name
+                                        SetSaveFile {
+                                            name: file_name.replace(".ron", "")
                                         }
+                                        // LoadRequest {
+                                        //     path: SAVES_LOCATION.to_owned() + "/" + &file_name
+                                        // }
                                     )
                                 }
                             }

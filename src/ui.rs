@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use moonshine_save::prelude::Save;
 use std::any::TypeId;
 
-use crate::resources::{TypeRegistryOnSave, ComponentsOnSave, ShowSerializable, ShowUnserializable};
+use crate::resources::{TypeRegistryOnSave, ComponentsOnSave, ShowSerializable, ShowUnserializable, RefreshCounter};
 use egui_extras::{Column, TableBuilder};
 
 #[derive(Component)]
@@ -35,7 +35,7 @@ pub fn update_last_saved_typedata(
 ) {
     let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
     
-    println!("updaitng last saved type_data");
+    //println!("updating last saved type_data");
 
     let type_registry = world.resource::<AppTypeRegistry>();
 
@@ -75,7 +75,7 @@ pub fn manage_serialization_ui(
     //registered_and_component_types: In<(HashMap::<TypeId, String>, HashMap::<TypeId, String>)>,
     saved_components: Res<ComponentsOnSave>,
     registered_types: Res<TypeRegistryOnSave>,
-
+    mut refresh_counter: ResMut<RefreshCounter>,
     mut show_serializable: ResMut<ShowSerializable>,
     mut show_unserializable: ResMut<ShowUnserializable>,
 
@@ -93,11 +93,15 @@ pub fn manage_serialization_ui(
                 .min_scrolled_height(0.0)
                 .header(20.0, |mut header| {
                     header.col(|ui| {
+                        ui.heading("Components to serialize");
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut show_serializable.check, "show savable");
                             ui.checkbox(&mut show_unserializable.check, "show unsavable");
+                            if ui.button("refresh").clicked() {
+                                refresh_counter.counter += 1;
+                            }
                         });
-                        ui.heading("Components to serialize");
+
                     });
                 })
                 .body(|mut body| {

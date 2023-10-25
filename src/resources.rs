@@ -4,6 +4,12 @@ use moonshine_save::{save::SaveFilter, prelude::LoadFromFileRequest};
 use std::collections::HashMap;
 use moonshine_save::prelude::SaveIntoFileRequest;
 use std::path::Path;
+
+#[derive(Resource, Default)]
+pub struct RefreshCounter {
+    pub counter: usize
+}
+
 #[derive(Resource, Default)]
 pub struct SerializeFilter {
     pub filter: SaveFilter

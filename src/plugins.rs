@@ -137,6 +137,7 @@ impl Plugin for SerializationPlugin {
         .insert_resource(ShowUnserializable::default())
         .insert_resource(ComponentsOnSave::default())
         .insert_resource(TypeRegistryOnSave::default())
+        .insert_resource(RefreshCounter::default())
         .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
@@ -156,6 +157,8 @@ impl Plugin for SerializationPlugin {
         .register_type::<Camera3dDepthTextureUsage>()
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<LoadRequest>()))
+        .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_changed::<RefreshCounter>()))
+
         .add_systems(Update, 
             save_default_with(save_filter)
             .into_file_on_request::<SaveRequest>()             
