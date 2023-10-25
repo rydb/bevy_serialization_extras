@@ -2,7 +2,8 @@
 A library for bevy which contains wrappers/systems for managing serialization in bevy with [`moonshine-save`](https://github.com/Zeenobit/moonshine_save) for a more "hands off" serialization workflow
 
 
-![til](https://github.com/rydb/bevy_serialization_extras/demo_gif.webm)
+[demo_gif.webm](https://github.com/rydb/bevy_serialization_extras/assets/43288084/3bda45f1-c75a-437b-a02d-27e58bd3276e)
+
 
 
 
