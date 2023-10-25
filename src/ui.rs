@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::{WindowResolution, PresentMode}};
+use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use egui::{RichText, Color32};
 use std::collections::HashMap;
@@ -7,28 +7,6 @@ use std::any::TypeId;
 
 use crate::resources::{TypeRegistryOnSave, ComponentsOnSave, ShowSerializable, ShowUnserializable, RefreshCounter};
 use egui_extras::{Column, TableBuilder};
-
-#[derive(Component)]
-pub struct SerializeWindowMarker;
-
-pub fn spawn_unserializable_window(
-    mut commands: Commands,
-    window_marker_query: Query<&mut EguiContext, With<SerializeWindowMarker>>,
-) {
-    if window_marker_query.is_empty() {
-        commands.spawn(
-            (
-                Window {
-                    title: "Serializable components list".to_owned(),
-                    resolution: WindowResolution::new(800.0, 600.0),
-                    present_mode: PresentMode::AutoVsync,
-                    ..Default::default()
-                },
-                SerializeWindowMarker,
-            )
-        );
-    }
-}
 
 pub fn update_last_saved_typedata(
     world: &mut World,
@@ -68,21 +46,20 @@ pub fn update_last_saved_typedata(
             components: saved_component_types
         }
     );
-    // registered_types, saved_component_types
 } 
 
+/// utility for showing information components to be serialized
 pub fn manage_serialization_ui(
-    //registered_and_component_types: In<(HashMap::<TypeId, String>, HashMap::<TypeId, String>)>,
     saved_components: Res<ComponentsOnSave>,
     registered_types: Res<TypeRegistryOnSave>,
     mut refresh_counter: ResMut<RefreshCounter>,
     mut show_serializable: ResMut<ShowSerializable>,
     mut show_unserializable: ResMut<ShowUnserializable>,
 
-    mut window_marker_query: Query<&mut EguiContext, With<SerializeWindowMarker>>
+    mut window_marker_query: Query<&mut EguiContext, With<PrimaryWindow>>
 ) {
     for mut context in window_marker_query.iter_mut() {
-        egui::CentralPanel::default()
+        egui::Window::new("Components to serialize")
         .show(context.get_mut(), |ui|{
             let table = TableBuilder::new(ui);
                 table
@@ -93,7 +70,6 @@ pub fn manage_serialization_ui(
                 .min_scrolled_height(0.0)
                 .header(20.0, |mut header| {
                     header.col(|ui| {
-                        ui.heading("Components to serialize");
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut show_serializable.check, "show savable");
                             ui.checkbox(&mut show_unserializable.check, "show unsavable");

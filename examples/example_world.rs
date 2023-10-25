@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, ui::spawn_unserializable_window, resources::{SaveRequest, LoadRequest}};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
@@ -26,10 +26,7 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
-        .add_systems(Update, spawn_unserializable_window)
         .add_systems(Update, manage_serialization_ui)
-        .add_systems(Update, check_for_save_keypress)
-        //.add_systems(Update, check_for_load_keypress)
         .run();
 }
 
@@ -81,17 +78,6 @@ fn setup(
     },
     Save
 ));
-}
-
-
-pub fn check_for_save_keypress(
-    keys: Res<Input<KeyCode>>,
-    mut commands: Commands,
-
-){
-    if keys.just_pressed(KeyCode::AltLeft) {
-        commands.insert_resource(SaveRequest {path: SAVES_LOCATION.to_owned() + "/" + "red.ron"})
-    } 
 }
 
 #[derive(Resource, Default)]
@@ -150,9 +136,6 @@ pub fn save_file_selection(
                                         SetSaveFile {
                                             name: file_name.replace(".ron", "")
                                         }
-                                        // LoadRequest {
-                                        //     path: SAVES_LOCATION.to_owned() + "/" + &file_name
-                                        // }
                                     )
                                 }
                             }
