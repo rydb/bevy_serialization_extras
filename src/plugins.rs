@@ -13,6 +13,8 @@ use moonshine_save::prelude::SaveFilter;
 use crate::ui::update_last_saved_typedata;
 use super::systems::*;
 use super::resources::*;
+
+/// plugin for serialization for WrapperComponent -> Component, Component -> WrapperComponent
 #[derive(Default)]
 pub struct SerializeComponentFor<T, U> {
     thing: PhantomData<fn() -> T>,
@@ -50,6 +52,8 @@ impl<T, U> Plugin for SerializeComponentFor<T, U>
         ;
     }
 } 
+
+/// plugin for serialization for WrapperComponent -> Asset, Asset -> WrapperComponent
 #[derive(Default)]
 pub struct SerializeAssetFor<T, U> {
     thing: PhantomData<fn() -> T>,
@@ -83,7 +87,10 @@ impl<T, U> Plugin for SerializeAssetFor<T, U>
         ;
     }
 } 
-
+/// Plugin for deserialization for WrapperComponent -> Asset.
+/// This is for assets that don't have 1:1 conversions from asset to warpper.
+/// 
+/// !!!Changes made to these assets at runtime will not be saved!!! 
 pub struct DeserializeAssetFrom<U, T> {
     wrapper_thing: PhantomData<fn() -> U>,
     thing: PhantomData<fn() -> T>,
@@ -124,8 +131,6 @@ impl<U, T> Default for DeserializeAssetFrom<U, T> {
     }
 }
 
-
-
 /// plugin that adds systems/plugins for serialization. 
 /// `!!!THINGS THAT NEED TO BE SERIALIZED STILL MUST IMPLEMENT .register_type::<T>() IN ORDER TO BE USED!!!`
 pub struct SerializationPlugin;
@@ -143,7 +148,7 @@ impl Plugin for SerializationPlugin {
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
         ;
 
-        app//.insert_resource(SerializeSkipList::default())
+        app
         .add_plugins(
             (
                 SavePlugin,

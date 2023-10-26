@@ -5,11 +5,13 @@ use std::collections::HashMap;
 use moonshine_save::prelude::SaveIntoFileRequest;
 use std::path::Path;
 
+/// keeps track of number of times refresh request has been sent. For ui utils.
 #[derive(Resource, Default)]
 pub struct RefreshCounter {
     pub counter: usize
 }
 
+/// Resource version of moonshine-save's [`SaveFilter`]. 
 #[derive(Resource, Default)]
 pub struct SerializeFilter {
     pub filter: SaveFilter
@@ -37,11 +39,13 @@ impl LoadFromFileRequest for LoadRequest {
     }
 }
 
+/// contains the state of the type registry since the last [`SaveRequest`]/refresh.
 #[derive(Resource, Default)]
 pub struct TypeRegistryOnSave {
     pub registry: HashMap<TypeId, String>,
 }
 
+/// contains the components marked to saved since last save/refresh.
 #[derive(Resource, Default)]
 pub struct ComponentsOnSave {
     pub components: HashMap<TypeId, String>

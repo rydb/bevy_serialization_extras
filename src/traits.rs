@@ -7,7 +7,8 @@ pub trait Unwrap<T>: Sized {
 }
 
 /// trait that denotes that enum/struct/etc.. can fetch all of the type registrations of it self
-/// !!!(TODO) there should be a way to ensure test cases for this are satisfied? !!!
+///
+/// !!!(TODO) there should be a way to ensure test cases for this are satisfied !!!
 pub trait ManagedTypeRegistration: GetTypeRegistration {
     /// takes all fields of this enum/struc/etc.., and returns a vec with their type registrations.
     fn get_all_type_registrations() -> Vec<TypeRegistration>;

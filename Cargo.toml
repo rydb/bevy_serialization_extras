@@ -9,9 +9,8 @@ license = "MIT OR Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.11"}
+bevy = "0.11"
 bevy_rapier3d = "0.22"
-#urdf-rs = "0.7.1"
 glam = "0.24"
 ron = "0.8"
 moonshine-save = "0.3.3"
@@ -29,3 +28,7 @@ bevy_editor_extras = "*"
 bevy_mod_raycast = "0.14"
 bevy-inspector-egui = "0.20.0"
 bevy_component_extras = "0.1"
+
+#[features]
+#ui-utils = ["dep:egui", "dep:egui_extras", "dep:bevy_egui"]
+#physics = ["dep:bevy_rapier3d"]

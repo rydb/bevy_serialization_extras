@@ -9,7 +9,7 @@ A library for bevy which contains wrappers/systems for managing serialization in
 
 ### Features
 
-Out of the box serialization Through [`plugins`] for components
+- Out of the box serialization Through [`plugins`] for components
 ```Rust
     // From<Component> -> Wrapper + From<Wrapper> -> Component
     .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
@@ -22,6 +22,9 @@ Out of the box serialization Through [`plugins`] for components
 ```
 
 - type registration for wrappers through `ManagedTypeRegistration` trait
-- A visualization gui for types registerd to save, but that are not added to the type registry
 
+- A visualization util to list serializable/unserializable components
+
+
+For implementations of plugin trait bounds, see `Wrappers`
 

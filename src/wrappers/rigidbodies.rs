@@ -1,4 +1,5 @@
-use bevy::prelude::*;
+
+use bevy::{reflect::Reflect, prelude::Component};
 use bevy_rapier3d::prelude::RigidBody;
 
 #[derive(Component, Reflect, Clone, Default)]

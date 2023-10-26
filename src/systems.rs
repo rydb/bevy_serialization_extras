@@ -4,6 +4,7 @@ use crate::traits::*;
 
 use bevy::asset::Asset;
 
+/// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Thing, WrapperThing>(
     thing_query: Query<(Entity, &Thing)>,
     mut commands: Commands,
@@ -20,6 +21,7 @@ pub fn serialize_for<Thing, WrapperThing>(
     }
 }
 
+/// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (
     things: ResMut<Assets<Thing>>,
     thing_query: Query<(Entity, &Handle<Thing>)>,
@@ -35,16 +37,15 @@ pub fn try_serialize_asset_for<Thing, WrapperThing> (
                 commands.entity(e).insert(
                     WrapperThing::from(thing)
                 );
-                //return true
             },
-            None => {
-                //return false
-            }
+            None => {}
         }
     }
     //return true;
 }
 
+/// takes a wrapper component, and attempts to deserialize it into its asset handle through [`Unwrap`]
+/// this is components that rely on file paths.
 pub fn deserialize_wrapper_for<WrapperThing, Thing> (
     mut things: ResMut<Assets<Thing>>,
     wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Handle<Thing>>>,
@@ -75,6 +76,7 @@ pub fn deserialize_wrapper_for<WrapperThing, Thing> (
     }
 }
 
+/// takes a wrapper componnet, and deserializes it back into its unserializable asset handle varaint
 pub fn deserialize_asset_for<WrapperThing, Thing> (
     mut things: ResMut<Assets<Thing>>,
     wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Handle<Thing>>>,
@@ -94,6 +96,7 @@ pub fn deserialize_asset_for<WrapperThing, Thing> (
     }
 }
 
+/// deserializes a wrapper component into its unserializable component variant.
 pub fn deserialize_for<WrapperThing, Thing>(
     wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Thing>>,
     mut commands: Commands,
@@ -108,58 +111,8 @@ pub fn deserialize_for<WrapperThing, Thing>(
         );
     }
 }
-
-
-/// collects all components in the world, and cross references them with the type registry. If a component is not in the type registry, label it in
-/// the 'serializable check" window
-// pub fn list_unserializable(
-//     world: &mut World,
-// ){
-//     let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
-    
-
-//     let type_registry = world.resource::<AppTypeRegistry>();
-
-//     let mut saved_component_types = HashMap::new();
-//     for e in enetities_to_save.iter(&world) {
-//         for component in world.entity(e).archetype().components() {
-
-//             let comp_info = world.components().get_info(component).unwrap();
-//             saved_component_types.insert(comp_info.type_id().unwrap(), comp_info.name().to_owned());
-//         }
-//     }
-
-//     let registered_types = type_registry.read().iter()
-//     .map(|id| {
-//         let type_id = id.type_id();
-
-//         return (type_id, id.type_name().to_owned())
-//     })
-//     .collect::<HashMap<TypeId, String>>();
-    
-//     println!("Listing imports required for adding unregistered types to type registry: ");
-//     for item in saved_component_types.keys() {
-//         if registered_types.contains_key(item) == false {
-//             println!("use {:#}", saved_component_types[item])
-//         }
-//     }
-//     println!("listing .register_type::<T>'s for unregistered types. copy and paste this into app  ");
-//     for item in saved_component_types.keys() {
-//         //println!("listing component types marked to save {:#?}", saved_component_types[item]);
-//         if registered_types.contains_key(item) == false {
-//             println!(".register_type::<{:#}>()", 
-//             saved_component_types[item].split("::")
-//             .collect::<Vec<_>>()
-//             .last()
-//             .unwrap())
-//         }
-//     }
-// }
-
-
-
-
-
+/// adds computed visability to componnets that don't have it. this should probably be removed
+/// at some point...
 pub fn add_computed_visiblity(
     computed_visiblity_query: Query<Entity, Without<ComputedVisibility>>,
     mut commands: Commands,
