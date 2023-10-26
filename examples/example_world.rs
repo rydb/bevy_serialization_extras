@@ -7,7 +7,7 @@ use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRe
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
-use bevy_editor_extras::plugins::*;
+//use bevy_editor_extras::plugins::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
@@ -22,7 +22,7 @@ fn main() {
     .insert_resource(SetSaveFile{name: "red".to_owned()})
     .add_plugins(DefaultPlugins.set(WindowPlugin {exit_condition: bevy::window::ExitCondition::OnPrimaryClosed, ..Default::default()}))
         .add_plugins(SerializationPlugin)
-        .add_plugins(SelecterPlugin)
+        //.add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))

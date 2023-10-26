@@ -25,7 +25,7 @@ strum_macros = "0.25"
 [dev-dependencies]
 bevy = {version = "0.11", features = ["dynamic_linking"]}
 bevy_ui_extras = "0.2"
-bevy_editor_extras = "*"
+#bevy_editor_extras = "0.1"
 bevy_mod_raycast = "0.14"
 bevy-inspector-egui = "0.20.0"
 bevy_component_extras = "0.1"
