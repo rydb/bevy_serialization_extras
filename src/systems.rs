@@ -1,8 +1,35 @@
 use bevy::reflect::TypeUuid;
 use bevy::prelude::*;
 use crate::traits::*;
+use bevy::ecs::query::ReadOnlyWorldQuery;
 
 use bevy::asset::Asset;
+
+
+// pub fn serialize_as_one<F, ThingSet, WrapperThing>(
+//     mut commands: Commands,
+// ) 
+//     where
+//         F: ReadOnlyWorldQuery,
+//         ThingSet: Structure<ThingSet>
+// {
+    
+
+// }
+
+// pub fn deserialize_as_many_for<Thing, WrapperThing>(
+//     thing_query: Query<&Thing>,
+//     mut commands: Commands,
+// ) 
+//     where
+//     Thing: Component,
+//     WrapperThing: Component + for<'a> From<&'a Thing>  
+// {
+//     for f in thing_query.iter() {
+
+//     }
+
+// }
 
 /// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Thing, WrapperThing>(
@@ -122,3 +149,11 @@ pub fn add_computed_visiblity(
         commands.entity(e).insert(ComputedVisibility::default());
     }
 }
+
+// pub fn query_test(
+//     query: Query<(&Name, &Transform)>,
+// ) {
+//     for t in query.iter() {
+
+//     }
+// }

@@ -13,3 +13,14 @@ pub trait ManagedTypeRegistration: GetTypeRegistration {
     /// takes all fields of this enum/struc/etc.., and returns a vec with their type registrations.
     fn get_all_type_registrations() -> Vec<TypeRegistration>;
 }
+
+// trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
+// pub trait Structure<T> {
+//     /// returns the name of the structure this struct refers to. 
+//     fn name(value: T) -> String;
+// }
+
+// returns a list of filters from the given T 
+// pub trait FilterList<T> {
+//     fn filter_list(value: T) -> Vec<???>
+// }

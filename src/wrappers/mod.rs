@@ -5,3 +5,4 @@ pub mod material;
 pub mod mesh;
 pub mod rigidbodies;
 pub mod friction;
+pub mod urdf;
