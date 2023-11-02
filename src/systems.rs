@@ -6,6 +6,15 @@ use bevy::ecs::query::ReadOnlyWorldQuery;
 use bevy::asset::Asset;
 
 
+// pub fn collect_as_one<F, ThingSet, WrapperSet> (
+//     thing: In<(Vec<String>)>,
+// ) -> WrapperSet
+//     // where:
+//     //     ThingSet: 
+// {
+    
+// }
+
 // pub fn serialize_as_one<F, ThingSet, WrapperThing>(
 //     mut commands: Commands,
 // ) 

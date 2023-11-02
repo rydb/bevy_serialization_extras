@@ -18,6 +18,7 @@ moonshine-save = "0.3.3"
 bevy_egui = "0.22"
 egui = "0.23"
 egui_extras = "0.23"
+urdf-rs = "0.7.1"
 
 strum = "0.25"
 strum_macros = "0.25"
