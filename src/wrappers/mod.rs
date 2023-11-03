@@ -7,5 +7,5 @@ pub mod rigidbodies;
 pub mod friction;
 pub mod urdf;
 pub mod link;
-pub mod joint;
+//pub mod joint;
 pub mod mass;

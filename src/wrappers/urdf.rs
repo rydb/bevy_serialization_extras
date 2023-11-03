@@ -6,10 +6,10 @@ use urdf_rs::{Robot, Joint};
 
 use crate::traits::FromStructure;
 
-use super::{material::MaterialFlag, link::LinkFlag, joint::JointFlag};
-// pub struct LinkWrapper {}
+// use super::{material::MaterialFlag, link::LinkFlag, joint::JointFlag};
+// // pub struct LinkWrapper {}
 
-type RobotPropertiesAsTuple = (String, LinkFlag, JointFlag, MaterialFlag);
+// type RobotPropertiesAsTuple = (String, LinkFlag, JointFlag, MaterialFlag);
 
 // impl FromStructure<RobotPropertiesAsTuple> for Robot {
 //     fn from_world(value: RobotPropertiesAsTuple, world: &World) -> Self {

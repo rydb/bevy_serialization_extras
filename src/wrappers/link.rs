@@ -1,6 +1,8 @@
 
-use bevy::prelude::Component;
-use urdf_rs::Link;
+use bevy::prelude::{Component, Transform};
+use bevy_rapier3d::prelude::ImpulseJoint;
+
+use crate::traits::FromStructure;
 
 use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag};
 pub struct LinkStructure {
@@ -39,6 +41,59 @@ impl From<LinkFlag> for LinkAsTuple {
         )
     }
 }
+
+pub struct Dynamics {
+    pub damping: f64,
+    pub friction: f64,
+}
+
+pub struct JointLimit {
+    pub lower: f64,
+    pub upper: f64,
+    pub effort: f64,
+    pub velocity: f64,
+}
+
+/// Recieves joint movements from joint sender flag
+#[derive(Component)]
+pub struct JointRecieverFlag {
+    pub id: String
+}
+
+/// Sends joint movements to all joint recievers with equivilent ids. 
+#[derive(Component)]
+pub struct JointSenderFlag {
+    pub id: String
+}
+
+#[derive(Component)]
+pub struct JointFlag {
+    //pub name: JointStructure,
+    //pub joint_type:
+    pub offset: Transform,
+    // the parent is the entity holding the impulse joint, the "parent", is implied. A joint parent/reciever cannot exist if the parent doesnt exist,
+    // but the exact parent is liable to change at runtime. Making the "parent", distiction redundant. 
+    //pub parent: String,
+    pub reciever: String,
+    //pub axis: 
+    pub limit: JointLimit,
+    pub dynamics: Option<Dynamics>,
+    //pub mimic: Option<Mimic>
+    //pub safety_controller: Option<SafetyController>,
+
+}
+
+// impl FromStructure<(LinkFlag, JointFlag)> for ImpulseJoint {
+//     fn from_world(value: (LinkFlag, JointFlag), world: &bevy::prelude::World) -> Self {
+        
+//     }
+// }
+
+// impl From<ImpulseJoint> for JointFlag {
+//     fn from(value: ImpulseJoint) -> Self {
+        
+//     }
+// }
 
 // /// Urdf Link element
 // /// See <http://wiki.ros.org/urdf/XML/link> for more detail.
