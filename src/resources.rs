@@ -12,7 +12,7 @@ pub struct RefreshCounter {
 }
 
 /// Resource version of moonshine-save's [`SaveFilter`]. 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Clone)]
 pub struct SerializeFilter {
     pub filter: SaveFilter
 }

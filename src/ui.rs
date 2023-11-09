@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow, reflect::TypeInfo};
 use bevy_egui::EguiContext;
 use egui::{RichText, Color32};
 use std::collections::HashMap;
@@ -30,7 +30,7 @@ pub fn update_last_saved_typedata(
     .map(|id| {
         let type_id = id.type_id();
 
-        return (type_id, id.type_name().to_owned())
+        return (type_id, TypeInfo::type_path(id.type_info()).to_owned())
     })
     .collect::<HashMap<TypeId, String>>();
     

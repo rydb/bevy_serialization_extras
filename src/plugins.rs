@@ -1,10 +1,10 @@
 
 use std::{marker::PhantomData, any::TypeId};
-use bevy::core_pipeline::core_3d::Camera3dDepthTextureUsage;
+use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_rapier3d::prelude::AsyncCollider;
 use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on_request};
 use moonshine_save::save::SaveSet;
-use bevy::{asset::Asset, reflect::TypeUuid};
+use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
@@ -30,8 +30,8 @@ impl<T, U> Plugin for SerializeComponentFor<T, U>
         let mut skip_list = app.world
             .get_resource_or_insert_with::<L>(| |L::default());
 
-
-        skip_list.filter.components.deny_by_id(TypeId::of::<T>());
+        let skip_list_copy = skip_list.clone();
+        skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<T>());
 
         let type_registry = app.world.resource::<AppTypeRegistry>();
         for registration in U::get_all_type_registrations().into_iter() {
@@ -69,7 +69,8 @@ impl<T, U> Plugin for SerializeAssetFor<T, U>
         let mut skip_list = app.world
             .get_resource_or_insert_with::<L>(| |L::default());
 
-        skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
+        let skip_list_copy = skip_list.clone();
+        skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
 
 
         app
@@ -87,6 +88,7 @@ impl<T, U> Plugin for SerializeAssetFor<T, U>
         ;
     }
 } 
+
 /// Plugin for deserialization for WrapperComponent -> Asset.
 /// This is for assets that don't have 1:1 conversions from asset to warpper.
 /// 
@@ -99,14 +101,16 @@ pub struct DeserializeAssetFrom<U, T> {
 impl<U, T> Plugin for DeserializeAssetFrom<U, T>
     where
         U: 'static + Component + ManagedTypeRegistration,
-        T: 'static + Asset + TypeUuid + for<'a> Unwrap<&'a U>,
+        T: 'static + Asset + for<'a> Unwrap<&'a U>,
  {
     fn build(&self, app: &mut App) {
         type L = SerializeFilter;
         let mut skip_list = app.world
             .get_resource_or_insert_with::<L>(| |L::default());
 
-        skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
+        let skip_list_copy = skip_list.clone();
+        skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
+        //skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
         
         let type_registry = app.world.resource::<AppTypeRegistry>();
         for registration in U::get_all_type_registrations().into_iter() {
@@ -160,6 +164,8 @@ impl Plugin for SerializationPlugin {
         .register_type::<AlphaMode>()
         .register_type::<ParallaxMappingMethod>()
         .register_type::<Camera3dDepthTextureUsage>()
+        .register_type::<InheritedVisibility>()
+        .register_type::<ScreenSpaceTransmissionQuality>()
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<LoadRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_changed::<RefreshCounter>()))
@@ -168,15 +174,16 @@ impl Plugin for SerializationPlugin {
             save_default_with(save_filter)
             .into_file_on_request::<SaveRequest>()             
         )
-        .add_systems(Update, add_computed_visiblity.after(LoadSet::PostLoad))
+        .add_systems(Update, add_inherieted_visibility.after(LoadSet::PostLoad))
+        .add_systems(Update, add_view_visibility.after(LoadSet::PostLoad))
         .add_systems(Update, 
             load_from_file_on_request::<LoadRequest>())
-        ;    
+        ;  
     }
 }
 // save filter for this library.
 fn save_filter(f: Res<SerializeFilter>) -> SaveFilter {
-    let mut f_modified =     f.filter.clone();
-    f_modified.components.deny::<ComputedVisibility>();
+    let f_modified =     f.filter.clone();
+    //f_modified.components.deny::<ComputedVisibility>();
     f_modified
 }

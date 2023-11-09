@@ -1,7 +1,5 @@
-use bevy::reflect::TypeUuid;
 use bevy::prelude::*;
 use crate::traits::*;
-use bevy::ecs::query::ReadOnlyWorldQuery;
 
 use bevy::asset::Asset;
 
@@ -90,7 +88,7 @@ pub fn deserialize_wrapper_for<WrapperThing, Thing> (
 ) 
     where
         WrapperThing: Component,
-        Thing: Asset + TypeUuid + for<'a> Unwrap<&'a WrapperThing>,
+        Thing: Asset + for<'a> Unwrap<&'a WrapperThing>,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         let thing_fetch_attempt = Thing::unwrap(wrapper_thing);
@@ -149,13 +147,23 @@ pub fn deserialize_for<WrapperThing, Thing>(
 }
 /// adds computed visability to componnets that don't have it. this should probably be removed
 /// at some point...
-pub fn add_computed_visiblity(
-    computed_visiblity_query: Query<Entity, Without<ComputedVisibility>>,
+pub fn add_inherieted_visibility(
+    computed_visiblity_query: Query<Entity, Without<InheritedVisibility>>,
     mut commands: Commands,
     
 ) {
     for e in computed_visiblity_query.iter() {
-        commands.entity(e).insert(ComputedVisibility::default());
+        commands.entity(e).insert(InheritedVisibility::default());
+    }
+}
+
+pub fn add_view_visibility(
+    computed_visiblity_query: Query<Entity, Without<ViewVisibility>>,
+    mut commands: Commands,
+    
+) {
+    for e in computed_visiblity_query.iter() {
+        commands.entity(e).insert(ViewVisibility::default());
     }
 }
 

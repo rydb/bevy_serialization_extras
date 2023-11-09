@@ -1,7 +1,79 @@
 (
   resources: {},
   entities: {
-    4294967298: (
+    2: (
+      components: {
+        "bevy_transform::components::transform::Transform": (
+          translation: (
+            x: 0.0,
+            y: 0.5,
+            z: 0.0,
+          ),
+          rotation: (
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 1.0,
+          ),
+          scale: (
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+          ),
+        ),
+        "bevy_transform::components::global_transform::GlobalTransform": ((
+          matrix3: (
+            x_axis: (
+              x: 1.0,
+              y: 0.0,
+              z: 0.0,
+            ),
+            y_axis: (
+              x: 0.0,
+              y: 1.0,
+              z: 0.0,
+            ),
+            z_axis: (
+              x: 0.0,
+              y: 0.0,
+              z: 1.0,
+            ),
+          ),
+          translation: (
+            x: 0.0,
+            y: 0.5,
+            z: 0.0,
+          ),
+        )),
+        "bevy_render::view::visibility::Visibility": Inherited,
+        "bevy_render::view::visibility::InheritedVisibility": (true),
+        "bevy_render::view::visibility::ViewVisibility": (true),
+        "bevy_serialization_extras::wrappers::mesh::GeometryFlag": Primitive(Box(
+          size: (1.0, 1.0, 1.0),
+        )),
+        "bevy_serialization_extras::wrappers::material::MaterialFlag": (
+          color: Rgba(
+            red: 1.0,
+            green: 0.0,
+            blue: 0.0,
+            alpha: 1.0,
+          ),
+        ),
+        "bevy_render::primitives::Aabb": (
+          center: (
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+          ),
+          half_extents: (
+            x: 0.5,
+            y: 0.5,
+            z: 0.5,
+          ),
+        ),
+      },
+    ),
+    3: (
       components: {
         "bevy_transform::components::transform::Transform": (
           translation: (
@@ -9,7 +81,12 @@
             y: 8.0,
             z: 4.0,
           ),
-          rotation: (0.0, 0.0, 0.0, 1.0),
+          rotation: (
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 1.0,
+          ),
           scale: (
             x: 1.0,
             y: 1.0,
@@ -41,6 +118,8 @@
           ),
         )),
         "bevy_render::view::visibility::Visibility": Inherited,
+        "bevy_render::view::visibility::InheritedVisibility": (true),
+        "bevy_render::view::visibility::ViewVisibility": (true),
         "bevy_pbr::light::PointLight": (
           color: Rgba(
             red: 1.0,
@@ -59,7 +138,7 @@
         "bevy_render::primitives::CubemapFrusta": (),
       },
     ),
-    4294967299: (
+    4: (
       components: {
         "bevy_transform::components::transform::Transform": (
           translation: (
@@ -67,7 +146,12 @@
             y: 2.5,
             z: 5.0,
           ),
-          rotation: (-0.2117188, -0.18465966, -0.040773313, 0.95886046),
+          rotation: (
+            x: -0.2117188,
+            y: -0.18465966,
+            z: -0.040773313,
+            w: 0.95886046,
+          ),
           scale: (
             x: 1.0,
             y: 1.0,
@@ -98,6 +182,8 @@
             z: 5.0,
           ),
         )),
+        "bevy_render::view::visibility::InheritedVisibility": (false),
+        "bevy_render::view::visibility::ViewVisibility": (false),
         "bevy_render::camera::camera::Camera": (
           viewport: None,
           order: 0,
@@ -118,6 +204,8 @@
           clear_color: Default,
           depth_load_op: Clear(0.0),
           depth_texture_usages: (16),
+          screen_space_specular_transmission_steps: 1,
+          screen_space_specular_transmission_quality: Medium,
         ),
         "bevy_core_pipeline::tonemapping::Tonemapping": TonyMcMapface,
         "bevy_core_pipeline::tonemapping::DebandDither": Enabled,
@@ -135,71 +223,6 @@
             far_z_mode: MaxLightRange,
           ),
           dynamic_resizing: true,
-        ),
-      },
-    ),
-    4294967300: (
-      components: {
-        "bevy_transform::components::transform::Transform": (
-          translation: (
-            x: 0.0,
-            y: 0.5,
-            z: 0.0,
-          ),
-          rotation: (0.0, 0.0, 0.0, 1.0),
-          scale: (
-            x: 1.0,
-            y: 1.0,
-            z: 1.0,
-          ),
-        ),
-        "bevy_transform::components::global_transform::GlobalTransform": ((
-          matrix3: (
-            x_axis: (
-              x: 1.0,
-              y: 0.0,
-              z: 0.0,
-            ),
-            y_axis: (
-              x: 0.0,
-              y: 1.0,
-              z: 0.0,
-            ),
-            z_axis: (
-              x: 0.0,
-              y: 0.0,
-              z: 1.0,
-            ),
-          ),
-          translation: (
-            x: 0.0,
-            y: 0.5,
-            z: 0.0,
-          ),
-        )),
-        "bevy_render::view::visibility::Visibility": Inherited,
-        "bevy_serialization_extras::wrappers::mesh::GeometryFlag": Primitive(Box(
-          size: (1.0, 1.0, 1.0),
-        )),
-        "bevy_serialization_extras::wrappers::material::MaterialFlag": (
-          color: Rgba(
-            red: 1.0,
-            green: 0.0,
-            blue: 0.0,
-            alpha: 1.0,
-          ),
-        ),
-        "bevy_render::primitives::Aabb": (
-          center: (
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-          ),
-          half_extents: (
-            x: 0.5,
-            y: 0.5,
-            z: 0.5,
-          ),
         ),
       },
     ),

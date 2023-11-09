@@ -10,26 +10,26 @@ description = "A crate for managing serialization with moonshine_save + wrappers
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.11"
-bevy_rapier3d = "0.22"
+bevy = "0.12"
+bevy_rapier3d = "0.23"
 glam = "0.24"
 ron = "0.8"
-moonshine-save = "0.3.3"
-bevy_egui = "0.22"
+moonshine-save = "0.3.4"
+bevy_egui = "0.23"
 egui = "0.23"
 egui_extras = "0.23"
-urdf-rs = "0.7.1"
+urdf-rs = "0.8.0"
 
 strum = "0.25"
 strum_macros = "0.25"
 
 [dev-dependencies]
-bevy = {version = "0.11", features = ["dynamic_linking"]}
-bevy_ui_extras = "0.2"
+bevy = {version = "0.12", features = ["dynamic_linking"]}
+bevy_ui_extras = "0.3"
 #bevy_editor_extras = "0.1"
-bevy_mod_raycast = "0.14"
-bevy-inspector-egui = "0.20.0"
-bevy_component_extras = "0.1"
+#bevy_mod_raycast = "0.15"
+bevy-inspector-egui = "0.21.0"
+#bevy_component_extras = "0.1"
 
 #[features]
 #ui-utils = ["dep:egui", "dep:egui_extras", "dep:bevy_egui"]

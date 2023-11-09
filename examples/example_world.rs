@@ -7,7 +7,6 @@ use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRe
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
-//use bevy_editor_extras::plugins::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
@@ -17,6 +16,7 @@ const SAVES_LOCATION: &str = "assets/saves";
 
 
 fn main() {
+
     App::new()
 
     .insert_resource(SetSaveFile{name: "red".to_owned()})
@@ -37,11 +37,13 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // plane
-    commands.spawn(PbrBundle {
+    commands.spawn(
+        PbrBundle {
         mesh: meshes.add(shape::Plane::from_size(5.0).into()),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
         ..default()
-    });
+    },
+    );
     // cube
     commands.spawn(
         (

@@ -1,4 +1,4 @@
-use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{With, World}};
+use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World}, ecs::query::WorldQuery};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing. 
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
@@ -14,11 +14,11 @@ pub trait ManagedTypeRegistration: GetTypeRegistration {
     fn get_all_type_registrations() -> Vec<TypeRegistration>;
 }
 
-// trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
-// pub trait Structure<T> {
-//     /// returns the name of the structure this struct refers to. 
-//     fn name(value: T) -> String;
-// }
+///trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
+pub trait Structure {
+    /// returns the name of the structure this struct refers to. 
+    fn structure(self) -> String;
+}
 
 // returns a list of filters from the given T 
 // pub trait CollectFromQuery<T> {
@@ -28,9 +28,10 @@ pub trait ManagedTypeRegistration: GetTypeRegistration {
 
 
 /// creates the struct via components that reference the same structure, but are individually distributed.
-pub trait FromStructure<T>: Sized {
-    fn from_world(value: T, world: &World) -> Self;
+pub trait FromStructure<T: WorldQuery>: Sized {
+    fn from_world(query: T, world: &World) -> Self;
 }
+
 
 // pub trait CollectFromQuery<T> {
 //     fn return_vecs() -> Vec<Vec<_>>;

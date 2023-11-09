@@ -1,46 +1,48 @@
 
-use bevy::prelude::{Component, Transform};
+use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery};
 use bevy_rapier3d::prelude::ImpulseJoint;
+use bevy::ecs::world::World;
+use crate::traits::{FromStructure, Structure};
+use bevy::prelude::*;
 
-use crate::traits::FromStructure;
-
-use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag};
-pub struct LinkStructure {
-    pub name: String, 
-}
+use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag, urdf};
+// pub struct LinkStructure {
+//     pub name: String, 
+// }
 
 #[derive(Component)]
 pub struct LinkFlag {
-    pub name: LinkStructure,
+    pub structure: String,
+    pub name: String,
     pub inertial: MassFlag,
     pub visual: GeometryFlag,
     pub collision: ColliderFlag,
 }
 
 /// all of the things that compose a "Link"
-type LinkAsTuple = (LinkStructure, MassFlag, GeometryFlag, ColliderFlag);
+// type LinkAsTuple = (String, MassFlag, GeometryFlag, ColliderFlag);
 
-impl From<LinkAsTuple> for LinkFlag {
-    fn from(value: LinkAsTuple) -> Self {
-        Self {
-            name: value.0,
-            inertial: value.1,
-            visual: value.2,
-            collision: value.3,
-        }
-    }
-}
+// impl From<LinkAsTuple> for LinkFlag {
+//     fn from(value: LinkAsTuple) -> Self {
+//         Self {
+//             name: value.0,
+//             inertial: value.1,
+//             visual: value.2,
+//             collision: value.3,
+//         }
+//     }
+// }
 
-impl From<LinkFlag> for LinkAsTuple {
-    fn from(value: LinkFlag) -> Self {
-        (
-            value.name,
-            value.inertial,
-            value.visual,
-            value.collision
-        )
-    }
-}
+// impl From<LinkFlag> for LinkAsTuple {
+//     fn from(value: LinkFlag) -> Self {
+//         (
+//             value.name,
+//             value.inertial,
+//             value.visual,
+//             value.collision
+//         )
+//     }
+// }
 
 pub struct Dynamics {
     pub damping: f64,
@@ -59,6 +61,22 @@ pub struct JointLimit {
 pub struct JointRecieverFlag {
     pub id: String
 }
+
+
+#[derive(WorldQuery)]
+struct Linkage {
+    //entity: Entity,
+    // It is required that all reference lifetimes are explicitly annotated, just like in any
+    // struct. Each lifetime should be 'static.
+    link: &'static LinkFlag,
+    joint: &'static JointFlag,
+}
+
+// impl Structure for Linkage {
+//     fn name(self) -> String {
+//         self.link.structure.clone()
+//     }
+// }
 
 /// Sends joint movements to all joint recievers with equivilent ids. 
 #[derive(Component)]
@@ -83,10 +101,27 @@ pub struct JointFlag {
 
 }
 
-// impl FromStructure<(LinkFlag, JointFlag)> for ImpulseJoint {
-//     fn from_world(value: (LinkFlag, JointFlag), world: &bevy::prelude::World) -> Self {
+// pub fn deserialize_from_structure<T, U>(
+//     structure_query: Query<T>
+// ) 
+//     where 
+//         T: WorldQuery,
+// {
+//     let same_structured = structure_query.iter().filter()
+// }
+
+// impl FromStructure<Linkage> for ImpulseJoint {
+//     fn from_world(query: Linkage, world: &World) -> Self {
+//         let links_and_joints = world.query::<Linkage>();
+
+//         for 
+
         
 //     }
+//     // fn from_world(world: &World) -> Self {        
+//     //     //let link_query = world.;
+//     //     let link_query = world.query::<&LinkFlag>();
+//     // }
 // }
 
 // impl From<ImpulseJoint> for JointFlag {
