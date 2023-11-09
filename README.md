@@ -28,3 +28,7 @@ A library for bevy which contains wrappers/systems for managing serialization in
 
 For implementations of plugin trait bounds, see `Wrappers`
 
+### TODO
+
+- Add a mechanism for updating from old save versions to new save versions as to not break old save files.
+
