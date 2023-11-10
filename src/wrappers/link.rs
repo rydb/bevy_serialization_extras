@@ -65,12 +65,45 @@ pub struct JointRecieverFlag {
 
 #[derive(WorldQuery)]
 struct Linkage {
-    //entity: Entity,
+    entity: Entity,
     // It is required that all reference lifetimes are explicitly annotated, just like in any
     // struct. Each lifetime should be 'static.
     link: &'static LinkFlag,
     joint: &'static JointFlag,
 }
+
+
+pub fn from_structure<T, U>(
+    commands: Commands,
+    structure_query: Query<T>,
+) 
+    where
+        T: WorldQuery,
+        U: From<T>
+{
+    for thing in structure_query.iter() {
+        let x = U::from(thing);
+    }
+}
+
+impl From<Linkage> for ImpulseJoint {
+    fn from(value: Linkage) -> Self {
+        Self { 
+            parent: value.entity,
+            data: self::default(), // for debug, need to implement this later
+        }
+    }
+}
+
+// impl FromStructure<Linkage> for ImpulseJoint {
+//     fn from_world(world: &World) -> Self {
+//         let joint_query = world.query::<Linkage>();
+
+//         for e in joint_query.iter() {
+
+//         }
+//     }
+// }
 
 // impl Structure for Linkage {
 //     fn name(self) -> String {

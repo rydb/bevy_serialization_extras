@@ -29,7 +29,7 @@ pub trait Structure {
 
 /// creates the struct via components that reference the same structure, but are individually distributed.
 pub trait FromStructure<T: WorldQuery>: Sized {
-    fn from_world(query: T, world: &World) -> Self;
+    fn from_world(world: &World) -> Self;
 }
 
 
