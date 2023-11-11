@@ -1,11 +1,12 @@
 
 use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
-use bevy_rapier3d::prelude::AsyncCollider;
+use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
 use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on_request};
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
+use crate::wrappers::link::Linkage;
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
 use moonshine_save::prelude::save_default_with;
@@ -87,7 +88,8 @@ impl<T, U> Plugin for SerializeAssetFor<T, U>
         )
         ;
     }
-} 
+}
+
 
 /// Plugin for deserialization for WrapperComponent -> Asset.
 /// This is for assets that don't have 1:1 conversions from asset to warpper.
@@ -122,6 +124,8 @@ impl<U, T> Plugin for DeserializeAssetFrom<U, T>
                 deserialize_wrapper_for::<U, T>
             ).after(LoadSet::PostLoad)
         )
+
+        
         ;
     }
 } 
@@ -166,6 +170,7 @@ impl Plugin for SerializationPlugin {
         .register_type::<Camera3dDepthTextureUsage>()
         .register_type::<InheritedVisibility>()
         .register_type::<ScreenSpaceTransmissionQuality>()
+        //.add_systems(Update, from_structure::<Linkage, ImpulseJoint>)
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<LoadRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_changed::<RefreshCounter>()))

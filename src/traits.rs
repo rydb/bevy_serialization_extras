@@ -1,4 +1,4 @@
-use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World}, ecs::query::WorldQuery};
+use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World, Entity}, ecs::query::WorldQuery};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing. 
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
@@ -25,7 +25,14 @@ pub trait Structure {
 //     fn filter_list(value: T) -> Vec<With>
 // }
 
+// pub trait BoundEntiy {
 
+// }
+
+/// A trait to be applied to bound queries to fetch the current entity of a specific query iteration.
+pub trait AssociatedEntity<T> {
+    fn associated_entity(value: T) -> Entity;
+}
 
 /// creates the struct via components that reference the same structure, but are individually distributed.
 pub trait FromStructure<T: WorldQuery>: Sized {

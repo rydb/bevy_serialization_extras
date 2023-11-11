@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ecs::query::WorldQuery};
 use crate::traits::*;
 
 use bevy::asset::Asset;
@@ -51,6 +51,23 @@ pub fn serialize_for<Thing, WrapperThing>(
         commands.entity(e).insert(
 
             WrapperThing::from(f)
+        );
+    }
+}
+
+/// Takes a query based interpretation of thing(`thing` that is composted of several components), and decomposes it into a single component
+pub fn deserialize_from_query<T, U>(
+    mut commands: Commands,
+    structure_query: Query<T>,
+) 
+    where
+        T: WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        U: Component + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+{
+    for thing_query in structure_query.iter() {
+        let unwrapped_thing = U::from(&thing_query);
+        commands.entity(T::associated_entity(&thing_query)).insert(
+            unwrapped_thing
         );
     }
 }

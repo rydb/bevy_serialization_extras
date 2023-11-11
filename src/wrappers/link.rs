@@ -2,7 +2,7 @@
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery};
 use bevy_rapier3d::prelude::ImpulseJoint;
 use bevy::ecs::world::World;
-use crate::traits::{FromStructure, Structure};
+use crate::traits::{FromStructure, Structure, AssociatedEntity};
 use bevy::prelude::*;
 
 use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag, urdf};
@@ -64,7 +64,7 @@ pub struct JointRecieverFlag {
 
 
 #[derive(WorldQuery)]
-struct Linkage {
+pub struct Linkage {
     entity: Entity,
     // It is required that all reference lifetimes are explicitly annotated, just like in any
     // struct. Each lifetime should be 'static.
@@ -73,25 +73,20 @@ struct Linkage {
 }
 
 
-pub fn from_structure<T, U>(
-    commands: Commands,
-    structure_query: Query<T>,
-) 
-    where
-        T: WorldQuery,
-        U: From<T>
-{
-    for thing in structure_query.iter() {
-        let x = U::from(thing);
-    }
-}
 
-impl From<Linkage> for ImpulseJoint {
-    fn from(value: Linkage) -> Self {
+
+impl From<&LinkageItem<'_>> for ImpulseJoint {
+    fn from(value: &LinkageItem) -> Self {
         Self { 
             parent: value.entity,
             data: self::default(), // for debug, need to implement this later
         }
+    }
+}
+
+impl AssociatedEntity<LinkageItem<'_>> for Linkage {
+    fn associated_entity(value: LinkageItem<'_>) -> Entity {
+        value.entity
     }
 }
 
