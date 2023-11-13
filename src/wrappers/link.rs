@@ -2,7 +2,7 @@
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery};
 use bevy_rapier3d::prelude::ImpulseJoint;
 use bevy::ecs::world::World;
-use crate::traits::{FromStructure, Structure, AssociatedEntity};
+use crate::traits::{FromStructure, Structure, AssociatedEntity, Unfold};
 use bevy::prelude::*;
 
 use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag, urdf};
@@ -49,6 +49,7 @@ pub struct Dynamics {
     pub friction: f64,
 }
 
+#[derive(Default)]
 pub struct JointLimit {
     pub lower: f64,
     pub upper: f64,
@@ -84,6 +85,14 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
     }
 }
 
+impl From<ImpulseJoint> for JointFlag {
+    fn from(value: ImpulseJoint) -> Self {
+        Self {
+            ..default()
+        }
+    }
+}
+
 impl AssociatedEntity<LinkageItem<'_>> for Linkage {
     fn associated_entity(value: LinkageItem<'_>) -> Entity {
         value.entity
@@ -112,7 +121,7 @@ pub struct JointSenderFlag {
     pub id: String
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct JointFlag {
     //pub name: JointStructure,
     //pub joint_type:

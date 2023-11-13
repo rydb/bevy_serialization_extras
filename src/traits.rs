@@ -34,6 +34,11 @@ pub trait AssociatedEntity<T> {
     fn associated_entity(value: T) -> Entity;
 }
 
+/// denotes that this struct unfolds into something else. Usually means that the struct is "object oriented", and can be unfolded into an ECS compliant variant. 
+pub trait Unfold<T> {
+    fn unfolded(value: T) -> Self;
+}
+
 /// creates the struct via components that reference the same structure, but are individually distributed.
 pub trait FromStructure<T: WorldQuery>: Sized {
     fn from_world(world: &World) -> Self;

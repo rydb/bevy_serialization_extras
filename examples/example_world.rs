@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, bundles::physics::PhysicsBundle};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
@@ -50,7 +50,7 @@ fn setup(
         ModelBundle {
             mesh: shape::Cube {size: 1.0}.into(),
             material: Color::GREEN.into(),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            transform: Transform::from_xyz(0.0, 10.0, 0.0),
             ..default()
         },
         //PhysicsBundle::default(),

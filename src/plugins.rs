@@ -1,12 +1,14 @@
 
 use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
+use bevy::ecs::query::WorldQuery;
 use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
 use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on_request};
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
-use crate::wrappers::link::Linkage;
+use crate::traits::AssociatedEntity;
+use crate::wrappers::link::{Linkage, JointFlag};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
 use moonshine_save::prelude::save_default_with;
@@ -14,6 +16,54 @@ use moonshine_save::prelude::SaveFilter;
 use crate::ui::update_last_saved_typedata;
 use super::systems::*;
 use super::resources::*;
+
+
+pub struct SerializeQueryFor<S, T, U> {
+    query: PhantomData<fn() -> S>,
+    thing: PhantomData<fn() -> T>,
+    wrapper_thing: PhantomData<fn() -> U>,
+}
+
+impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
+    where
+        S: 'static + WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        T: 'static + Component + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T>
+{
+    fn build(&self, app: &mut App) {
+        type L = SerializeFilter;
+
+        let mut skip_list = app.world
+            .get_resource_or_insert_with::<L>(| |L::default());
+
+        let skip_list_copy = skip_list.clone();
+        skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<T>());
+
+        app
+        .register_type::<U>()
+        .add_systems(PreUpdate,
+            (
+             serialize_for::<T, U>,
+            ).before(SaveSet::Save)
+        )
+        .add_systems(Update, 
+            (
+                deserialize_as_one::<S, T>
+            ).after(LoadSet::PostLoad)
+        )
+        ;
+    }
+}
+
+impl<S, T, U> Default for SerializeQueryFor<S, T, U> {
+    fn default() -> Self {
+        Self {
+            query: PhantomData,
+            thing: PhantomData,
+            wrapper_thing: PhantomData,
+        }
+    }
+}
 
 /// plugin for serialization for WrapperComponent -> Component, Component -> WrapperComponent
 #[derive(Default)]
@@ -154,6 +204,7 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
+        //.add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
         ;
 
         app
