@@ -6,9 +6,10 @@ pub trait Unwrap<T>: Sized {
     fn unwrap(value: T) -> Result<Self, String>;
 }
 
-/// trait that denotes that enum/struct/etc.. can fetch all of the type registrations of it self
+/// trait that denotes that enum/struct/etc.. can fetch all of the type registrations needed of itself.
 ///
-/// !!!(TODO) there should be a way to ensure test cases for this are satisfied !!!
+/// this is placeholder to fill the gap of recursive type registration,
+/// See: https://github.com/bevyengine/bevy/issues/4154
 pub trait ManagedTypeRegistration: GetTypeRegistration {
     /// takes all fields of this enum/struc/etc.., and returns a vec with their type registrations.
     fn get_all_type_registrations() -> Vec<TypeRegistration>;

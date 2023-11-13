@@ -28,7 +28,7 @@ impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
     where
         S: 'static + WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
         T: 'static + Component + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
-        U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T>
+        U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration
 {
     fn build(&self, app: &mut App) {
         type L = SerializeFilter;
@@ -38,9 +38,12 @@ impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
 
         let skip_list_copy = skip_list.clone();
         skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<T>());
-
+        
+        let type_registry = app.world.resource::<AppTypeRegistry>();
+        for registration in U::get_all_type_registrations().into_iter() {
+            type_registry.write().add_registration(registration)
+        }
         app
-        .register_type::<U>()
         .add_systems(PreUpdate,
             (
              serialize_for::<T, U>,
@@ -204,7 +207,7 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
-        //.add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
+        .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
         ;
 
         app

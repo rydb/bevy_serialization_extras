@@ -1,8 +1,8 @@
 
-use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery};
+use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
 use bevy_rapier3d::prelude::ImpulseJoint;
 use bevy::ecs::world::World;
-use crate::traits::{FromStructure, Structure, AssociatedEntity, Unfold};
+use crate::traits::{FromStructure, Structure, AssociatedEntity, Unfold, ManagedTypeRegistration};
 use bevy::prelude::*;
 
 use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag, urdf};
@@ -18,38 +18,13 @@ pub struct LinkFlag {
     pub visual: GeometryFlag,
     pub collision: ColliderFlag,
 }
-
-/// all of the things that compose a "Link"
-// type LinkAsTuple = (String, MassFlag, GeometryFlag, ColliderFlag);
-
-// impl From<LinkAsTuple> for LinkFlag {
-//     fn from(value: LinkAsTuple) -> Self {
-//         Self {
-//             name: value.0,
-//             inertial: value.1,
-//             visual: value.2,
-//             collision: value.3,
-//         }
-//     }
-// }
-
-// impl From<LinkFlag> for LinkAsTuple {
-//     fn from(value: LinkFlag) -> Self {
-//         (
-//             value.name,
-//             value.inertial,
-//             value.visual,
-//             value.collision
-//         )
-//     }
-// }
-
+#[derive(Default, Reflect)]
 pub struct Dynamics {
     pub damping: f64,
     pub friction: f64,
 }
 
-#[derive(Default)]
+#[derive(Default, Reflect)]
 pub struct JointLimit {
     pub lower: f64,
     pub upper: f64,
@@ -85,35 +60,19 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
     }
 }
 
-impl From<ImpulseJoint> for JointFlag {
-    fn from(value: ImpulseJoint) -> Self {
+impl From<&ImpulseJoint> for JointFlag {
+    fn from(value: &ImpulseJoint) -> Self {
         Self {
             ..default()
         }
     }
 }
 
-impl AssociatedEntity<LinkageItem<'_>> for Linkage {
-    fn associated_entity(value: LinkageItem<'_>) -> Entity {
+impl AssociatedEntity<&LinkageItem<'_>> for Linkage {
+    fn associated_entity(value: &LinkageItem<'_>) -> Entity {
         value.entity
     }
 }
-
-// impl FromStructure<Linkage> for ImpulseJoint {
-//     fn from_world(world: &World) -> Self {
-//         let joint_query = world.query::<Linkage>();
-
-//         for e in joint_query.iter() {
-
-//         }
-//     }
-// }
-
-// impl Structure for Linkage {
-//     fn name(self) -> String {
-//         self.link.structure.clone()
-//     }
-// }
 
 /// Sends joint movements to all joint recievers with equivilent ids. 
 #[derive(Component)]
@@ -121,7 +80,7 @@ pub struct JointSenderFlag {
     pub id: String
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
 pub struct JointFlag {
     //pub name: JointStructure,
     //pub joint_type:
@@ -132,10 +91,23 @@ pub struct JointFlag {
     pub reciever: String,
     //pub axis: 
     pub limit: JointLimit,
-    pub dynamics: Option<Dynamics>,
+    pub dynamics: Dynamics,
     //pub mimic: Option<Mimic>
     //pub safety_controller: Option<SafetyController>,
 
+}
+
+impl ManagedTypeRegistration for JointFlag {
+    fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {
+        let mut type_registry = Vec::new();
+
+        type_registry.push(JointLimit::get_type_registration());
+        type_registry.push(Dynamics::get_type_registration());
+        type_registry.push(JointFlag::get_type_registration());
+
+        return type_registry
+        
+    }
 }
 
 // pub fn deserialize_from_structure<T, U>(
