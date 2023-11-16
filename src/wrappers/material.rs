@@ -1,10 +1,20 @@
 use bevy::prelude::*;
 
+
+
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]
 pub struct MaterialFlag {
     color: Color
 }
+
+#[derive(Component, Reflect, Clone, Default)]
+#[reflect(Component)]
+pub struct MaterialFile {
+    path: String, 
+}
+
+
 
 impl From<&MaterialFlag> for StandardMaterial {
     fn from(value: &MaterialFlag) -> Self {

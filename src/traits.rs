@@ -20,6 +20,10 @@ pub trait Structure {
     /// returns the name of the structure this struct refers to. 
     fn structure(self) -> String;
 }
+/// indicates that this is something to be appended to a resource
+pub trait AppendToResource {
+    fn push(self);
+}
 
 // returns a list of filters from the given T 
 // pub trait CollectFromQuery<T> {

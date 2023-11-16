@@ -1,4 +1,4 @@
-use bevy::{prelude::*, ecs::query::WorldQuery};
+use bevy::{prelude::*, ecs::query::{WorldQuery, self}, asset::io::AssetSource};
 use crate::traits::*;
 
 use bevy::asset::Asset;
@@ -72,16 +72,20 @@ pub fn deserialize_as_one<T, U>(
     }
 }
 
-// /// takes a component that contains the info of several things, and converts it into one thing
-// pub fn serialize_as_one<T, U>(
-//     mut commands: Commands,
-// ) 
-//     where
-//         T: Component
+//takes a query, and serializes the components inside that query into a single resource
+pub fn serialize_as_one<T, U, V>(
+    mut commands: Commands,
+    thing_set_query: Query<T>
+) 
+    where
+        T: WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        U: AppendToResource,
+        V: Resource
+{
+    for thing_set in thing_set_query.iter() {
 
-// {
-
-// }
+    } 
+}
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (
@@ -173,6 +177,7 @@ pub fn deserialize_for<WrapperThing, Thing>(
         );
     }
 }
+
 /// adds computed visability to componnets that don't have it. this should probably be removed
 /// at some point...
 pub fn add_inherieted_visibility(
@@ -194,6 +199,7 @@ pub fn add_view_visibility(
         commands.entity(e).insert(ViewVisibility::default());
     }
 }
+
 
 // pub fn query_test(
 //     query: Query<(&Name, &Transform)>,

@@ -1,33 +1,87 @@
 
 // use bevy::core::Name;
 use bevy::{prelude::*, ecs::query::WorldQuery};
-use bevy_egui::EguiContext;
-use urdf_rs::{Robot, Joint};
 
 use crate::traits::FromStructure;
+
+use super::{mass::MassFlag, mesh::GeometryFlag, colliders::ColliderFlag, material::{MaterialFlag, MaterialFile}, link::{LinkFlag, JointFlag}};
 
 // use super::{material::MaterialFlag, link::LinkFlag, joint::JointFlag};
 // // pub struct LinkWrapper {}
 
-// type RobotPropertiesAsTuple = (String, LinkFlag, JointFlag, MaterialFlag);
 
-// impl FromStructure<RobotPropertiesAsTuple> for Robot {
-//     fn from_world(value: RobotPropertiesAsTuple, world: &World) -> Self {
-//         //let b = value.2;
-//         let links_query = world.query::<value.1>();
-//         let joints_query = world.query::<value.2>();
-//         let materials_query = world.query::<value.3>();
+#[derive(WorldQuery)]
+pub struct UrdfQuery {
+    entity: Entity,
+    link: &'static LinkFlag,
+    visual: &'static GeometryFlag,
+    joint: Option<&'static JointFlag>,
+    material: Option<&'static MaterialFlag>,
+}
 
+
+
+// pub fn file_check<T, U>(
+//     file_query: Query<(Entity, &T, Option<&U>)>
+// ) -> Vec<(Entity, Result<T, U>)>
+//     where
+//         T: Component,
+//         U: Component
+// {
+//     let v = Vec::new();
+//     for (e, thing, thing_file_check) in file_query.iter() {
+//             match thing_file_check {
+//                 Some(file) => v.push((e, Ok(file))),
+//                 None => v.push((e, Err(thing)))
+//             }
 //     }
-
+//     return v
 // }
-// pub struct UrdfFlag {
+
+// impl FileCheck<MaterialFile> for MaterialFlag {
+//     fn return_file(file_query: Query<(&Self, Option<&MaterialFile>)>) -> Vec<Result<MaterialFile, Self>> {
+//         let v = Vec::new();
+
+//         for (item, file_check) in file_query.iter() {
+//             match file_check {
+//                 Some(file) => v.push(Ok(file.clone())),
+//                 None => v.push(Err(item))
+//             }
+//         }
+//         return v
+//     }
+// }
+
+// pub trait FileCheck<T> 
+//     where
+//         Self: Sized + Component,
+//         T: Component
+// {
+//     fn return_file(file_query: Query<(&Self, Option<&T>)>) -> Vec<Result<T, Self>>;
+// }
+
+pub struct UrdfStructure {
+    
+    pub structure: String,
+    pub links: Vec<LinkFlag>,
+    pub joints: Vec<JointFlag>,
+    pub materials: Vec<MaterialFlag>
+
+}
+
+// /// Top level struct to access urdf.
+// #[derive(Debug, YaDeserialize, YaSerialize, Clone)]
+// #[yaserde(rename = "robot", namespace = "http://www.ros.org")]
+// pub struct Robot {
+//     #[yaserde(attribute)]
 //     pub name: String,
 
+//     #[yaserde(rename = "link")]
 //     pub links: Vec<Link>,
 
+//     #[yaserde(rename = "joint")]
 //     pub joints: Vec<Joint>,
 
+//     #[yaserde(rename = "material")]
 //     pub materials: Vec<Material>,
-
-// };
+// }
