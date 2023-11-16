@@ -21,7 +21,7 @@ pub trait Structure {
     fn structure(self) -> String;
 }
 /// indicates that this is something to be appended to a resource
-pub trait AppendToResource {
+pub trait AppendToResource<T> {
     fn push(self);
 }
 

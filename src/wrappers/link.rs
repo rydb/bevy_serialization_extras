@@ -68,12 +68,6 @@ impl From<&ImpulseJoint> for JointFlag {
     }
 }
 
-impl AssociatedEntity<&LinkageItem<'_>> for Linkage {
-    fn associated_entity(value: &LinkageItem<'_>) -> Entity {
-        value.entity
-    }
-}
-
 /// Sends joint movements to all joint recievers with equivilent ids. 
 #[derive(Component)]
 pub struct JointSenderFlag {

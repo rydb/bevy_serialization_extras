@@ -26,7 +26,7 @@ pub struct SerializeQueryFor<S, T, U> {
 
 impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
     where
-        S: 'static + WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        S: 'static + WorldQuery,
         T: 'static + Component + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
         U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration
 {

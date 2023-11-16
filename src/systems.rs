@@ -1,4 +1,4 @@
-use bevy::{prelude::*, ecs::query::{WorldQuery, self}, asset::io::AssetSource};
+use bevy::{prelude::*, ecs::{query::{WorldQuery, self, ReadOnlyWorldQuery}, system::ReadOnlySystemParam}, asset::io::AssetSource};
 use crate::traits::*;
 
 use bevy::asset::Asset;
@@ -58,34 +58,34 @@ pub fn serialize_for<Thing, WrapperThing>(
 /// Takes a query based interpretation of thing(`thing` that is composted of several components), and decomposes it into a single component
 pub fn deserialize_as_one<T, U>(
     mut commands: Commands,
-    structure_query: Query<T>,
+    structure_query: Query<(Entity, T)>,
 ) 
     where
-        T: WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        T: WorldQuery,
         U: Component + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
 {
-    for thing_query in structure_query.into_iter() {
+    for (e, thing_query) in structure_query.into_iter() {
         let unwrapped_thing = U::from(&thing_query);
-        commands.entity(T::associated_entity(&thing_query)).insert(
+        commands.entity(e).insert(
             unwrapped_thing
         );
     }
 }
 
 //takes a query, and serializes the components inside that query into a single resource
-pub fn serialize_as_one<T, U, V>(
-    mut commands: Commands,
-    thing_set_query: Query<T>
-) 
-    where
-        T: WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
-        U: AppendToResource,
-        V: Resource
-{
-    for thing_set in thing_set_query.iter() {
+// pub fn serialize_as_one<T, U, V>(
+//     mut commands: Commands,
+//     thing_set_query: Query<Entity, T>
+// ) 
+//     where
+//         T: WorldQuery + for<'a, 'b> AssociatedEntity<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+//         U: AppendToResource,
+//         V: Resource
+// {
+//     for thing_set in thing_set_query.iter() {
 
-    } 
-}
+//     } 
+// }
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (
