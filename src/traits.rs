@@ -16,9 +16,9 @@ pub trait ManagedTypeRegistration: GetTypeRegistration {
 }
 
 ///trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
-pub trait Structure {
+pub trait Structure<T> {
     /// returns the name of the structure this struct refers to. 
-    fn structure(self) -> String;
+    fn structure(value: T) -> String;
 }
 /// indicates that this is something to be appended to a resource
 pub trait AppendToResource<T> {

@@ -19,7 +19,7 @@ bevy_egui = "0.23"
 egui = "0.23"
 egui_extras = "0.23"
 urdf-rs = "0.8.0"
-
+multimap = "0.9.1"
 strum = "0.25"
 strum_macros = "0.25"
 

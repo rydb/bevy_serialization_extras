@@ -2,7 +2,7 @@
 // use bevy::core::Name;
 use bevy::{prelude::*, ecs::query::WorldQuery};
 
-use crate::traits::FromStructure;
+use crate::traits::{FromStructure, Structure};
 
 use super::{mass::MassFlag, mesh::GeometryFlag, colliders::ColliderFlag, material::{MaterialFlag, MaterialFile}, link::{LinkFlag, JointFlag}};
 
@@ -12,14 +12,38 @@ use super::{mass::MassFlag, mesh::GeometryFlag, colliders::ColliderFlag, materia
 
 #[derive(WorldQuery)]
 pub struct UrdfQuery {
-    entity: Entity,
     link: &'static LinkFlag,
     visual: &'static GeometryFlag,
     joint: Option<&'static JointFlag>,
-    material: Option<&'static MaterialFlag>,
+    material: Option<FileCheck<MaterialFlag, MaterialFile>>,
 }
 
 
+impl Structure<&UrdfQueryItem<'_>> for UrdfQuery {
+    fn structure(value: &UrdfQueryItem<'_>) -> String {
+        value.link.name.clone()
+    }
+}
+
+// #[derive(WorldQuery)]
+// pub struct UrdfQuery {
+//     link: &'static LinkFlag,
+//     visual: &'static GeometryFlag,
+//     joint: Option<&'static JointFlag>,
+//     material: Option<&'static MaterialFlag>,
+// }
+
+#[derive(WorldQuery)]
+pub struct FileCheck<T, U>
+    where
+        T: Component,
+        U: Component 
+{
+    component: &'static T,
+    component_file: Option<&'static U>
+
+
+}
 
 // pub fn file_check<T, U>(
 //     file_query: Query<(Entity, &T, Option<&U>)>
