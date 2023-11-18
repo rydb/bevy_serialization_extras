@@ -1,6 +1,7 @@
 
 // use bevy::core::Name;
 use bevy::{prelude::*, ecs::query::WorldQuery};
+use urdf_rs::Robot;
 
 use crate::traits::{FromStructure, Structure};
 
@@ -18,6 +19,14 @@ pub struct UrdfQuery {
     material: Option<FileCheck<MaterialFlag, MaterialFile>>,
 }
 
+
+// impl<'w, 's> From<Query<'w, 's, &UrdfQuery>> for Robot {
+
+// }
+
+trait FromQuery<T: WorldQuery> {
+    fn from_query(query: Query<T>);
+}
 
 impl Structure<&UrdfQueryItem<'_>> for UrdfQuery {
     fn structure(value: &UrdfQueryItem<'_>) -> String {

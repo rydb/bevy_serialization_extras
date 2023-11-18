@@ -66,31 +66,32 @@ pub fn deserialize_as_one<T, U>(
 }
 
 //takes a query, and serializes the components inside that query into a single resource
-// pub fn serialize_as_one<'a, T, U, V>(
-//     //mut commands: Commands,
-//     thing_set_query: Query<'a, 'a, T>
-// ) 
-//     where
-//         T: WorldQuery + ReadOnlyWorldQuery + for<'b> Structure<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
-//         U: ,//AppendToResource,
-//         V: Resource
-// {
-//     let mut thing_structures: HashMap<String, Vec<<T as WorldQuery>::Item<'a>>> = HashMap::new();
+pub fn serialize_as_one<T, U, V>(
+    //mut commands: Commands,
+    thing_set_query: Query<(Entity, T)>
+) 
+    where
+        T: WorldQuery + ReadOnlyWorldQuery + for<'a> Structure<<<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        U: for<'w, 's> From<Query<'w, 's, (Entity, T)>>,
+        V: Resource,
+{
+    let mut thing_structures: HashMap<String, Vec<Entity>> = HashMap::new();
 
-//     // collect all things that share the same structure, into a hashmap, where each "structure" string represents the structure they below to
-//     // and each vec for that structure string represents how many thing_sets share that structure.
-//     for thing_set in thing_set_query.iter() {
 
-//         thing_structures.entry(T::structure(&thing_set))
-//         .or_default()
-//         .push(thing_set)
-//         ;
+    let urdf_resource = U::from(thing_set_query);
+    // for (e, thing_set) in thing_set_query.iter() {
 
-//     } 
-//     for (structure_name, things) in thing_structures.iter() {
-//         // shove each structure into a "urdf" resource vec  
-//     }
-// }
+    //     thing_structures.entry(T::structure(thing_set))
+    //     .or_default()
+    //     .push(e)
+    //     ;
+
+    // } 
+    // for (structure_name, thing_set_) in thing_structures.iter() {
+    //     // let thing_set = thing_set_query.get(thing_set_entity);
+    //     for thing_
+    // }
+}
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (
