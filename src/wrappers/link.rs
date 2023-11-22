@@ -2,22 +2,40 @@
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
 use bevy_rapier3d::prelude::ImpulseJoint;
 use bevy::ecs::world::World;
-use crate::traits::{FromStructure, Structure, AssociatedEntity, Unfold, ManagedTypeRegistration};
+use crate::{traits::{FromStructure, Structure, AssociatedEntity, Unfold, ManagedTypeRegistration}, queries::FileCheck};
 use bevy::prelude::*;
 
-use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag, urdf};
+use super::{mesh::{GeometryFlag, GeometryFile}, colliders::ColliderFlag, mass::MassFlag, urdf};
 // pub struct LinkStructure {
 //     pub name: String, 
 // }
 
-#[derive(Component, Clone)]
-pub struct LinkFlag {
-    pub structure: String,
+// #[derive(Component, Clone)]
+// pub struct LinkFlag {
+//     pub structure: String,
+//     pub name: String,
+//     pub inertial: MassFlag,
+//     pub visual: GeometryFlag,
+//     pub collision: ColliderFlag,
+// }
+
+/// the "super-structure" that this entity is related to, relevant for serializing disconnected by related entities 
+#[derive(Component)]
+pub struct StructureFlag {
     pub name: String,
-    pub inertial: MassFlag,
-    pub visual: GeometryFlag,
-    pub collision: ColliderFlag,
 }
+
+/// the collection of things that qualify as a "link", in the ROS 2 context. 
+#[derive(WorldQuery)]
+pub struct LinkQuery {
+    pub name: &'static Name,
+    pub structure: &'static StructureFlag,
+    pub inertial: Option<&'static MassFlag>,
+    pub visual: FileCheck<GeometryFlag, GeometryFile>,
+    pub collision: Option<&'static ColliderFlag>,
+
+}
+
 #[derive(Default, Reflect, Clone)]
 pub struct Dynamics {
     pub damping: f64,
@@ -44,7 +62,7 @@ pub struct Linkage {
     entity: Entity,
     // It is required that all reference lifetimes are explicitly annotated, just like in any
     // struct. Each lifetime should be 'static.
-    link: &'static LinkFlag,
+    link: LinkQuery,
     joint: &'static JointFlag,
 }
 

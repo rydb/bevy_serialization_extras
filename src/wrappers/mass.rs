@@ -1,5 +1,6 @@
+use bevy::ecs::component::Component;
 use bevy_rapier3d::prelude::AdditionalMassProperties;
-#[derive(Clone)]
+#[derive(Component, Clone)]
 pub struct MassFlag {
     mass: f32
 }
