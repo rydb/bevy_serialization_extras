@@ -22,6 +22,7 @@ urdf-rs = "0.8.0"
 multimap = "0.9.1"
 strum = "0.25"
 strum_macros = "0.25"
+bitflags = "*"
 
 [dev-dependencies]
 bevy = {version = "0.12", features = ["dynamic_linking"]}

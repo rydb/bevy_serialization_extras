@@ -1,7 +1,9 @@
 
+use std::collections::HashMap;
+
 // use bevy::core::Name;
-use bevy::{prelude::*, ecs::query::WorldQuery, utils::HashMap};
-use urdf_rs::Robot;
+use bevy::{prelude::*, ecs::query::WorldQuery};
+use urdf_rs::{Robot, Joint};
 
 use crate::{traits::{FromStructure, Structure}, queries::FileCheck};
 
@@ -60,6 +62,44 @@ use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{Mater
 //                 }
 //             )
 //         }
+//     }
+// }
+
+// pub struct UrdfQuery {
+
+// }
+
+#[derive(Default, Resource)]
+pub struct Urdfs {
+    pub world_urdfs: HashMap<String, Robot>
+}
+
+// impl From<Query<'_, '_, LinkQuery>> for Urdfs {
+//     fn from(value: Query<LinkQuery>) -> Self {
+//         let mut urdf_map = Self::default();
+//         for link in value.iter() {
+//             let structure_name = link.structure.name;
+//             let mut entry = urdf_map.world_urdfs.entry(structure_name)
+//             .or_insert(Robot { name: link.structure.name, links: Vec::new(), joints: Vec::new(), materials: Vec::new() })
+//             ;
+            
+//             match link.joint {
+//                 Some(joint) => {
+//                     entry.joints.push(
+//                         Joint {
+//                             name: link.name.unwrap_or(&Name::new(entry.joints.len().to_string()  + "_joint")).to_string()
+//                             joint_type: 
+//                         }
+//                     )
+//                 }
+//                 None => {}
+                
+//                 //entry.joints.push(joint.into())
+//             }
+
+//             urdf_map.world_urdfs[&structure_name] = entry.to_owned();
+//         }
+//         return urdf_map
 //     }
 // }
 
@@ -143,10 +183,7 @@ trait FromQuery<T: WorldQuery> {
 
 // }
 
-#[derive(Default, Resource)]
-pub struct Urdfs {
-    pub world_urdfs: HashMap<String, Robot>
-}
+
 
 // /// Top level struct to access urdf.
 // #[derive(Debug, YaDeserialize, YaSerialize, Clone)]
