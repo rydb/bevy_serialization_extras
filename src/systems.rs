@@ -66,7 +66,7 @@ pub fn deserialize_as_one<T, U>(
 }
 
 //takes a query, and serializes the components inside that query into a single resource
-pub fn serialize_as_one<T, U, V>(
+pub fn serialize_as_one_resource<T, U, V>(
     //mut commands: Commands,
     thing_set_query: Query<(Entity, T)>
 ) 

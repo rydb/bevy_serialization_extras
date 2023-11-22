@@ -5,24 +5,57 @@ use urdf_rs::Robot;
 
 use crate::traits::{FromStructure, Structure};
 
-use super::{mass::MassFlag, mesh::GeometryFlag, colliders::ColliderFlag, material::{MaterialFlag, MaterialFile}, link::{LinkFlag, JointFlag}};
+use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{LinkFlag, JointFlag}};
 
 // use super::{material::MaterialFlag, link::LinkFlag, joint::JointFlag};
 // // pub struct LinkWrapper {}
 
 
-#[derive(WorldQuery)]
+#[derive(WorldQuery, Clone)]
 pub struct UrdfQuery {
-    link: &'static LinkFlag,
-    visual: &'static GeometryFlag,
-    joint: Option<&'static JointFlag>,
-    material: Option<FileCheck<MaterialFlag, MaterialFile>>,
+    pub link: &'static LinkFlag,
+    pub visual: FileCheck<GeometryFlag, GeometryFile>,
+    pub joint_check: Option<&'static JointFlag>,
+    pub material_check: Option<FileCheck<MaterialFlag, MaterialFile>>,
 }
 
 
-// impl<'w, 's> From<Query<'w, 's, &UrdfQuery>> for Robot {
+impl FromQuery<UrdfQuery> for UrdfStructure {
+    fn from_query(query: Query<UrdfQuery>) {
+        let mut urdf_structure = UrdfStructure::default();
+        for item in query.iter() {
+            //let x = item.link.clone();
+            urdf_structure.links.push(item.link.clone());
+            urdf_structure.visuals.push(
+                match item.visual.component_file {
+                    None => GeometrySource::Primitive(item.visual.component.clone()),
+                    Some(file) => GeometrySource::File(file.clone()) 
+                }
 
-// }
+            );
+            urdf_structure.materials.push(
+            if let Some(material) = item.material_check {
+
+                    match material.component_file {
+                        None => Some(MaterialSource::Wrapper(material.component.clone())),
+                        Some(file) => Some(MaterialSource::File(file.clone()))
+                    }
+                
+
+            } else {
+                None
+            }
+            );
+            urdf_structure.joints.push(
+                if let Some(joint) = item.joint_check {
+                    Some(joint.clone())
+                } else {
+                    None
+                }
+            )
+        }
+    }
+}
 
 trait FromQuery<T: WorldQuery> {
     fn from_query(query: Query<T>);
@@ -42,14 +75,14 @@ impl Structure<&UrdfQueryItem<'_>> for UrdfQuery {
 //     material: Option<&'static MaterialFlag>,
 // }
 
-#[derive(WorldQuery)]
+#[derive(Debug, WorldQuery, Clone)]
 pub struct FileCheck<T, U>
     where
-        T: Component,
-        U: Component 
+        T: Component + Clone,
+        U: Component + Clone, 
 {
-    component: &'static T,
-    component_file: Option<&'static U>
+    pub component: &'static T,
+    pub component_file: Option<&'static U>
 
 
 }
@@ -92,13 +125,14 @@ pub struct FileCheck<T, U>
 // {
 //     fn return_file(file_query: Query<(&Self, Option<&T>)>) -> Vec<Result<T, Self>>;
 // }
-
+#[derive(Default)]
 pub struct UrdfStructure {
     
-    pub structure: String,
+    pub name: String,
     pub links: Vec<LinkFlag>,
-    pub joints: Vec<JointFlag>,
-    pub materials: Vec<MaterialFlag>
+    pub visuals: Vec<GeometrySource>,
+    pub joints: Vec<Option<JointFlag>>,
+    pub materials: Vec<Option<MaterialSource>>
 
 }
 

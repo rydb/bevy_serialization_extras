@@ -1,17 +1,22 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ecs::query::WorldQuery};
 
 
 
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]
 pub struct MaterialFlag {
-    color: Color
+    pub color: Color
+}
+
+pub enum MaterialSource {
+    Wrapper(MaterialFlag),
+    File(MaterialFile),
 }
 
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]
 pub struct MaterialFile {
-    path: String, 
+    pub path: String, 
 }
 
 

@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, bundles::physics::PhysicsBundle};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, wrappers::{mesh::GeometryFlag, material::{MaterialFlag, MaterialFile}, urdf::FileCheck}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
@@ -11,6 +11,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
 use bevy_serialization_extras::ui::*;
+use urdf_rs::Geometry;
 use std::env;
 const SAVES_LOCATION: &str = "assets/saves";
 
@@ -29,6 +30,17 @@ fn main() {
         .add_systems(Update, manage_serialization_ui)
         .run();
 }
+
+// pub fn filecheck_check(
+//     check: Query<FileCheck<MaterialFlag, MaterialFile>>
+// ) {
+//     for item in check.iter() {
+//         match item.component_file {
+//             None => println!("found component but not file"),
+//             Some(file) => println!("found file for thing")
+//         }
+//     }
+// }
 
 /// set up a simple 3D scene
 fn setup(

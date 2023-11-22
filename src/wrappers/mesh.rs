@@ -13,10 +13,30 @@ use bevy::render::mesh::shape::Plane;
 #[reflect(Component)]
 pub enum GeometryFlag{
     Primitive(MeshPrimitive),
-    Mesh {
-        filename: String,
-        scale: Option<Vec3>,
-    },
+    // Mesh {
+    //     filename: String,
+    //     scale: Option<Vec3>,
+    // },
+}
+
+#[derive(Component, Reflect, Clone, EnumIter)]
+#[reflect(Component)]
+pub enum GeometrySource {
+    Primitive(GeometryFlag),
+    File(GeometryFile),
+}
+
+impl Default for GeometrySource {
+    fn default() -> Self {
+        Self::Primitive(GeometryFlag::default())
+    }
+}
+
+
+#[derive(Default, Component, Reflect, Clone)]
+#[reflect(Component)]
+pub struct GeometryFile {
+    path: String
 }
 
 impl ManagedTypeRegistration for GeometryFlag {
@@ -28,7 +48,7 @@ impl ManagedTypeRegistration for GeometryFlag {
         for enum_variant in Self::iter() {
             match enum_variant {
                 Self::Primitive(..) => type_registry.push(MeshPrimitive::get_type_registration()),
-                Self::Mesh {..} => {}
+                //Self::Mesh {..} => {}
             }
         }
         return type_registry
@@ -40,10 +60,11 @@ impl ManagedTypeRegistration for GeometryFlag {
 /// represent failed load attempts. (TODO): add a system that picks up error meshes, and displays them somewhere.
 impl Default for GeometryFlag {
     fn default() -> Self {
-        Self::Mesh {
-            filename: "fallback.gltf".to_string(),
-            scale: None,
-        }        
+        Self::Primitive(MeshPrimitive::default())
+        // Self::Mesh {
+        //     filename: "fallback.gltf".to_string(),
+        //     scale: None,
+        // }        
     }
 }
 
@@ -114,14 +135,14 @@ impl From<Plane> for GeometryFlag {
     }
 }
 
-impl From<&str> for GeometryFlag {
-    fn from(value: &str) -> Self {
-        Self::Mesh {
-            filename: value.to_string(),
-            scale: None,
-        }
-    }
-}
+// impl From<&str> for GeometryFlag {
+//     fn from(value: &str) -> Self {
+//         Self::Mesh {
+//             filename: value.to_string(),
+//             scale: None,
+//         }
+//     }
+// }
 
 
 
@@ -151,7 +172,7 @@ impl Unwrap<&GeometryFlag> for Mesh {
                     },
                 }
             } 
-            GeometryFlag::Mesh { filename, .. } => Err(filename.to_string())
+            //GeometryFlag::Mesh { filename, .. } => Err(filename.to_string())
         }
     }
 }

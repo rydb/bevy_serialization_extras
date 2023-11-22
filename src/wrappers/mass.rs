@@ -1,4 +1,5 @@
 use bevy_rapier3d::prelude::AdditionalMassProperties;
+#[derive(Clone)]
 pub struct MassFlag {
     mass: f32
 }

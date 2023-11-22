@@ -10,7 +10,7 @@ use super::{mesh::GeometryFlag, colliders::ColliderFlag, mass::MassFlag, urdf};
 //     pub name: String, 
 // }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct LinkFlag {
     pub structure: String,
     pub name: String,
@@ -18,13 +18,13 @@ pub struct LinkFlag {
     pub visual: GeometryFlag,
     pub collision: ColliderFlag,
 }
-#[derive(Default, Reflect)]
+#[derive(Default, Reflect, Clone)]
 pub struct Dynamics {
     pub damping: f64,
     pub friction: f64,
 }
 
-#[derive(Default, Reflect)]
+#[derive(Default, Reflect, Clone)]
 pub struct JointLimit {
     pub lower: f64,
     pub upper: f64,
@@ -47,7 +47,6 @@ pub struct Linkage {
     link: &'static LinkFlag,
     joint: &'static JointFlag,
 }
-
 
 
 
@@ -74,7 +73,7 @@ pub struct JointSenderFlag {
     pub id: String
 }
 
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default, Reflect, Clone)]
 pub struct JointFlag {
     //pub name: JointStructure,
     //pub joint_type:
