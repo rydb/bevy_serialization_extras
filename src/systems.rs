@@ -31,6 +31,37 @@ use bevy::asset::Asset;
 
 // }
 
+pub fn serialize_structures_as_resource<ThingSet, ThingResource> (
+    thing_query: Query<ThingSet>,
+    things_resource: ResMut<ThingResource>,
+    mut commands: Commands,
+)
+
+    where
+        ThingSet: WorldQuery,
+        ThingResource: Resource + for<'w, 's> From<Query<'w, 's, ThingSet>>,
+{
+    commands.insert_resource(
+        ThingResource::from(thing_query)       
+    )
+}
+
+pub fn deserialize_resource_as_structures<ThingResource, ThingSet>(
+    mut things_resource: ResMut<ThingResource>,
+    thing_query: Query<ThingSet>,
+    mut commands: Commands,
+) 
+    where
+        ThingSet: WorldQuery,
+        ThingResource: Resource + Clone + IntoIterator,
+{
+    for thing_set in things_resource.clone().into_iter() { 
+        // commands.spawn(
+        //     //...
+        // )
+    }
+}
+
 /// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Thing, WrapperThing>(
     thing_query: Query<(Entity, &Thing)>,

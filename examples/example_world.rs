@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, wrappers::link::JointAxesMask};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
@@ -28,6 +28,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         .add_systems(Update, manage_serialization_ui)
+        .add_systems(Update, axis_mask_test)
         .run();
 }
 
@@ -41,6 +42,10 @@ fn main() {
 //         }
 //     }
 // }
+
+pub fn axis_mask_test() {
+    println!("axis for x axis is: {:#?}", JointAxesMask::X)
+}
 
 /// set up a simple 3D scene
 fn setup(

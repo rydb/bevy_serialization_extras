@@ -1,4 +1,4 @@
-use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World, Entity}, ecs::query::WorldQuery};
+use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World, Entity}, ecs::{query::WorldQuery, bundle::Bundle}};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing. 
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
@@ -20,24 +20,16 @@ pub trait Structure<T> {
     /// returns the name of the structure this struct refers to. 
     fn structure(value: T) -> String;
 }
-/// indicates that this is something to be appended to a resource
-pub trait AppendToResource<T> {
-    fn push(self);
+
+
+pub trait AsBundle<T: Bundle> {
+    fn into_bundle(self) -> T;
 }
-
-// returns a list of filters from the given T 
-// pub trait CollectFromQuery<T> {
-//     fn filter_list(value: T) -> Vec<With>
-// }
-
-// pub trait BoundEntiy {
-
-// }
 
 /// A trait to be applied to bound queries to fetch the current entity of a specific query iteration.
-pub trait AssociatedEntity<T> {
-    fn associated_entity(value: T) -> Entity;
-}
+// pub trait AssociatedEntity<T> {
+//     fn associated_entity(value: T) -> Entity;
+// }
 
 /// denotes that this struct unfolds into something else. Usually means that the struct is "object oriented", and can be unfolded into an ECS compliant variant. 
 pub trait Unfold<T> {

@@ -7,7 +7,6 @@ use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
-use crate::traits::AssociatedEntity;
 use crate::wrappers::link::{Linkage, JointFlag};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
