@@ -7,7 +7,7 @@ use urdf_rs::{Robot, Joint, Pose};
 
 use crate::{traits::{FromStructure, Structure}, queries::FileCheck};
 
-use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMask}};
+use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery}};
 
 
 // use super::{material::MaterialFlag, link::LinkFlag, joint::JointFlag};
@@ -135,12 +135,14 @@ impl From<Query<'_, '_, LinkQuery>> for Urdfs {
                             },
                             parent: urdf_rs::LinkName { link: link_name.clone() },
                             child: urdf_rs::LinkName { link: joint.reciever.clone() },
+                            //(TODO) FIX THIS AFTER DEMO
                             axis: urdf_rs::Axis { 
                                 xyz:  {
-                                    let x = joint.limit_axes.contains(JointAxesMask::ANG_X) as u32 as f64;
-                                    let y = joint.limit_axes.contains(JointAxesMask::ANG_Y) as u32 as f64;
-                                    let z = joint.limit_axes.contains(JointAxesMask::ANG_Z) as u32 as f64;
-                                    urdf_rs::Vec3([x, y, z])
+                                    // let x = joint.limit_axes.contains(JointAxesMask::ANG_X) as u32 as f64;
+                                    // let y = joint.limit_axes.contains(JointAxesMask::ANG_Y) as u32 as f64;
+                                    // let z = joint.limit_axes.contains(JointAxesMask::ANG_Z) as u32 as f64;
+                                    // urdf_rs::Vec3([x, y, z])
+                                    urdf_rs::Vec3([0.0, 0.0, 0.0])
                                 }
                             },
                             limit: urdf_rs::JointLimit {
