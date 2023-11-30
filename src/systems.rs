@@ -46,13 +46,11 @@ pub fn serialize_structures_as_resource<ThingSet, ThingResource> (
     )
 }
 
-pub fn deserialize_resource_as_structures<ThingResource, ThingSet>(
+pub fn deserialize_resource_as_structures<ThingResource>(
     mut things_resource: ResMut<ThingResource>,
-    thing_query: Query<ThingSet>,
     mut commands: Commands,
 ) 
     where
-        ThingSet: WorldQuery,
         ThingResource: Resource + Clone + IntoIterator,
 {
     for thing_set in things_resource.clone().into_iter() { 

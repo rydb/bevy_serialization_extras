@@ -1,13 +1,13 @@
 
-use std::collections::HashMap;
+use std::{collections::HashMap, ffi::IntoStringError};
 
 // use bevy::core::Name;
-use bevy::{prelude::*, ecs::query::WorldQuery};
+use bevy::{prelude::*, ecs::query::WorldQuery, utils::hashbrown::hash_map::IntoIter};
 use urdf_rs::{Robot, Joint, Pose};
 
-use crate::{traits::{FromStructure, Structure}, queries::FileCheck};
+use crate::{traits::Structure, queries::FileCheck};
 
-use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery}};
+use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMask, LinkageItem, LinkQueryItem}};
 
 
 // use super::{material::MaterialFlag, link::LinkFlag, joint::JointFlag};
@@ -84,6 +84,52 @@ pub struct Urdfs {
 //     }
 // }
 
+// impl<'a> From<Robot> for LinkQueryItem<'a> {
+//     fn from(value: Robot) -> Self {
+//         Self {
+
+//         }
+//     }
+// }
+
+// impl<'a> From<Robot> for LinkQueryItem<'a> {
+//     fn from(value: Robot) -> Self {
+//         Self {
+
+//         }
+//     }
+// }
+
+// impl<'a> FromStructure<Robot> for LinkQueryItem<'a>{
+//     fn into_structures(value: Robot) -> HashMap<String, Self> {
+//         let link_hash_map = HashMap::new();
+
+//         for link in value.links {
+//             link_hash_map.entry(link.name)
+//             .or_insert(
+//                 Self {
+//                     name: Some(Name::new()value.name.into()),
+//                 }
+//             )
+//         }
+//     }
+// }
+
+pub trait FromStructure<T>
+    where
+        Self: Sized
+{
+    fn into_structures(value: T) -> HashMap<String, Self>;
+}
+
+// impl<'a> IntoIterator for &'a Robot {
+//     type Item = LinkQueryItem<'a>;
+//     type IntoIter = std::vec::IntoIter<Self::Item>;
+//     fn into_iter(self) -> Self::IntoIter {
+        
+//     }
+// }
+
 impl<'a> IntoIterator for &'a Urdfs {
     type Item = &'a Robot;
     type IntoIter = std::vec::IntoIter<Self::Item>;
@@ -96,6 +142,13 @@ impl<'a> IntoIterator for &'a Urdfs {
 
     }
 }
+
+// impl<'a> From<<&'a Urdfs as IntoIterator>::Item> for Query<'_, '_, LinkQuery> {
+//     fn from(value: <&'a Urdfs as IntoIterator>::Item) -> Self {
+        
+//     }
+// }
+
 
 // #[derive(Hash, Resource)]
 // pub struct Urdfs {
@@ -135,14 +188,12 @@ impl From<Query<'_, '_, LinkQuery>> for Urdfs {
                             },
                             parent: urdf_rs::LinkName { link: link_name.clone() },
                             child: urdf_rs::LinkName { link: joint.reciever.clone() },
-                            //(TODO) FIX THIS AFTER DEMO
                             axis: urdf_rs::Axis { 
                                 xyz:  {
-                                    // let x = joint.limit_axes.contains(JointAxesMask::ANG_X) as u32 as f64;
-                                    // let y = joint.limit_axes.contains(JointAxesMask::ANG_Y) as u32 as f64;
-                                    // let z = joint.limit_axes.contains(JointAxesMask::ANG_Z) as u32 as f64;
-                                    // urdf_rs::Vec3([x, y, z])
-                                    urdf_rs::Vec3([0.0, 0.0, 0.0])
+                                    let x = joint.limit_axes.contains(JointAxesMask::ANG_X) as u32 as f64;
+                                    let y = joint.limit_axes.contains(JointAxesMask::ANG_Y) as u32 as f64;
+                                    let z = joint.limit_axes.contains(JointAxesMask::ANG_Z) as u32 as f64;
+                                    urdf_rs::Vec3([x, y, z])
                                 }
                             },
                             limit: urdf_rs::JointLimit {

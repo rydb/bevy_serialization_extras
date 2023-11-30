@@ -36,10 +36,10 @@ pub trait Unfold<T> {
     fn unfolded(value: T) -> Self;
 }
 
-/// creates the struct via components that reference the same structure, but are individually distributed.
-pub trait FromStructure<T: WorldQuery>: Sized {
-    fn from_world(world: &World) -> Self;
-}
+// creates the struct via components that reference the same structure, but are individually distributed.
+// pub trait FromStructure<T: WorldQuery>: Sized {
+//     fn from_world(world: &World) -> Self;
+// }
 
 
 // pub trait CollectFromQuery<T> {

@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow, ecs::query::WorldQuery};
 use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
@@ -39,6 +39,25 @@ fn main() {
 //         match item.component_file {
 //             None => println!("found component but not file"),
 //             Some(file) => println!("found file for thing")
+//         }
+//     }
+// }
+
+// pub fn query_spawn_test<T: WorldQuery>(
+//     model_query: Query<T>,
+//     mut commands: Commands,
+// )
+//     where 
+//         //ensure query can be iterated through
+//         T: WorldQuery + IntoIterator,
+//         // ensure each world query item can be iterated through for its 
+//         for<'a> <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>: IntoIterator,
+// { 
+//     for i in model_query.iter() {
+//         let e = commands.spawn_empty().id();
+//         //model_query.
+//         for item in i.into_iter() {
+//             commands.entity(e).insert(item);
 //         }
 //     }
 // }
