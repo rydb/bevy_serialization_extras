@@ -7,8 +7,8 @@ use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
-use crate::wrappers::link::{Linkage, JointFlag};
-use crate::wrappers::urdf::FromStructure;
+use crate::wrappers::link::{Linkage, JointFlag, LinkQuery};
+use crate::wrappers::urdf::{FromStructure, Urdfs};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
 use moonshine_save::prelude::save_default_with;
@@ -209,7 +209,7 @@ impl<U, T> Default for SerializeManyAsOneFor<U, T> {
 
 impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
     where
-        T: 'static + WorldQuery + for<'a> Unwrap<&'a U>,
+        T: 'static + WorldQuery,
         U: 'static + Resource + Default + Clone + for<'w, 's> From<Query<'w, 's, T>> + FromStructure
 
  {
@@ -256,6 +256,9 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
         .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
+        //.add_plugins(SerializeComponentFor::<Mass, ColliderFlag>::default())
+
+        .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdfs>::default())
         ;
 
         app

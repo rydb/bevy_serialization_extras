@@ -72,7 +72,7 @@ use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{Mater
 
 //ReflectComponent
 
-#[derive(Default, Resource)]
+#[derive(Default, Resource, Clone)]
 pub struct Urdfs {
     pub world_urdfs: HashMap<String, Robot>
 }
@@ -115,7 +115,7 @@ pub struct Urdfs {
 //     }
 // }
 
-impl<'a> FromStructure for Res<'a, Urdfs> {
+impl<'a> FromStructure for Urdfs {
     fn into_structures(commands: &mut Commands, value: Self){
         for (name, robot) in value.world_urdfs.iter() {
             let mut structured_link_map = HashMap::new();
