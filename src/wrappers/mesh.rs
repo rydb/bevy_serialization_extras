@@ -36,7 +36,7 @@ impl Default for GeometrySource {
 #[derive(Default, Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFile {
-    path: String
+    pub path: String
 }
 
 impl ManagedTypeRegistration for GeometryFlag {

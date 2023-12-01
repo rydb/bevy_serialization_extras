@@ -2,7 +2,7 @@ use bevy::ecs::component::Component;
 use bevy_rapier3d::prelude::AdditionalMassProperties;
 #[derive(Component, Clone)]
 pub struct MassFlag {
-    mass: f32
+    pub mass: f32
 }
 
 impl From<MassFlag> for AdditionalMassProperties {

@@ -1,13 +1,13 @@
 
-use std::{collections::HashMap, ffi::IntoStringError};
+use std::{collections::HashMap, ffi::IntoStringError, rc::Rc, borrow::Cow};
 
 // use bevy::core::Name;
-use bevy::{prelude::*, ecs::query::WorldQuery, utils::hashbrown::hash_map::IntoIter};
+use bevy::{prelude::*, ecs::{query::WorldQuery, system::EntityCommands}, utils::hashbrown::hash_map::IntoIter, transform::commands};
 use urdf_rs::{Robot, Joint, Pose};
 
-use crate::{traits::Structure, queries::FileCheck};
+use crate::{traits::Structure, queries::{FileCheck, FileCheckItem}};
 
-use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMask, LinkageItem, LinkQueryItem}};
+use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMask, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag};
 
 
 // use super::{material::MaterialFlag, link::LinkFlag, joint::JointFlag};
@@ -100,26 +100,76 @@ pub struct Urdfs {
 //     }
 // }
 
-// impl<'a> FromStructure<Robot> for LinkQueryItem<'a>{
-//     fn into_structures(value: Robot) -> HashMap<String, Self> {
-//         let link_hash_map = HashMap::new();
-
-//         for link in value.links {
-//             link_hash_map.entry(link.name)
-//             .or_insert(
-//                 Self {
-//                     name: Some(Name::new()value.name.into()),
-//                 }
-//             )
-//         }
+// impl<'a> From<Robot> for Vec<LinkQueryItem<'a>> {
+//     fn from(value: Robot) -> Self {
+        
 //     }
 // }
+
+// impl<'a> IntoIterator for &'a Robot {
+//     type Item = LinkQueryItem<'a>;
+//     type IntoIter = std::vec::IntoIter<Self::Item>;
+    
+//     fn into_iter(self) -> Self::IntoIter {
+        
+//     }
+// }
+
+impl<'a> FromStructure<Robot> for LinkQueryItem<'a>{
+    fn into_structures(value: Robot) -> Vec<Self> {
+        let mut structured_link_map = HashMap::new();
+        let mut structured_joint_map = HashMap::new();
+        let mut structured_material_map = HashMap::new();
+        
+        for link in value.links {
+            structured_link_map.insert(link.name.clone(), link.clone());
+        }
+        for joint in value.joints {
+            structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
+        }
+        for material in value.materials {
+            structured_material_map.insert(material.name.clone(), material.clone());
+        }
+        let query_items =structured_link_map.iter().map(|(key, link)| 
+            {
+                LinkQueryItem {
+                    name: Some(&Name::new(link.name.clone())),
+                    structure: &StructureFlag { name: value.name.clone() },
+                    inertial: Some(&MassFlag { mass: link.inertial.mass.value as f32}), 
+                    // implement visual properly
+                    visual: FileCheckItem {component: &GeometryFlag::default(), component_file: None}, 
+                    // implement collision properly. Grouped colliders will need to be ignored for the sake of model coherence.
+                    collision: Some(&ColliderFlag::default()), 
+                    // implement joint loading properly..
+                    joint: Some(&JointFlag::default()) }
+            }
+        ).collect::<Vec<Self>>();
+    }
+}
+
+
+impl<'a> IntoIterator for LinkQueryItem<'a> {
+    type Item = EntityCommands;
+}
+
+// impl<'a> ComponentIter for LinkQueryItem<'a> {
+//     fn spawn_iter(commands: Commands) {
+//         commands.spawn()
+//     }
+// }
+
+
+
+
+pub trait ComponentIter {
+    fn spawn_iter(commands: Commands);
+}
 
 pub trait FromStructure<T>
     where
         Self: Sized
 {
-    fn into_structures(value: T) -> HashMap<String, Self>;
+    fn into_structures(value: T) -> Vec<Self>;
 }
 
 // impl<'a> IntoIterator for &'a Robot {
