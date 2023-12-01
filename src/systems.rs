@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use bevy::{prelude::*, ecs::{query::{WorldQuery, self, ReadOnlyWorldQuery}, system::ReadOnlySystemParam}, asset::io::AssetSource};
 use multimap::MultiMap;
-use crate::traits::*;
+use crate::{traits::*, wrappers::urdf::FromStructure};
 
 use bevy::asset::Asset;
 
@@ -47,17 +47,14 @@ pub fn serialize_structures_as_resource<ThingSet, ThingResource> (
 }
 
 pub fn deserialize_resource_as_structures<ThingResource>(
-    mut things_resource: ResMut<ThingResource>,
+    things_resource: Res<ThingResource>,
     mut commands: Commands,
 ) 
     where
-        ThingResource: Resource + Clone + IntoIterator,
+        ThingResource: Resource + Clone + FromStructure
 {
-    for thing_set in things_resource.clone().into_iter() { 
-        // commands.spawn(
-        //     //...
-        // )
-    }
+    //(TODO) get rid of this clone
+    FromStructure::into_structures(&mut commands, things_resource.into_inner().clone())
 }
 
 /// takes a component, and spawns a serializable copy of it on its entity

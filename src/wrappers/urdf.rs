@@ -115,42 +115,60 @@ pub struct Urdfs {
 //     }
 // }
 
-impl<'a> FromStructure<Robot> for LinkQueryItem<'a>{
-    fn into_structures(value: Robot) -> Vec<Self> {
-        let mut structured_link_map = HashMap::new();
-        let mut structured_joint_map = HashMap::new();
-        let mut structured_material_map = HashMap::new();
-        
-        for link in value.links {
-            structured_link_map.insert(link.name.clone(), link.clone());
-        }
-        for joint in value.joints {
-            structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
-        }
-        for material in value.materials {
-            structured_material_map.insert(material.name.clone(), material.clone());
-        }
-        let query_items =structured_link_map.iter().map(|(key, link)| 
-            {
-                LinkQueryItem {
-                    name: Some(&Name::new(link.name.clone())),
-                    structure: &StructureFlag { name: value.name.clone() },
-                    inertial: Some(&MassFlag { mass: link.inertial.mass.value as f32}), 
-                    // implement visual properly
-                    visual: FileCheckItem {component: &GeometryFlag::default(), component_file: None}, 
-                    // implement collision properly. Grouped colliders will need to be ignored for the sake of model coherence.
-                    collision: Some(&ColliderFlag::default()), 
-                    // implement joint loading properly..
-                    joint: Some(&JointFlag::default()) }
+impl<'a> FromStructure for Res<'a, Urdfs> {
+    fn into_structures(commands: &mut Commands, value: Self){
+        for (name, robot) in value.world_urdfs.iter() {
+            let mut structured_link_map = HashMap::new();
+            let mut structured_joint_map = HashMap::new();
+            let mut structured_material_map = HashMap::new();
+            
+            for link in &robot.links {
+                structured_link_map.insert(link.name.clone(), link.clone());
             }
-        ).collect::<Vec<Self>>();
+            for joint in &robot.joints {
+                structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
+            }
+            for material in &robot.materials {
+                structured_material_map.insert(material.name.clone(), material.clone());
+            }
+            // let query_items =structured_link_map.iter().map(|(key, link)| 
+            //     {
+            //         LinkQueryItem {
+            //             name: Some(&Name::new(link.name.clone())),
+            //             structure: &StructureFlag { name: value.name.clone() },
+            //             inertial: Some(&MassFlag { mass: link.inertial.mass.value as f32}), 
+            //             // implement visual properly
+            //             visual: FileCheckItem {component: &GeometryFlag::default(), component_file: None}, 
+            //             // implement collision properly. Grouped colliders will need to be ignored for the sake of model coherence.
+            //             collision: Some(&ColliderFlag::default()), 
+            //             // implement joint loading properly..
+            //             joint: Some(&JointFlag::default()) }
+            //     }
+            // ).collect::<Vec<Self>>();
+            for (key , link) in structured_link_map.iter() {
+                let mut e = commands.spawn_empty();
+    
+                e
+                .insert(Name::new(link.name.clone()))
+                .insert(StructureFlag { name: robot.name.clone() })
+                .insert(MassFlag { mass: link.inertial.mass.value as f32})
+                .insert(GeometryFlag::default())
+                .insert(ColliderFlag::default())
+                .insert(JointFlag::default())
+                ;
+            }
+        }
+
     }
 }
 
 
-impl<'a> IntoIterator for LinkQueryItem<'a> {
-    type Item = EntityCommands;
-}
+// impl<'a> IntoIterator for LinkQueryItem<'a> {
+//     type Item = EntityCommands;
+//     fn into_iter(self) -> Self::IntoIter {
+        
+//     }
+// }
 
 // impl<'a> ComponentIter for LinkQueryItem<'a> {
 //     fn spawn_iter(commands: Commands) {
@@ -165,11 +183,11 @@ pub trait ComponentIter {
     fn spawn_iter(commands: Commands);
 }
 
-pub trait FromStructure<T>
+pub trait FromStructure
     where
         Self: Sized
 {
-    fn into_structures(value: T) -> Vec<Self>;
+    fn into_structures(commands: &mut Commands, value: Self);
 }
 
 // impl<'a> IntoIterator for &'a Robot {
@@ -276,81 +294,6 @@ trait FromQuery<T: WorldQuery> {
     fn from_query(query: Query<T>);
 }
 
-// impl Structure<&UrdfQueryItem<'_>> for UrdfQuery {
-//     fn structure(value: &UrdfQueryItem<'_>) -> String {
-//         value.link.name.clone()
-//     }
-// }
-
-// #[derive(WorldQuery)]
-// pub struct UrdfQuery {
-//     link: &'static LinkFlag,
-//     visual: &'static GeometryFlag,
-//     joint: Option<&'static JointFlag>,
-//     material: Option<&'static MaterialFlag>,
-// }
-
-// #[derive(Debug, WorldQuery, Clone)]
-// pub struct FileCheck<T, U>
-//     where
-//         T: Component + Clone,
-//         U: Component + Clone, 
-// {
-//     pub component: &'static T,
-//     pub component_file: Option<&'static U>
-
-
-// }
-
-
-// pub fn file_check<T, U>(
-//     file_query: Query<(Entity, &T, Option<&U>)>
-// ) -> Vec<(Entity, Result<T, U>)>
-//     where
-//         T: Component,
-//         U: Component
-// {
-//     let v = Vec::new();
-//     for (e, thing, thing_file_check) in file_query.iter() {
-//             match thing_file_check {
-//                 Some(file) => v.push((e, Ok(file))),
-//                 None => v.push((e, Err(thing)))
-//             }
-//     }
-//     return v
-// }
-
-// impl FileCheck<MaterialFile> for MaterialFlag {
-//     fn return_file(file_query: Query<(&Self, Option<&MaterialFile>)>) -> Vec<Result<MaterialFile, Self>> {
-//         let v = Vec::new();
-
-//         for (item, file_check) in file_query.iter() {
-//             match file_check {
-//                 Some(file) => v.push(Ok(file.clone())),
-//                 None => v.push(Err(item))
-//             }
-//         }
-//         return v
-//     }
-// }
-
-// pub trait FileCheck<T> 
-//     where
-//         Self: Sized + Component,
-//         T: Component
-// {
-//     fn return_file(file_query: Query<(&Self, Option<&T>)>) -> Vec<Result<T, Self>>;
-// }
-// #[derive(Default)]
-// pub struct UrdfStructure {
-    
-//     pub name: String,
-//     pub links: Vec<LinkFlag>,
-//     pub visuals: Vec<GeometrySource>,
-//     pub joints: Vec<Option<JointFlag>>,
-//     pub materials: Vec<Option<MaterialSource>>
-
-// }
 
 
 

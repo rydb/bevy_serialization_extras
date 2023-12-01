@@ -3,7 +3,7 @@ use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::Get
 use bevy_rapier3d::{prelude::ImpulseJoint, na::SimdBool};
 use bevy::ecs::world::World;
 use urdf_rs::Joint;
-use crate::{traits::{ManagedTypeRegistration, AsBundle}, queries::FileCheck};
+use crate::{traits::{ManagedTypeRegistration, AsBundle}, queries::{FileCheck, FileCheckItem}};
 use bevy::prelude::*;
 
 
@@ -38,6 +38,16 @@ pub struct LinkQuery {
     pub collision: Option<&'static ColliderFlag>,
     pub joint: Option<&'static JointFlag>,
 }
+
+// #[derive(WorldQuery)]
+// pub struct LinkBundle {
+//     pub name: Name,
+//     pub structure: StructureFlag,
+//     pub inertial: MassFlag,
+//     pub visual: 
+//     pub collision: ColliderFlag,
+//     pub joint: JointFlag
+// }
 
 //impl AsBundle<
 

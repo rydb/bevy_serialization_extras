@@ -8,6 +8,7 @@ use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::wrappers::link::{Linkage, JointFlag};
+use crate::wrappers::urdf::FromStructure;
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
 use moonshine_save::prelude::save_default_with;
@@ -188,6 +189,54 @@ impl<U, T> Default for DeserializeAssetFrom<U, T> {
             wrapper_thing: PhantomData,
             thing: PhantomData,
         }
+    }
+}
+
+pub struct SerializeManyAsOneFor<T, U> {
+    things_query: PhantomData<fn() -> T>,
+    composed_things_resource: PhantomData<fn() -> U>,
+}
+
+
+impl<U, T> Default for SerializeManyAsOneFor<U, T> {
+    fn default() -> Self {
+        Self {
+            things_query: PhantomData,
+            composed_things_resource: PhantomData,
+        }
+    }
+}
+
+impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
+    where
+        T: 'static + WorldQuery + for<'a> Unwrap<&'a U>,
+        U: 'static + Resource + Default + Clone + for<'w, 's> From<Query<'w, 's, T>> + FromStructure
+
+ {
+    fn build(&self, app: &mut App) {
+        // type L = SerializeFilter;
+        // let mut skip_list = app.world
+        //     .get_resource_or_insert_with::<L>(| |L::default());
+
+        // let skip_list_copy = skip_list.clone();
+        // skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
+        //skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
+        app.world.insert_resource(U::default());
+
+        app
+        .add_systems(PreUpdate,
+            (
+                serialize_structures_as_resource::<T, U>,
+            ).before(SaveSet::Save)
+        )
+        .add_systems(Update, 
+            (
+                deserialize_resource_as_structures::<U>
+            ).after(LoadSet::PostLoad)
+        )
+
+        
+        ;
     }
 }
 
