@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, bundles::physics::PhysicsBundle, wrappers::urdf::Urdfs};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, bundles::physics::PhysicsBundle, wrappers::urdf::Urdfs, loaders::urdf_loader::Urdf};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
@@ -20,21 +20,49 @@ fn main() {
     App::new()
 
     .insert_resource(SetSaveFile{name: "red".to_owned()})
+    .insert_resource(Urdfs::default())
+    .insert_resource(UrdfHandles::default())
     .add_plugins(DefaultPlugins.set(WindowPlugin {exit_condition: bevy::window::ExitCondition::OnPrimaryClosed, ..Default::default()}))
         .add_plugins(SerializationPlugin)
         //.add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, load_urdf)
+        .add_systems(Startup, queue_urdf_handles)
+        .add_systems(Update, load_urdfs_handles_into_registry)
         .add_systems(Startup, setup)
         .add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         .add_systems(Update, manage_serialization_ui)
         .run();
 }
 
-fn load_urdf(
-    mut urdfs: ResMut<Urdfs>,
+#[derive(Resource, Default)]
+pub struct UrdfHandles {
+    pub handle_vec: Vec<Handle<Urdf>>
+}
+
+pub fn queue_urdf_handles(
+    //mut urdfs: ResMut<Urdfs>,
+    asset_server: ResMut<AssetServer>,
+    //mut urdfs: ResMut<Assets<Urdf>>,
+    mut urdf_handles_vec: ResMut<UrdfHandles>,
 ) {
-    
+   let example_bot: Handle<Urdf> = asset_server.load("urdfs/example_bot.xml");   
+
+   urdf_handles_vec.handle_vec.push(example_bot);
+}
+
+pub fn load_urdfs_handles_into_registry(
+    mut urdf_handles_vec: ResMut<UrdfHandles>,
+    mut urdfs: ResMut<Assets<Urdf>>,
+    mut cached_urdfs: ResMut<Urdfs>
+) {
+    for handle in urdf_handles_vec.handle_vec.iter() {
+        if let Some(urdf) = urdfs.get(handle) {
+            let robot_name = urdf.robot.name.clone();
+            println!("adding the following robot to urdf registry: {:#?}", robot_name);
+            cached_urdfs.world_urdfs.insert(robot_name.clone(), urdf.robot.clone());
+        }
+    }
+
 }
 
 /// set up a simple 3D scene

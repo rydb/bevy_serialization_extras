@@ -121,7 +121,6 @@ impl<'a> FromStructure for Urdfs {
             let mut structured_link_map = HashMap::new();
             let mut structured_joint_map = HashMap::new();
             let mut structured_material_map = HashMap::new();
-            
             for link in &robot.links {
                 structured_link_map.insert(link.name.clone(), link.clone());
             }
@@ -155,6 +154,7 @@ impl<'a> FromStructure for Urdfs {
                 .insert(GeometryFlag::default())
                 .insert(ColliderFlag::default())
                 .insert(JointFlag::default())
+                //.insert(Transform::default())
                 ;
             }
         }

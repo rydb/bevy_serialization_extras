@@ -7,6 +7,7 @@ use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
+use crate::loaders::urdf_loader::UrdfLoaderPlugin;
 use crate::wrappers::link::{Linkage, JointFlag, LinkQuery};
 use crate::wrappers::urdf::{FromStructure, Urdfs};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
@@ -252,6 +253,9 @@ impl Plugin for SerializationPlugin {
         .insert_resource(ComponentsOnSave::default())
         .insert_resource(TypeRegistryOnSave::default())
         .insert_resource(RefreshCounter::default())
+
+        .add_plugins(UrdfLoaderPlugin)
+
         .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
