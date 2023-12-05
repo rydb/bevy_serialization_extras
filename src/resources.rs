@@ -1,5 +1,5 @@
-use std::any::TypeId;
-use bevy::prelude::Resource;
+use std::{any::TypeId, marker::PhantomData, collections::VecDeque};
+use bevy::{prelude::Resource, transform::components::Transform};
 use moonshine_save::{save::SaveFilter, prelude::LoadFromFileRequest};
 use std::collections::HashMap;
 use moonshine_save::prelude::SaveIntoFileRequest;
@@ -9,6 +9,26 @@ use std::path::Path;
 #[derive(Resource, Default)]
 pub struct RefreshCounter {
     pub counter: usize
+}
+
+#[derive(Default, Clone)]
+pub struct ResLoadRequest {
+    pub item: String,
+    pub position: Transform
+}
+#[derive(Resource, Clone)]
+pub struct ResLoadRequests<T> {
+    pub requests: VecDeque<ResLoadRequest>,
+    pub requests_are_for: PhantomData<T>,
+}
+
+impl<T> Default for ResLoadRequests<T> {
+    fn default() -> Self {
+        Self {
+            requests: VecDeque::new(),
+            requests_are_for: PhantomData,
+        }
+    }
 }
 
 /// Resource version of moonshine-save's [`SaveFilter`]. 

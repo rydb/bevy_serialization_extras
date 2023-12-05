@@ -2,7 +2,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use bevy::{prelude::*, ecs::{query::{WorldQuery, self, ReadOnlyWorldQuery}, system::ReadOnlySystemParam}, asset::io::AssetSource};
 use multimap::MultiMap;
-use crate::{traits::*, wrappers::urdf::FromStructure};
+use crate::{traits::*, wrappers::urdf::FromStructure, resources::{ResLoadRequest, ResLoadRequests}};
 
 use bevy::asset::Asset;
 
@@ -48,13 +48,22 @@ pub fn serialize_structures_as_resource<ThingSet, ThingResource> (
 
 pub fn deserialize_resource_as_structures<ThingResource>(
     things_resource: Res<ThingResource>,
+    mut resload_requests: ResMut<ResLoadRequests<ThingResource>>,
     mut commands: Commands,
 ) 
     where
         ThingResource: Resource + Clone + FromStructure
 {
+    // let mut load_requests = Vec::new();
+    // if let Some(requests_as_resource) = resload_requests_check {
+    //     load_requests = requests_as_resource.requests
+    // }
     //(TODO) get rid of this clone
-    FromStructure::into_structures(&mut commands, things_resource.into_inner().clone())
+    //let leftover_reqs = 
+    //println!("handing of resource {:#?}", things_resource.into_inner().clone());
+    //let x = things_resource.into_inner().clone();
+    FromStructure::into_structures(&mut commands, things_resource.into_inner().clone(), resload_requests.requests.clone());
+    //resload_requests.requests = leftover_reqs;
 }
 
 /// takes a component, and spawns a serializable copy of it on its entity

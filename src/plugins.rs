@@ -223,6 +223,9 @@ impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
         // skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
         //skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
         app.world.insert_resource(U::default());
+        app.world.get_resource_or_insert_with::<ResLoadRequests<U>>(
+            | |ResLoadRequests::<U>::default()
+        );
 
         app
         .add_systems(PreUpdate,
