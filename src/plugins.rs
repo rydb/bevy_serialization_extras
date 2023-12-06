@@ -7,7 +7,7 @@ use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
-use crate::loaders::urdf_loader::UrdfLoaderPlugin;
+use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
 use crate::wrappers::link::{Linkage, JointFlag, LinkQuery};
 use crate::wrappers::urdf::{FromStructure, Urdfs};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
@@ -223,19 +223,19 @@ impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
         // skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
         //skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
         app.world.insert_resource(U::default());
-        app.world.get_resource_or_insert_with::<ResLoadRequests<U>>(
-            | |ResLoadRequests::<U>::default()
+        app.world.get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(
+            | |AssetSpawnRequestQueue::<U>::default()
         );
 
         app
-        .add_systems(PreUpdate,
-            (
-                serialize_structures_as_resource::<T, U>,
-            ).before(SaveSet::Save)
-        )
+        // .add_systems(PreUpdate,
+        //     (
+        //         serialize_structures_as_resource::<T, U>,
+        //     ).before(SaveSet::Save)
+        // )
         .add_systems(Update, 
             (
-                deserialize_resource_as_structures::<U>
+                deserialize_assets_as_structures::<U>
             ).after(LoadSet::PostLoad)
         )
 
@@ -265,7 +265,7 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
         //.add_plugins(SerializeComponentFor::<Mass, ColliderFlag>::default())
 
-        .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdfs>::default())
+        //.add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
         ;
 
         app

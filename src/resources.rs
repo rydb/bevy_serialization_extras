@@ -1,5 +1,5 @@
 use std::{any::TypeId, marker::PhantomData, collections::VecDeque};
-use bevy::{prelude::Resource, transform::components::Transform};
+use bevy::{prelude::Resource, transform::components::Transform, asset::{AssetId, Asset}};
 use moonshine_save::{save::SaveFilter, prelude::LoadFromFileRequest};
 use std::collections::HashMap;
 use moonshine_save::prelude::SaveIntoFileRequest;
@@ -12,24 +12,24 @@ pub struct RefreshCounter {
 }
 
 #[derive(Default, Clone)]
-pub struct ResLoadRequest {
-    pub item: String,
-    pub position: Transform
+pub struct AssetSpawnRequest<T: Asset> {
+    pub item_id: AssetId<T>,
+    pub position: Transform,
+    pub failed_load_attempts: u64,
 }
-#[derive(Resource, Clone)]
-pub struct ResLoadRequests<T> {
-    pub requests: VecDeque<ResLoadRequest>,
-    pub requests_are_for: PhantomData<T>,
+#[derive(Resource, Default, Clone)]
+pub struct AssetSpawnRequestQueue<T: Asset> {
+    pub requests: VecDeque<AssetSpawnRequest<T>>,
 }
 
-impl<T> Default for ResLoadRequests<T> {
-    fn default() -> Self {
-        Self {
-            requests: VecDeque::new(),
-            requests_are_for: PhantomData,
-        }
-    }
-}
+// impl<T> Default for ResLoadRequests<T> {
+//     fn default() -> Self {
+//         Self {
+//             requests: VecDeque::new(),
+//             requests_are_for: PhantomData,
+//         }
+//     }
+// }
 
 /// Resource version of moonshine-save's [`SaveFilter`]. 
 #[derive(Resource, Default, Clone)]

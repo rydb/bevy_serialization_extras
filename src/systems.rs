@@ -1,8 +1,8 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::{HashMap, VecDeque}, str::FromStr};
 
 use bevy::{prelude::*, ecs::{query::{WorldQuery, self, ReadOnlyWorldQuery}, system::ReadOnlySystemParam}, asset::io::AssetSource};
 use multimap::MultiMap;
-use crate::{traits::*, wrappers::urdf::FromStructure, resources::{ResLoadRequest, ResLoadRequests}};
+use crate::{traits::*, wrappers::urdf::FromStructure, resources::AssetSpawnRequestQueue};
 
 use bevy::asset::Asset;
 
@@ -31,40 +31,77 @@ use bevy::asset::Asset;
 
 // }
 
-pub fn serialize_structures_as_resource<ThingSet, ThingResource> (
+pub fn serialize_structures_as_assets<ThingSet, AssetType> (
     thing_query: Query<ThingSet>,
-    things_resource: ResMut<ThingResource>,
-    mut commands: Commands,
-)
-
+) 
     where
         ThingSet: WorldQuery,
-        ThingResource: Resource + for<'w, 's> From<Query<'w, 's, ThingSet>>,
+        AssetType: Asset + for<'w, 's> From<Query<'w, 's, ThingSet>>,
 {
-    commands.insert_resource(
-        ThingResource::from(thing_query)       
-    )
+    // populate later...
 }
 
-pub fn deserialize_resource_as_structures<ThingResource>(
-    things_resource: Res<ThingResource>,
-    mut resload_requests: ResMut<ResLoadRequests<ThingResource>>,
+// pub fn serialize_structures_as_resource<ThingSet, ThingResource> (
+//     thing_query: Query<ThingSet>,
+//     things_resource: ResMut<ThingResource>,
+//     mut commands: Commands,
+// )
+
+//     where
+//         ThingSet: WorldQuery,
+//         ThingResource: Resource + for<'w, 's> From<Query<'w, 's, ThingSet>>,
+// {
+//     commands.insert_resource(
+//         ThingResource::from(thing_query)       
+//     )
+// }
+
+pub fn deserialize_assets_as_structures<ThingAsset>(
+    thing_assets: Res<Assets<ThingAsset>>,
+    mut asset_spawn_requests: ResMut<AssetSpawnRequestQueue<ThingAsset>>,
     mut commands: Commands,
 ) 
     where
-        ThingResource: Resource + Clone + FromStructure
+        ThingAsset: Asset + Clone + FromStructure
 {
-    // let mut load_requests = Vec::new();
-    // if let Some(requests_as_resource) = resload_requests_check {
-    //     load_requests = requests_as_resource.requests
+    let mut failed_requests = VecDeque::new();
+    while asset_spawn_requests.requests.len() != 0 {
+        if let Some(request) = asset_spawn_requests.requests.pop_front() {
+            if let Some(asset) = thing_assets.get(request.item_id) {
+                FromStructure::into_structures(&mut commands, asset.clone(), request)
+            } else {
+                let mut failed_request = request;
+                failed_request.failed_load_attempts += 1;
+                failed_requests.push_back(failed_request)
+            }
+        }
+    }
+    // re-add failed requests to asset_spawn_requests, as there could be a chance the asset just hasn't loaded yet.
+    asset_spawn_requests.requests.append(&mut failed_requests);
+    // for (asset_id, asset) in thing_assets.iter() {
+    //     //FromStructure::into_structures(&mut commands, asset, asset_load_request.requests.clone());
     // }
-    //(TODO) get rid of this clone
-    //let leftover_reqs = 
-    //println!("handing of resource {:#?}", things_resource.into_inner().clone());
-    //let x = things_resource.into_inner().clone();
-    FromStructure::into_structures(&mut commands, things_resource.into_inner().clone(), resload_requests.requests.clone());
-    //resload_requests.requests = leftover_reqs;
 }
+
+// pub fn deserialize_resource_as_structures<ThingResource>(
+//     things_resource: Res<ThingResource>,
+//     mut resload_requests: ResMut<ResLoadRequests<ThingResource>>,
+//     mut commands: Commands,
+// ) 
+//     where
+//         ThingResource: Resource + Clone + FromStructure
+// {
+//     // let mut load_requests = Vec::new();
+//     // if let Some(requests_as_resource) = resload_requests_check {
+//     //     load_requests = requests_as_resource.requests
+//     // }
+//     //(TODO) get rid of this clone
+//     //let leftover_reqs = 
+//     //println!("handing of resource {:#?}", things_resource.into_inner().clone());
+//     //let x = things_resource.into_inner().clone();
+//     FromStructure::into_structures(&mut commands, things_resource.into_inner().clone(), resload_requests.requests.clone());
+//     //resload_requests.requests = leftover_reqs;
+// }
 
 /// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Thing, WrapperThing>(

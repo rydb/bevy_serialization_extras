@@ -3,9 +3,10 @@ use std::{collections::{HashMap, VecDeque}, ffi::IntoStringError, rc::Rc, borrow
 
 // use bevy::core::Name;
 use bevy::{prelude::*, ecs::{query::WorldQuery, system::EntityCommands}, utils::hashbrown::hash_map::IntoIter, transform::commands};
+use egui::Link;
 use urdf_rs::{Robot, Joint, Pose};
 
-use crate::{traits::Structure, queries::{FileCheck, FileCheckItem}, resources::{ResLoadRequest, LoadRequest, ResLoadRequests}};
+use crate::{traits::Structure, queries::{FileCheck, FileCheckItem}, resources::{LoadRequest, AssetSpawnRequest}, loaders::urdf_loader::Urdf};
 
 use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMask, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag};
 
@@ -23,49 +24,6 @@ use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{Mater
 // }
 
 
-// impl FromQuery<LinkQuery> for UrdfStructure {
-//     fn from_query(query: Query<LinkQuery>) {
-        
-//     }
-// }
-
-// impl FromQuery<UrdfQuery> for UrdfStructure {
-//     fn from_query(query: Query<UrdfQuery>) {
-//         let mut urdf_structure = UrdfStructure::default();
-//         for item in query.iter() {
-//             //let x = item.link.clone();
-//             urdf_structure.links.push(item.link.clone());
-//             urdf_structure.visuals.push(
-//                 match item.visual.component_file {
-//                     None => GeometrySource::Primitive(item.visual.component.clone()),
-//                     Some(file) => GeometrySource::File(file.clone()) 
-//                 }
-
-//             );
-//             urdf_structure.materials.push(
-//             if let Some(material) = item.material_check {
-
-//                     match material.component_file {
-//                         None => Some(MaterialSource::Wrapper(material.component.clone())),
-//                         Some(file) => Some(MaterialSource::File(file.clone()))
-//                     }
-                
-
-//             } else {
-//                 None
-//             }
-//             );
-//             urdf_structure.joints.push(
-//                 if let Some(joint) = item.joint_check {
-//                     Some(joint.clone())
-//                 } else {
-//                     None
-//                 }
-//             )
-//         }
-//     }
-// }
-
 // pub struct UrdfQuery {
 
 // }
@@ -77,113 +35,128 @@ pub struct Urdfs {
     pub world_urdfs: HashMap<String, Robot>
 }
 
-// impl Iterator for Urdfs {
-//     type Item = Robot;
-//     fn next(&mut self) -> Option<Self::Item> {
-//         // ???
-//     }
-// }
+impl<'a> FromStructure for Urdf {
+    fn into_structures(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>){
+        //let name = request.item.clone();
+        //let robot = value.world_urdfs.get(&request.item).unwrap();
+        let robot = value.robot;
 
-// impl<'a> From<Robot> for LinkQueryItem<'a> {
-//     fn from(value: Robot) -> Self {
-//         Self {
-
-//         }
-//     }
-// }
-
-// impl<'a> From<Robot> for LinkQueryItem<'a> {
-//     fn from(value: Robot) -> Self {
-//         Self {
-
-//         }
-//     }
-// }
-
-// impl<'a> From<Robot> for Vec<LinkQueryItem<'a>> {
-//     fn from(value: Robot) -> Self {
-        
-//     }
-// }
-
-// impl<'a> IntoIterator for &'a Robot {
-//     type Item = LinkQueryItem<'a>;
-//     type IntoIter = std::vec::IntoIter<Self::Item>;
-    
-//     fn into_iter(self) -> Self::IntoIter {
-        
-//     }
-// }
-
-impl<'a> FromStructure for Urdfs {
-    fn into_structures(commands: &mut Commands, value: Self, mut resload_request: VecDeque<ResLoadRequest>) -> VecDeque<ResLoadRequest> {
-        //let mut my_resload_requests = resload_request;
-        println!("robots are {:#?}", value.world_urdfs);
-        //println!("load requests are {:#?}", resload_request.);
-        while resload_request.len() != 0{
-            if let Some(request) = resload_request.pop_front() {
-                println!("loading request for {:#?}", request.item.clone());
-                if value.world_urdfs.contains_key(&request.item) {
-                    //let name = request.item.clone();
-                    let robot = value.world_urdfs.get(&request.item).unwrap();
-
-
-                    let mut structured_link_map = HashMap::new();
-                    let mut structured_joint_map = HashMap::new();
-                    let mut structured_material_map = HashMap::new();
-                    for link in &robot.links {
-                        structured_link_map.insert(link.name.clone(), link.clone());
-                    }
-                    for joint in &robot.joints {
-                        structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
-                    }
-                    for material in &robot.materials {
-                        structured_material_map.insert(material.name.clone(), material.clone());
-                    }
-                    // let query_items =structured_link_map.iter().map(|(key, link)| 
-                    //     {
-                    //         LinkQueryItem {
-                    //             name: Some(&Name::new(link.name.clone())),
-                    //             structure: &StructureFlag { name: value.name.clone() },
-                    //             inertial: Some(&MassFlag { mass: link.inertial.mass.value as f32}), 
-                    //             // implement visual properly
-                    //             visual: FileCheckItem {component: &GeometryFlag::default(), component_file: None}, 
-                    //             // implement collision properly. Grouped colliders will need to be ignored for the sake of model coherence.
-                    //             collision: Some(&ColliderFlag::default()), 
-                    //             // implement joint loading properly..
-                    //             joint: Some(&JointFlag::default()) }
-                    //     }
-                    // ).collect::<Vec<Self>>();
-                    for (key , link) in structured_link_map.iter() {
-                        let mut e = commands.spawn_empty();
-            
-                        e
-                        .insert(Name::new(link.name.clone()))
-                        .insert(StructureFlag { name: robot.name.clone() })
-                        .insert(MassFlag { mass: link.inertial.mass.value as f32})
-                        .insert(GeometryFlag::default())
-                        .insert(ColliderFlag::default())
-                        .insert(JointFlag::default())
-                        .insert(MaterialFlag::default())
-                        .insert(VisibilityBundle::default())
-                        .insert(TransformBundle {
-                            local: request.position, 
-                            ..default()
-                        })
-                        ;
-                    }
-                }
-                // for (name, robot) in value.world_urdfs.iter() {
-
-                // }
-            }
-
+        let mut structured_link_map = HashMap::new();
+        let mut structured_joint_map = HashMap::new();
+        let mut structured_material_map = HashMap::new();
+        for link in &robot.links {
+            structured_link_map.insert(link.name.clone(), link.clone());
         }
-        return resload_request
+        for joint in &robot.joints {
+            structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
+        }
+        for material in &robot.materials {
+            structured_material_map.insert(material.name.clone(), material.clone());
+        }
+        // let query_items =structured_link_map.iter().map(|(key, link)| 
+        //     {
+        //         LinkQueryItem {
+        //             name: Some(&Name::new(link.name.clone())),
+        //             structure: &StructureFlag { name: value.name.clone() },
+        //             inertial: Some(&MassFlag { mass: link.inertial.mass.value as f32}), 
+        //             // implement visual properly
+        //             visual: FileCheckItem {component: &GeometryFlag::default(), component_file: None}, 
+        //             // implement collision properly. Grouped colliders will need to be ignored for the sake of model coherence.
+        //             collision: Some(&ColliderFlag::default()), 
+        //             // implement joint loading properly..
+        //             joint: Some(&JointFlag::default()) }
+        //     }
+        // ).collect::<Vec<Self>>();
+        for (key , link) in structured_link_map.iter() {
+            let mut e = commands.spawn_empty();
 
-
+            e
+            .insert(Name::new(link.name.clone()))
+            .insert(StructureFlag { name: robot.name.clone() })
+            .insert(MassFlag { mass: link.inertial.mass.value as f32})
+            .insert(GeometryFlag::default())
+            .insert(ColliderFlag::default())
+            .insert(JointFlag::default())
+            .insert(MaterialFlag::default())
+            .insert(VisibilityBundle::default())
+            .insert(TransformBundle {
+                local: spawn_request.position, 
+                ..default()
+            })
+            ;
+        }
     }
 }
+
+// impl FromStructure for Urdfs {
+//     fn into_structures(commands: &mut Commands, value: Self, mut resload_request: VecDeque<ResLoadRequest>) -> VecDeque<ResLoadRequest> {
+//         //let mut my_resload_requests = resload_request;
+//         //println!("robots are {:#?}", value.world_urdfs);
+//         //println!("load requests are {:#?}", resload_request.);
+//         while resload_request.len() != 0{
+//             if let Some(request) = resload_request.pop_front() {
+//                 //println!("loading request for {:#?}", request.item.clone());
+//                 if value.world_urdfs.contains_key(&request.item) {
+//                     //let name = request.item.clone();
+//                     let robot = value.world_urdfs.get(&request.item).unwrap();
+
+
+//                     let mut structured_link_map = HashMap::new();
+//                     let mut structured_joint_map = HashMap::new();
+//                     let mut structured_material_map = HashMap::new();
+//                     for link in &robot.links {
+//                         structured_link_map.insert(link.name.clone(), link.clone());
+//                     }
+//                     for joint in &robot.joints {
+//                         structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
+//                     }
+//                     for material in &robot.materials {
+//                         structured_material_map.insert(material.name.clone(), material.clone());
+//                     }
+//                     // let query_items =structured_link_map.iter().map(|(key, link)| 
+//                     //     {
+//                     //         LinkQueryItem {
+//                     //             name: Some(&Name::new(link.name.clone())),
+//                     //             structure: &StructureFlag { name: value.name.clone() },
+//                     //             inertial: Some(&MassFlag { mass: link.inertial.mass.value as f32}), 
+//                     //             // implement visual properly
+//                     //             visual: FileCheckItem {component: &GeometryFlag::default(), component_file: None}, 
+//                     //             // implement collision properly. Grouped colliders will need to be ignored for the sake of model coherence.
+//                     //             collision: Some(&ColliderFlag::default()), 
+//                     //             // implement joint loading properly..
+//                     //             joint: Some(&JointFlag::default()) }
+//                     //     }
+//                     // ).collect::<Vec<Self>>();
+//                     for (key , link) in structured_link_map.iter() {
+//                         let mut e = commands.spawn_empty();
+            
+//                         e
+//                         .insert(Name::new(link.name.clone()))
+//                         .insert(StructureFlag { name: robot.name.clone() })
+//                         .insert(MassFlag { mass: link.inertial.mass.value as f32})
+//                         .insert(GeometryFlag::default())
+//                         .insert(ColliderFlag::default())
+//                         .insert(JointFlag::default())
+//                         .insert(MaterialFlag::default())
+//                         .insert(VisibilityBundle::default())
+//                         .insert(TransformBundle {
+//                             local: request.position, 
+//                             ..default()
+//                         })
+//                         ;
+//                     }
+//                 }
+//                 // for (name, robot) in value.world_urdfs.iter() {
+
+//                 // }
+//             }
+
+//         }
+//         return resload_request
+
+
+//     }
+// }
 
 
 // impl<'a> IntoIterator for LinkQueryItem<'a> {
@@ -208,9 +181,9 @@ pub trait ComponentIter {
 
 pub trait FromStructure
     where
-        Self: Sized
+        Self: Sized + Asset
 {
-    fn into_structures(commands: &mut Commands, value: Self, resload_request: VecDeque<ResLoadRequest>) -> VecDeque<ResLoadRequest>;
+    fn into_structures(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>);
 }
 
 // impl<'a> IntoIterator for &'a Robot {
@@ -234,19 +207,9 @@ impl<'a> IntoIterator for &'a Urdfs {
     }
 }
 
-// impl<'a> From<<&'a Urdfs as IntoIterator>::Item> for Query<'_, '_, LinkQuery> {
-//     fn from(value: <&'a Urdfs as IntoIterator>::Item) -> Self {
-        
-//     }
+// impl From<Query<'_, '_, LinkQuery>> for HashMap<String, Urdf> {
+
 // }
-
-
-// #[derive(Hash, Resource)]
-// pub struct Urdfs {
-//     name: String,
-//     contents: Robot,
-// }
-
 
 impl From<Query<'_, '_, LinkQuery>> for Urdfs {
     fn from(value: Query<LinkQuery>) -> Self {

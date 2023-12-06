@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, ResLoadRequests, ResLoadRequest}, bundles::physics::PhysicsBundle, wrappers::urdf::Urdfs, loaders::urdf_loader::Urdf};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, bundles::physics::PhysicsBundle, wrappers::urdf::Urdfs, loaders::urdf_loader::Urdf};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
@@ -25,7 +25,7 @@ fn main() {
         .add_plugins(SerializationPlugin)
         //.add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
-        .add_systems(Startup, queue_urdf_load_requests)
+        //.add_systems(Startup, queue_urdf_load_requests)
         .add_systems(Update, load_urdfs_handles_into_registry)
         .add_systems(Startup, setup)
         //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
@@ -42,17 +42,18 @@ pub struct UrdfHandles {
 pub fn queue_urdf_load_requests(
     //mut urdfs: ResMut<Urdfs>,
     asset_server: ResMut<AssetServer>,
-    mut urdf_load_requests: ResMut<ResLoadRequests<Urdfs>>,
+    //mut urdf_load_requests: ResMut<ResLoadRequests<Urdfs>>,
     //mut urdfs: ResMut<Assets<Urdf>>,
     mut urdf_handles_vec: ResMut<UrdfHandles>,
 ) {
-   let request = ResLoadRequest {
-        item: "myfirst".to_owned(),
-        position: Transform { translation: Vec3 {x: 0.0, y: 2.0, z: 0.0}.into(), ..default()}
-   };
+//    let request = ResLoadRequest {
+//         item_id: "myfirst".to_owned(),
+//         position: Transform { translation: Vec3 {x: 0.0, y: 2.0, z: 0.0}.into(), ..default()}
+//    };
    let example_bot: Handle<Urdf> = asset_server.load("urdfs/example_bot.xml");   
+   println!("example_bot path is {:#?}", example_bot.path());
    urdf_handles_vec.handle_vec.push(example_bot);
-   urdf_load_requests.requests.push_back(request)
+   //urdf_load_requests.requests.push_back(request)
 }
 
 pub fn load_urdfs_handles_into_registry(
@@ -65,7 +66,7 @@ pub fn load_urdfs_handles_into_registry(
             let robot_name = urdf.robot.name.clone();
             println!("adding the following robot to urdf registry: {:#?}", robot_name);
             cached_urdfs.world_urdfs.insert(robot_name.clone(), urdf.robot.clone());
-            println!("cached_urdfs are {:#?}", cached_urdfs.world_urdfs.keys());
+            //println!("cached_urdfs are {:#?}", cached_urdfs.world_urdfs.keys());
         }
     }
 
@@ -78,6 +79,9 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     //mut urdfs: ResMut<Urdfs>
 ) {
+    for (l, i) in materials.iter() {
+
+    }
     // plane
     commands.spawn(
         PbrBundle {
