@@ -11,7 +11,6 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
 use bevy_serialization_extras::ui::*;
-use std::env;
 const SAVES_LOCATION: &str = "assets/saves";
 
 

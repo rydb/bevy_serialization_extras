@@ -1,6 +1,8 @@
 
 use bevy::prelude::*;
 use bevy::reflect::GetTypeRegistration;
+use urdf_rs::Visual;
+use crate::queries::FileCheckItem;
 use crate::traits::{Unwrap, ManagedTypeRegistration};
 use crate::wrappers::mesh::shape::Cube;
 use strum::IntoEnumIterator;
@@ -9,10 +11,10 @@ use bevy::render::mesh::shape::Plane;
 
 
 
-#[derive(Component, Reflect, Clone, EnumIter)]
+#[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
-pub enum GeometryFlag{
-    Primitive(MeshPrimitive),
+pub struct GeometryFlag{
+    primitive: MeshPrimitive,
     // Mesh {
     //     filename: String,
     //     scale: Option<Vec3>,
@@ -44,27 +46,16 @@ impl ManagedTypeRegistration for GeometryFlag {
         let mut type_registry = Vec::new();
 
         type_registry.push(Self::get_type_registration());
-        
-        for enum_variant in Self::iter() {
-            match enum_variant {
-                Self::Primitive(..) => type_registry.push(MeshPrimitive::get_type_registration()),
-                //Self::Mesh {..} => {}
-            }
-        }
-        return type_registry
-        
-    }
-}
 
-/// Reflect, and Serialization both require a default implementation of structs. The default GeometryFlag resorts to an "fallback" mesh to
-/// represent failed load attempts. (TODO): add a system that picks up error meshes, and displays them somewhere.
-impl Default for GeometryFlag {
-    fn default() -> Self {
-        Self::Primitive(MeshPrimitive::default())
-        // Self::Mesh {
-        //     filename: "fallback.gltf".to_string(),
-        //     scale: None,
-        // }        
+        type_registry
+        // for enum_variant in Self::iter() {
+        //     match enum_variant {
+        //         Self::Primitive(..) => type_registry.push(MeshPrimitive::get_type_registration()),
+        //         //Self::Mesh {..} => {}
+        //     }
+        // }
+        // return type_registry
+        
     }
 }
 
@@ -121,17 +112,23 @@ impl Default for MeshPrimitive {
 
 impl From<Cube> for GeometryFlag {
     fn from(value: Cube) -> Self {
-        return GeometryFlag::Primitive(
-            MeshPrimitive::Box { size: [value.size, value.size, value.size] }
-        )
+        Self {
+            primitive: MeshPrimitive::Box { size: [value.size, value.size, value.size] }
+        }
+        // return GeometryFlag::Primitive(
+        //     MeshPrimitive::Box { size: [value.size, value.size, value.size] }
+        // )
     }
 }
 
 impl From<Plane> for GeometryFlag {
     fn from(value: Plane) -> Self {
-        return GeometryFlag::Primitive(
-            MeshPrimitive::Box { size: [value.size, 1.0, value.size]} 
-        )
+        Self {
+            primitive: MeshPrimitive::Box { size: [value.size, 1.0, value.size]}
+        }
+        // return GeometryFlag::Primitive(
+        //     MeshPrimitive::Box { size: [value.size, 1.0, value.size]} 
+        // )
     }
 }
 
@@ -145,34 +142,41 @@ impl From<Plane> for GeometryFlag {
 // }
 
 
+// impl From<Vec<Visual>> for FileCheckItem<'_, GeometryFlag, GeometryFile> {
+//     fn from(value: Vec<Visual>) -> Self {
+        
+//     }
+// }
+
+// impl From<Vec<Visual>> for GeometryFlag {
+//     fn from(value: Vec<Visual>) -> Self {
+        
+//     }
+// }
 
 impl Unwrap<&GeometryFlag> for Mesh {
     fn unwrap(value: &GeometryFlag) -> Result<Self, String>{
-        match value {
-            GeometryFlag::Primitive(primitive) => {
-                match primitive {
-                    MeshPrimitive::Box { size } => {
-                        return Ok(shape::Box{
-                            min_x: -size[0] * 0.5,
-                            max_x: size[0] * 0.5,
-                            min_y: -size[1] * 0.5,
-                            max_y: size[1] * 0.5,
-                            min_z: -size[2] * 0.5,
-                            max_z: size[2] * 0.5,
-                        }.into())
-                    }
-                    MeshPrimitive::Cylinder { radius, length } => {
-                        Ok(shape::Cylinder{radius: *radius, height: *length, ..default()}.into())
-                    },
-                    MeshPrimitive::Capsule { radius, length } => {
-                        Ok(shape::Capsule{radius: *radius, depth: *length, ..default()}.into())
-                    },
-                    MeshPrimitive::Sphere { radius } => {
-                        Ok(shape::Capsule{radius: *radius, depth: 0.0, ..default()}.into())
-                    },
-                }
-            } 
-            //GeometryFlag::Mesh { filename, .. } => Err(filename.to_string())
+        match value.primitive {
+            MeshPrimitive::Box { size } => {
+                return Ok(shape::Box{
+                    min_x: -size[0] * 0.5,
+                    max_x: size[0] * 0.5,
+                    min_y: -size[1] * 0.5,
+                    max_y: size[1] * 0.5,
+                    min_z: -size[2] * 0.5,
+                    max_z: size[2] * 0.5,
+                }.into())
+            }
+            MeshPrimitive::Cylinder { radius, length } => {
+                Ok(shape::Cylinder{radius: radius, height: length, ..default()}.into())
+            },
+            MeshPrimitive::Capsule { radius, length } => {
+                Ok(shape::Capsule{radius: radius, depth: length, ..default()}.into())
+            },
+            MeshPrimitive::Sphere { radius } => {
+                Ok(shape::Capsule{radius: radius, depth: 0.0, ..default()}.into())
+            },
         }
+
     }
 }

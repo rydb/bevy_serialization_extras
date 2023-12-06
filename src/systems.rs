@@ -83,13 +83,13 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
                     //passes off request to the front of the queue for the next update as the asset is likely to not have loaded yet until next update.
                     let mut unready_asset_request = request;
                     //turns asset request into assset id as now former "file" path is now a part of the Res<Assets<T>>
-                    unready_asset_request.source = RequestFrom::AssetId(asset_handle.id());
+                    unready_asset_request.source = RequestFrom::AssetHandle(asset_handle);
                     failed_requests.push_front(unready_asset_request);
                 }
-                RequestFrom::AssetId(id) => {
-                    println!("processing request from assetid {:#?}", id);
+                RequestFrom::AssetHandle(handle) => {
+                    println!("processing request from assetid {:#?}", handle);
                     println!("failed load attempts: {:#?}", request.failed_load_attempts);
-                    if let Some(asset) = thing_assets.get(id) {
+                    if let Some(asset) = thing_assets.get(handle) {
                         FromStructure::into_entities(&mut commands, asset.clone(), request)
                         ;
                     } else {

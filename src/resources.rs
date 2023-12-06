@@ -1,5 +1,5 @@
 use std::{any::TypeId, marker::PhantomData, collections::VecDeque, path::PathBuf};
-use bevy::{prelude::{Resource, default}, transform::components::Transform, asset::{AssetId, Asset}};
+use bevy::{prelude::{Resource, default}, transform::components::Transform, asset::{AssetId, Asset, Handle}};
 use moonshine_save::{save::SaveFilter, prelude::LoadFromFileRequest};
 use std::collections::HashMap;
 use moonshine_save::prelude::SaveIntoFileRequest;
@@ -33,7 +33,9 @@ pub enum RequestFrom<T: Asset> {
     /// 
     ///If `bob.stl` is in `~/project/assets/models/bob.stl`. Then this should be set to `"models/bob.stl"`
     AssetServerPath(String),
-    AssetId(AssetId<T>),
+    //AssetId(AssetId<T>),
+    AssetHandle(Handle<T>)
+
 }
 
 impl<T: Asset> From<String> for RequestFrom<T> {
