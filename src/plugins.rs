@@ -9,7 +9,7 @@ use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
 use crate::wrappers::link::{Linkage, JointFlag, LinkQuery};
-use crate::wrappers::urdf::{FromStructure, Urdfs};
+use crate::wrappers::urdf::{FromStructure, IntoHashMap, LazyDeserialize};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
 use moonshine_save::prelude::save_default_with;
@@ -211,7 +211,7 @@ impl<U, T> Default for SerializeManyAsOneFor<U, T> {
 impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
     where
         T: 'static + WorldQuery,
-        U: 'static + Resource + Default + Clone + for<'w, 's> From<Query<'w, 's, T>> + FromStructure
+        U: 'static + Asset + Default + Clone + for<'w, 's> IntoHashMap<Query<'w, 's, T>> + FromStructure + LazyDeserialize
 
  {
     fn build(&self, app: &mut App) {
@@ -222,17 +222,16 @@ impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
         // let skip_list_copy = skip_list.clone();
         // skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
         //skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
-        app.world.insert_resource(U::default());
+        //app.world.insert_resource(U::default());
         app.world.get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(
             | |AssetSpawnRequestQueue::<U>::default()
         );
-
         app
-        // .add_systems(PreUpdate,
-        //     (
-        //         serialize_structures_as_resource::<T, U>,
-        //     ).before(SaveSet::Save)
-        // )
+        .add_systems(PreUpdate,
+            (
+                serialize_structures_as_assets::<T, U>,
+            ).before(SaveSet::Save)
+        )
         .add_systems(Update, 
             (
                 deserialize_assets_as_structures::<U>
@@ -265,7 +264,7 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
         //.add_plugins(SerializeComponentFor::<Mass, ColliderFlag>::default())
 
-        //.add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
+        .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
         ;
 
         app

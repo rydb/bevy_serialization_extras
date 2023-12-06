@@ -23,6 +23,8 @@ multimap = "0.9.1"
 strum = "0.25"
 strum_macros = "0.25"
 bitflags = "2.4.1"
+#serde = "1.0.*"
+yaserde = "0.8"
 
 [dev-dependencies]
 bevy = {version = "0.12", features = ["dynamic_linking"]}

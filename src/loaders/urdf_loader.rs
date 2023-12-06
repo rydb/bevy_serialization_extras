@@ -32,6 +32,14 @@ pub struct Urdf {
     pub robot: Robot,
 }
 
+impl Default for Urdf {
+    fn default() -> Self {
+        Self {
+            robot: Robot {name: "DEFAULT_IN_CASE_OF_ERROR".to_owned(), links: Vec::new(), joints: Vec::new(), materials: Vec::new()}
+        }
+    }
+}
+
 /// Possible errors that can be produced by [`UrdfLoaderError`]
 #[non_exhaustive]
 #[derive(Error, Debug)]

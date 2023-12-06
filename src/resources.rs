@@ -1,5 +1,5 @@
-use std::{any::TypeId, marker::PhantomData, collections::VecDeque};
-use bevy::{prelude::Resource, transform::components::Transform, asset::{AssetId, Asset}};
+use std::{any::TypeId, marker::PhantomData, collections::VecDeque, path::PathBuf};
+use bevy::{prelude::{Resource, default}, transform::components::Transform, asset::{AssetId, Asset}};
 use moonshine_save::{save::SaveFilter, prelude::LoadFromFileRequest};
 use std::collections::HashMap;
 use moonshine_save::prelude::SaveIntoFileRequest;
@@ -11,9 +11,46 @@ pub struct RefreshCounter {
     pub counter: usize
 }
 
+#[derive(Resource, Default, Clone)]
+pub struct AssetFolder<T: Asset> {
+    pub path: PathBuf,
+    pub path_for_asset_type: PhantomData<T>
+}
+
+// impl Default for AssetFolder<T> {
+//     fn default() -> Self {
+//         Self {
+//             ..default()
+//         }
+//     }
+// }
+
+#[derive(Clone)]
+pub enum RequestFrom<T: Asset> {
+    ///path of asset relative to main.rs of bevy project.
+    ///
+    /// E.G:
+    /// 
+    ///If `bob.stl` is in `~/project/assets/models/bob.stl`. Then this should be set to `"models/bob.stl"`
+    AssetServerPath(String),
+    AssetId(AssetId<T>),
+}
+
+impl<T: Asset> From<String> for RequestFrom<T> {
+    fn from(value: String) -> Self {
+        Self::AssetServerPath(value)
+    }
+}
+
+impl<T: Asset> Default for RequestFrom<T> {
+    fn default() -> Self {
+        Self::AssetServerPath("don't use default for RequestFrom enum or you will get this!".to_owned())
+    }
+}
+
 #[derive(Default, Clone)]
 pub struct AssetSpawnRequest<T: Asset> {
-    pub item_id: AssetId<T>,
+    pub source: RequestFrom<T>,
     pub position: Transform,
     pub failed_load_attempts: u64,
 }
