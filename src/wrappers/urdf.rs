@@ -8,7 +8,7 @@ use moonshine_save::save::Save;
 use urdf_rs::{Robot, Joint, Pose, UrdfError};
 use yaserde::YaDeserialize;
 
-use crate::{traits::Structure, queries::{FileCheck, FileCheckItem}, resources::{LoadRequest, AssetSpawnRequest}, loaders::urdf_loader::Urdf};
+use crate::{traits::Structure, queries::{FileCheck, FileCheckItem, FileCheckPicker}, resources::{LoadRequest, AssetSpawnRequest}, loaders::urdf_loader::Urdf};
 
 use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMask, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag};
 
@@ -77,12 +77,20 @@ impl<'a> FromStructure for Urdf {
         for (key , link) in structured_link_map.iter() {
             let mut e = commands.spawn_empty();
 
+            // let x = match FileCheckPicker::from(link.visual){
+            //     FileCheckPicker::PureComponent(t) => t,
+            //     FileCheckPicker::PathComponent(u) => u,
+            // };
             e
             .insert(Name::new(link.name.clone()))
             .insert(StructureFlag { name: robot.name.clone() })
             .insert(MassFlag { mass: link.inertial.mass.value as f32})
-            .insert(GeometryFlag::default())
-            .insert(ColliderFlag::default())
+            ;
+            match FileCheckPicker::from(link.visual.clone()){
+                    FileCheckPicker::PureComponent(t) => e.insert(t),
+                    FileCheckPicker::PathComponent(u) => e.insert(u),
+                };
+            e
             .insert(JointFlag::default())
             .insert(MaterialFlag::default())
             .insert(VisibilityBundle::default())

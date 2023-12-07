@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use bevy::reflect::GetTypeRegistration;
 use urdf_rs::Visual;
-use crate::queries::FileCheckItem;
+use crate::queries::{FileCheckItem, FileCheckPicker};
 use crate::traits::{Unwrap, ManagedTypeRegistration};
 use crate::wrappers::mesh::shape::Cube;
 use strum::IntoEnumIterator;
@@ -147,12 +147,153 @@ impl From<Plane> for GeometryFlag {
         
 //     }
 // }
-
-// impl From<Vec<Visual>> for GeometryFlag {
-//     fn from(value: Vec<Visual>) -> Self {
-        
+// impl From<&urdf_rs::Geometry> for GeometryFlag {
+//     fn from(geom: &urdf_rs::Geometry) -> Self {
+//         match geom {
+//             urdf_rs::Geometry::Box { size } => 
+//             GeometryFlag { primitive:  MeshPrimitive::Box {
+//                 size: (**size).map(|f| f as f32),
+//             }},            
+//             urdf_rs::Geometry::Cylinder { radius, length } => {
+//                 GeometryFlag {primitive: MeshPrimitive::Cylinder {
+//                     radius: *radius as f32,
+//                     length: *length as f32,
+//                 }}
+//             },
+//             urdf_rs::Geometry::Capsule { radius, length } => {
+//                 GeometryFlag {primitive: MeshPrimitive::Capsule {
+//                     radius: *radius as f32,
+//                     length: *length as f32,
+//                 }}
+//             }
+//             urdf_rs::Geometry::Sphere { radius } => GeometryFlag {primitive: MeshPrimitive::Sphere {
+//                 radius: *radius as f32,
+//             }},
+//             urdf_rs::Geometry::Mesh { filename, scale } => {
+//                 GeometryFile {
+//                     path: filename.clone(),
+//                 }
+//             }
+//         }
 //     }
 // }
+
+impl From<Vec<Visual>> for FileCheckPicker<GeometryFlag, GeometryFile> {
+    fn from(value: Vec<Visual>) -> Self {
+        if let Some(visual) = value.first() {
+            let urdf_geometry = &visual.geometry;
+
+            let flag_geometry = match urdf_geometry {
+                urdf_rs::Geometry::Box { size } => FileCheckPicker::PureComponent(
+                    GeometryFlag { 
+                        primitive:  MeshPrimitive::Box {
+                            size: (*size).map(|f| f as f32),
+                        }
+                    }
+                ),
+                urdf_rs::Geometry::Cylinder { radius, length } => FileCheckPicker::PureComponent(
+                    GeometryFlag {
+                        primitive: MeshPrimitive::Cylinder {
+                            radius: *radius as f32,
+                            length: *length as f32,
+                        }
+                    }
+                ),
+                urdf_rs::Geometry::Capsule { radius, length } => FileCheckPicker::PureComponent(
+                    GeometryFlag {
+                        primitive: MeshPrimitive::Capsule {
+                            radius: *radius as f32,
+                            length: *length as f32,
+                        }
+                    }
+                ),
+                urdf_rs::Geometry::Sphere { radius } => FileCheckPicker::PureComponent(
+                    GeometryFlag {
+                        primitive: MeshPrimitive::Sphere {
+                            radius: *radius as f32,
+                        }
+                    }
+                ),
+                urdf_rs::Geometry::Mesh { filename, scale } => FileCheckPicker::PathComponent(
+                    GeometryFile {
+                        path: filename.clone(),
+                    }
+                )
+            };
+            return flag_geometry
+        } else {
+            Self::default()
+        }
+    }
+}
+
+// impl<'a> From<Vec<Visual>> for FileCheckItem<'a, GeometryFlag, GeometryFile> {
+//     fn from(value: Vec<Visual>) -> Self {
+//         // take only the first one for expidency
+//         if let Some(visual) = value.first() {
+//             let urdf_geometry = visual.geometry;
+
+//             let flag_geometry = match urdf_geometry {
+//                 urdf_rs::Geometry::Box { size } => 
+//                     FileCheckItem {
+//                         component: &GeometryFlag { 
+//                             primitive:  MeshPrimitive::Box {
+//                                 size: (*size).map(|f| f as f32),
+//                             }
+//                         },
+//                         component_file: None
+
+//                     },            
+//                 urdf_rs::Geometry::Cylinder { radius, length } => 
+//                     FileCheckItem {
+//                         component: &GeometryFlag {
+//                             primitive: MeshPrimitive::Cylinder {
+//                                 radius: radius as f32,
+//                                 length: length as f32,
+//                         }},
+//                         component_file: None
+//                     }
+//                 ,
+//                 urdf_rs::Geometry::Capsule { radius, length } => {
+//                     FileCheckItem {
+//                         component: &GeometryFlag {primitive: MeshPrimitive::Capsule {
+//                             radius: radius as f32,
+//                             length: length as f32,
+//                         }},
+//                         component_file: None
+//                     }
+
+//                 },
+//                 urdf_rs::Geometry::Sphere { radius } => 
+//                     FileCheckItem {
+//                         component: &GeometryFlag {
+//                             primitive: MeshPrimitive::Sphere {
+//                                 radius: radius as f32,
+//                             }
+//                         }, 
+//                         component_file: None
+//                     }
+//                 ,
+//                 urdf_rs::Geometry::Mesh { filename, scale } => 
+//                     FileCheckItem { 
+//                         component: &GeometryFlag::default(),
+//                         component_file: Some(&GeometryFile {
+//                             path: filename.clone(),
+//                         })
+//                     }
+
+                
+//             };
+//             flag_geometry
+//             } else {
+//                 FileCheckItem {
+//                     component: &GeometryFlag::default(),
+//                     component_file: None
+//                 }
+//             }
+//         }
+//     }
+
 
 impl Unwrap<&GeometryFlag> for Mesh {
     fn unwrap(value: &GeometryFlag) -> Result<Self, String>{
