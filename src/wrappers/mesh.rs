@@ -214,7 +214,7 @@ impl From<Vec<Visual>> for FileCheckPicker<GeometryFlag, GeometryFile> {
                         }
                     }
                 ),
-                urdf_rs::Geometry::Mesh { filename, scale } => FileCheckPicker::PathComponent(
+                urdf_rs::Geometry::Mesh { filename, .. } => FileCheckPicker::PathComponent(
                     GeometryFile {
                         path: filename.clone(),
                     }

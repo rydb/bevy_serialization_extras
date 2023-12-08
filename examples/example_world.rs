@@ -23,6 +23,7 @@ fn main() {
     .insert_resource(SetSaveFile{name: "red".to_owned()})
     .add_plugins(DefaultPlugins.set(WindowPlugin {exit_condition: bevy::window::ExitCondition::OnPrimaryClosed, ..Default::default()}))
         .add_plugins(SerializationPlugin)
+
         //.add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)

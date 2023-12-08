@@ -2,6 +2,7 @@
 use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy::ecs::query::WorldQuery;
+use bevy_rapier3d::dynamics::{RigidBody, AdditionalMassProperties};
 use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
 use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on_request};
 use moonshine_save::save::SaveSet;
@@ -9,6 +10,8 @@ use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
 use crate::wrappers::link::{Linkage, JointFlag, LinkQuery};
+use crate::wrappers::mass::MassFlag;
+use crate::wrappers::rigidbodies::RigidBodyFlag;
 use crate::wrappers::urdf::{FromStructure, IntoHashMap, LazyDeserialize};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::GeometryFlag;
@@ -262,8 +265,8 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
         .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
-        //.add_plugins(SerializeComponentFor::<Mass, ColliderFlag>::default())
-
+        .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
+        .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
         .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
         ;
 

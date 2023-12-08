@@ -3,13 +3,15 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::PhysicsBundle, loaders::urdf_loader::Urdf};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
+use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin};
+
 use bevy_serialization_extras::ui::*;
 const SAVES_LOCATION: &str = "assets/saves";
 
@@ -22,6 +24,8 @@ fn main() {
     .insert_resource(UrdfHandles::default())
     .add_plugins(DefaultPlugins.set(WindowPlugin {exit_condition: bevy::window::ExitCondition::OnPrimaryClosed, ..Default::default()}))
         .add_plugins(SerializationPlugin)
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugins(RapierDebugRenderPlugin::default())
         //.add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, queue_urdf_load_requests)
@@ -95,11 +99,14 @@ fn setup(
     // }
     // plane
     commands.spawn(
+    (
         PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..default()
-    },
+            mesh: meshes.add(shape::Plane::from_size(5.0).into()),
+            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            ..default()
+        },
+        PhysicsFlagBundle::default()
+        )
     );
     
     //urdfs.world_urdfs.insert("", urdf_rs::read_file("assets/urdfs/example_bot.xml"));

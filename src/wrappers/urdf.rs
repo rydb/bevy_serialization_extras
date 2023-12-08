@@ -10,7 +10,7 @@ use yaserde::YaDeserialize;
 
 use crate::{traits::Structure, queries::{FileCheck, FileCheckItem, FileCheckPicker}, resources::{LoadRequest, AssetSpawnRequest}, loaders::urdf_loader::Urdf};
 
-use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag};
+use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag};
 
 use std::fs;
 use thiserror::Error;
@@ -74,30 +74,41 @@ impl<'a> FromStructure for Urdf {
         //             joint: Some(&JointFlag::default()) }
         //     }
         // ).collect::<Vec<Self>>();
+        let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
+
+        for (key, joint) in structured_joint_map.iter() {
+            let e = *structured_entities_map.entry(joint.parent.link.clone())
+            .or_insert(commands.spawn_empty().id());
+
+            commands.entity(e)
+            .insert(JointFlag::from(joint))
+            ;
+        }
+
         for (key , link) in structured_link_map.iter() {
             let mut e = commands.spawn_empty();
 
-            // let x = match FileCheckPicker::from(link.visual){
-            //     FileCheckPicker::PureComponent(t) => t,
-            //     FileCheckPicker::PathComponent(u) => u,
-            // };
             e
             .insert(Name::new(link.name.clone()))
             .insert(StructureFlag { name: robot.name.clone() })
-            .insert(MassFlag { mass: link.inertial.mass.value as f32})
+            .insert(MassFlag {mass: 1.0})
+            //.insert(MassFlag { mass: link.inertial.mass.value as f32})
             ;
             match FileCheckPicker::from(link.visual.clone()){
                     FileCheckPicker::PureComponent(t) => e.insert(t),
                     FileCheckPicker::PathComponent(u) => e.insert(u),
                 };
             e
-            .insert(JointFlag::default())
             .insert(MaterialFlag::from(link.visual.clone()))
             .insert(VisibilityBundle::default())
             .insert(TransformBundle {
                 local: spawn_request.position, 
                 ..default()
             })
+            .insert(ColliderFlag::default())
+            .insert(RigidBodyFlag::Dynamic)
+            .insert(CcdFlag::default())
+            //.insert()
             ;
         }
     }

@@ -1,7 +1,7 @@
 
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
 use bevy_rapier3d::{prelude::ImpulseJoint, na::SimdBool, parry::math::Isometry};
-use urdf_rs::Joint;
+use urdf_rs::{Joint, JointLimit};
 use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
 use crate::{traits::ManagedTypeRegistration, queries::FileCheck};
 use bevy::prelude::*;
@@ -34,7 +34,7 @@ pub struct Dynamics {
 }
 
 #[derive(Default, Reflect, Clone)]
-pub struct JointLimit {
+pub struct JointLimitWrapper {
     pub lower: f64,
     pub upper: f64,
     pub effort: f64,
@@ -55,6 +55,53 @@ pub struct Linkage {
     // struct. Each lifetime should be 'static.
     link: LinkQuery,
     joint: &'static JointFlag,
+}
+
+impl From<&Joint> for JointFlag {
+    fn from(value: &Joint) -> Self {
+        Self {
+            offset: Transform {
+                translation: Vec3::new(value.origin.xyz.0[0] as f32, value.origin.xyz.0[1] as f32, value.origin.xyz.0[2] as f32),
+                rotation: Quat::default(),
+                ..default()
+            },
+            reciever: value.child.link.clone(),
+            limit: JointLimitWrapper {
+                 lower:  value.limit.lower, 
+                 upper: value.limit.upper, 
+                 effort: value.limit.effort, 
+                 velocity: value.limit.velocity
+            },
+            dynamics: {
+                match value.dynamics.clone() {
+                    Some(dynamics) => 
+                        Dynamics {
+                            damping: dynamics.damping,
+                            friction: dynamics.friction,
+                        },
+                    None => Dynamics::default()
+                    
+                }
+            },
+            local_frame1: Transform::default(),
+            local_frame2: Transform::default(),
+            locked_axes: {
+                //clamp axis to between 0-1 for simplicity and for bitmask flipping
+                let unit_axis = value.axis.xyz.0
+                .map(|n| n.clamp(0.0, 1.0))
+                .map(|n| n as u8);
+                let mut x = 1 << unit_axis[0];
+                x = x | (2 << unit_axis[1]);
+                x = x | (3 << unit_axis[2]);
+                JointAxesMaskWrapper::from_bits_truncate(x)
+            },
+            limit_axes: JointAxesMaskWrapper::all(),
+            motor_axes: JointAxesMaskWrapper::all(),
+            coupled_axes: JointAxesMaskWrapper::all(),
+            contacts_enabled: true,
+            enabled: true
+        }
+    }
 }
 
 impl From<&JointFlag> for GenericJoint {
@@ -79,11 +126,11 @@ impl From<&JointFlag> for GenericJoint {
             limit_axes: JointAxesMask::from_bits_truncate(value.limit_axes.bits()),
             motor_axes: JointAxesMask::from_bits_truncate(value.motor_axes.bits()),
             coupled_axes: JointAxesMask::from_bits_truncate(value.coupled_axes.bits()),
-            // this is probably wrong...
+            //FIXME: this is probably wrong...
             limits: [joint_limit, joint_limit, joint_limit, joint_limit, joint_limit, joint_limit],
             motors: [joint_motor, joint_motor, joint_motor, joint_motor, joint_motor, joint_motor],
             contacts_enabled: value.contacts_enabled,
-            //(!todo) fix jointflag to have a proper enum for this later
+            //FIXME:  fix jointflag to have a proper enum for this later
             enabled: rapier3d::dynamics::JointEnabled::Enabled,
         }
     }
@@ -228,7 +275,7 @@ pub struct JointFlag {
     //pub parent: String,
     pub reciever: String,
     //pub axis: 
-    pub limit: JointLimit,
+    pub limit: JointLimitWrapper,
     pub dynamics: Dynamics,
     //pub mimic: Option<Mimic>
     //pub safety_controller: Option<SafetyController>,
@@ -262,7 +309,7 @@ impl ManagedTypeRegistration for JointFlag {
     fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {
         let mut type_registry = Vec::new();
 
-        type_registry.push(JointLimit::get_type_registration());
+        type_registry.push(JointLimitWrapper::get_type_registration());
         type_registry.push(Dynamics::get_type_registration());
         type_registry.push(JointFlag::get_type_registration());
 

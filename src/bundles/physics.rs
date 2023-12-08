@@ -1,6 +1,19 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+use crate::wrappers::{rigidbodies::RigidBodyFlag, colliders::ColliderFlag, mass::MassFlag, friction::FrictionFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
+
+/// a collection of flags, that, when deserialized into a compatible physics component, enable physics for an entity.
+#[derive(Default, Bundle)]
+pub struct PhysicsFlagBundle {
+    pub rigid_body: RigidBodyFlag,
+    pub collider: ColliderFlag,
+    pub mass: MassFlag,
+    pub friction: FrictionFlag,
+    pub continous_collision_setting: CcdFlag,
+    pub solver_groups: SolverGroupsFlag,
+}
+
 /// collection of all things required for something to have "physics"
 #[derive(Bundle)]
 pub struct PhysicsBundle {

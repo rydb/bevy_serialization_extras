@@ -8,3 +8,4 @@ pub mod friction;
 pub mod urdf;
 pub mod link;
 pub mod mass;
+pub mod continous_collision;
