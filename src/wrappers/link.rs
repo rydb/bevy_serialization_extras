@@ -1,26 +1,14 @@
 
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
-use bevy_rapier3d::{prelude::ImpulseJoint, na::SimdBool};
-use bevy::ecs::world::World;
+use bevy_rapier3d::{prelude::ImpulseJoint, na::SimdBool, parry::math::Isometry};
 use urdf_rs::Joint;
-use crate::{traits::{ManagedTypeRegistration, AsBundle}, queries::{FileCheck, FileCheckItem}};
+use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
+use crate::{traits::ManagedTypeRegistration, queries::FileCheck};
 use bevy::prelude::*;
 
 
 
-use super::{mesh::{GeometryFlag, GeometryFile}, colliders::ColliderFlag, mass::MassFlag, urdf};
-// pub struct LinkStructure {
-//     pub name: String, 
-// }
-
-// #[derive(Component, Clone)]
-// pub struct LinkFlag {
-//     pub structure: String,
-//     pub name: String,
-//     pub inertial: MassFlag,
-//     pub visual: GeometryFlag,
-//     pub collision: ColliderFlag,
-// }
+use super::{mesh::{GeometryFlag, GeometryFile}, colliders::ColliderFlag, mass::MassFlag};
 
 /// the "super-structure" that this entity is related to, relevant for serializing disconnected by related entities 
 #[derive(Component)]
@@ -38,28 +26,6 @@ pub struct LinkQuery {
     pub collision: Option<&'static ColliderFlag>,
     pub joint: Option<&'static JointFlag>,
 }
-
-// #[derive(WorldQuery)]
-// pub struct LinkBundle {
-//     pub name: Name,
-//     pub structure: StructureFlag,
-//     pub inertial: MassFlag,
-//     pub visual: 
-//     pub collision: ColliderFlag,
-//     pub joint: JointFlag
-// }
-
-//impl AsBundle<
-
-// #[derive(Bundle)]
-// pub struct LinkBundle {
-//     pub name: Name,
-//     pub structure: StructureFlag,
-//     pub inertial: MassFlag,
-//     pub visual: GeometryFile,
-//     pub collision: ColliderFlag,
-//     pub joint: JointFlag
-// }
 
 #[derive(Default, Reflect, Clone)]
 pub struct Dynamics {
@@ -91,13 +57,45 @@ pub struct Linkage {
     joint: &'static JointFlag,
 }
 
-
+impl From<&JointFlag> for GenericJoint {
+    fn from(value: &JointFlag) -> Self {
+        //GenericJoint::(locked_axes)
+        let joint_limit = JointLimits {
+            max: value.limit.upper as f32,
+            min: value.limit.lower as f32,
+            impulse: value.limit.velocity as f32,
+        };
+        let joint_motor = JointMotor::default();
+        Self {
+            local_frame1: Isometry3 {
+                translation: value.local_frame1.translation.into(),
+                rotation: value.local_frame1.rotation.into()
+            },
+            local_frame2: Isometry3 {
+                translation: value.local_frame2.translation.into(),
+                rotation: value.local_frame2.rotation.into()
+            },
+            locked_axes: JointAxesMask::from_bits_truncate(value.locked_axes.bits()),
+            limit_axes: JointAxesMask::from_bits_truncate(value.limit_axes.bits()),
+            motor_axes: JointAxesMask::from_bits_truncate(value.motor_axes.bits()),
+            coupled_axes: JointAxesMask::from_bits_truncate(value.coupled_axes.bits()),
+            // this is probably wrong...
+            limits: [joint_limit, joint_limit, joint_limit, joint_limit, joint_limit, joint_limit],
+            motors: [joint_motor, joint_motor, joint_motor, joint_motor, joint_motor, joint_motor],
+            contacts_enabled: value.contacts_enabled,
+            //(!todo) fix jointflag to have a proper enum for this later
+            enabled: rapier3d::dynamics::JointEnabled::Enabled,
+        }
+    }
+}
 
 impl From<&LinkageItem<'_>> for ImpulseJoint {
     fn from(value: &LinkageItem) -> Self {
+        let joint = GenericJoint::from(value.joint);
+        let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
         Self { 
             parent: value.entity,
-            data: self::default(), // for debug, need to implement this later
+            data: bevy_rapier_joint, 
         }
     }
 }
@@ -173,10 +171,10 @@ pub fn infer_joint_type() {
 // }
 
 #[derive(Reflect, Clone, Default)]
-pub struct JointAxesMask(u32);
+pub struct JointAxesMaskWrapper(u8);
 
 bitflags::bitflags! {
-    impl JointAxesMask: u32 {
+    impl JointAxesMaskWrapper: u8 {
         /// The translational degree of freedom along the local X axis of a joint.
         const X = 1 << 0;
         /// The translational degree of freedom along the local Y axis of a joint.
@@ -212,44 +210,12 @@ bitflags::bitflags! {
     }
 }
 
+// pub struct LazyIsometry {
+//     transform: Transform,
+// }
 
-// bitflags::bitflags! {
-//     /// A bit mask identifying multiple degrees of freedom of a joint.
-//     #[derive(Reflect, Default)]
-//     pub struct ccc: u8 {
-//         /// The translational degree of freedom along the local X axis of a joint.
-//         const X = 1 << 0;
-//         /// The translational degree of freedom along the local Y axis of a joint.
-//         const Y = 1 << 1;
-//         /// The translational degree of freedom along the local Z axis of a joint.
-//         const Z = 1 << 2;
-//         /// The angular degree of freedom along the local X axis of a joint.
-//         const ANG_X = 1 << 3;
-//         /// The angular degree of freedom along the local Y axis of a joint.
-//         const ANG_Y = 1 << 4;
-//         /// The angular degree of freedom along the local Z axis of a joint.
-//         const ANG_Z = 1 << 5;
-//         /// The set of degrees of freedom locked by a revolute joint.
-//         const LOCKED_REVOLUTE_AXES = Self::X.bits | Self::Y.bits | Self::Z.bits | Self::ANG_Y.bits | Self::ANG_Z.bits;
-//         /// The set of degrees of freedom locked by a prismatic joint.
-//         const LOCKED_PRISMATIC_AXES = Self::Y.bits | Self::Z.bits | Self::ANG_X.bits | Self::ANG_Y.bits | Self::ANG_Z.bits;
-//         /// The set of degrees of freedom locked by a fixed joint.
-//         const LOCKED_FIXED_AXES = Self::X.bits | Self::Y.bits | Self::Z.bits | Self::ANG_X.bits | Self::ANG_Y.bits | Self::ANG_Z.bits;
-//         /// The set of degrees of freedom locked by a spherical joint.
-//         const LOCKED_SPHERICAL_AXES = Self::X.bits | Self::Y.bits | Self::Z.bits;
-//         /// The set of degrees of freedom left free by a revolute joint.
-//         const FREE_REVOLUTE_AXES = Self::ANG_X.bits;
-//         /// The set of degrees of freedom left free by a prismatic joint.
-//         const FREE_PRISMATIC_AXES = Self::X.bits;
-//         /// The set of degrees of freedom left free by a fixed joint.
-//         const FREE_FIXED_AXES = 0;
-//         /// The set of degrees of freedom left free by a spherical joint.
-//         const FREE_SPHERICAL_AXES = Self::ANG_X.bits | Self::ANG_Y.bits | Self::ANG_Z.bits;
-//         /// The set of all translational degrees of freedom.
-//         const LIN_AXES = Self::X.bits() | Self::Y.bits() | Self::Z.bits();
-//         /// The set of all angular degrees of freedom.
-//         const ANG_AXES = Self::ANG_X.bits() | Self::ANG_Y.bits() | Self::ANG_Z.bits();
-//     }
+// pub struct t {
+//     ttt: ImpulseJoint
 // }
 
 #[derive(Component, Default, Reflect, Clone)]
@@ -267,18 +233,18 @@ pub struct JointFlag {
     //pub mimic: Option<Mimic>
     //pub safety_controller: Option<SafetyController>,
 
-    // / The joint’s frame, expressed in the first rigid-body’s local-space.
-    // pub local_frame1: Isometry<Real>,
+    /// The joint’s frame, expressed in the first rigid-body’s local-space.
+    pub local_frame1: Transform,
     // / The joint’s frame, expressed in the second rigid-body’s local-space.
-    // pub local_frame2: Isometry<Real>,
+    pub local_frame2: Transform,
     // / The degrees-of-freedoms locked by this joint.
-    pub locked_axes: JointAxesMask,
+    pub locked_axes: JointAxesMaskWrapper,
     /// The degrees-of-freedoms limited by this joint.
-    pub limit_axes: JointAxesMask,
+    pub limit_axes: JointAxesMaskWrapper,
     /// The degrees-of-freedoms motorised by this joint.
-    pub motor_axes: JointAxesMask,
+    pub motor_axes: JointAxesMaskWrapper,
     /// The coupled degrees of freedom of this joint.
-    pub coupled_axes: JointAxesMask,
+    pub coupled_axes: JointAxesMaskWrapper,
     // The limits, along each degrees of freedoms of this joint.
     ///
     /// The motors, along each degrees of freedoms of this joint.

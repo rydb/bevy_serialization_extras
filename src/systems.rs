@@ -110,26 +110,6 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
     // }
 }
 
-// pub fn deserialize_resource_as_structures<ThingResource>(
-//     things_resource: Res<ThingResource>,
-//     mut resload_requests: ResMut<ResLoadRequests<ThingResource>>,
-//     mut commands: Commands,
-// ) 
-//     where
-//         ThingResource: Resource + Clone + FromStructure
-// {
-//     // let mut load_requests = Vec::new();
-//     // if let Some(requests_as_resource) = resload_requests_check {
-//     //     load_requests = requests_as_resource.requests
-//     // }
-//     //(TODO) get rid of this clone
-//     //let leftover_reqs = 
-//     //println!("handing of resource {:#?}", things_resource.into_inner().clone());
-//     //let x = things_resource.into_inner().clone();
-//     FromStructure::into_structures(&mut commands, things_resource.into_inner().clone(), resload_requests.requests.clone());
-//     //resload_requests.requests = leftover_reqs;
-// }
-
 /// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Thing, WrapperThing>(
     thing_query: Query<(Entity, &Thing)>,
@@ -163,33 +143,6 @@ pub fn deserialize_as_one<T, U>(
         );
     }
 }
-
-//takes a query, and serializes the components inside that query into a single resource
-// pub fn serialize_as_one_resource<T, U, V>(
-//     //mut commands: Commands,
-//     thing_set_query: Query<(Entity, T)>
-// ) 
-//     where
-//         T: WorldQuery + ReadOnlyWorldQuery + for<'a> Structure<<<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
-//         U: for<'w, 's> From<Query<'w, 's, (Entity, T)>>,
-//         V: Resource,
-// {
-//     let mut thing_structures: HashMap<String, Vec<Entity>> = HashMap::new();
-
-//     let urdf_resource = U::from(thing_set_query);
-//     for (e, thing_set) in thing_set_query.iter() {
-
-//         thing_structures.entry(T::structure(thing_set))
-//         .or_default()
-//         .push(e)
-//         ;
-
-//     } 
-//     // for (structure_name, thing_set_) in thing_structures.iter() {
-//     //     // let thing_set = thing_set_query.get(thing_set_entity);
-//     //     for thing_
-//     // }
-// }
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (

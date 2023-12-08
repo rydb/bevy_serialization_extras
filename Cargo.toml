@@ -12,6 +12,7 @@ description = "A crate for managing serialization with moonshine_save + wrappers
 [dependencies]
 bevy = "0.12"
 bevy_rapier3d = "0.23"
+rapier3d = "0.17.2"
 glam = "0.24"
 ron = "0.8"
 moonshine-save = "0.3.4"

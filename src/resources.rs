@@ -1,5 +1,5 @@
 use std::{any::TypeId, marker::PhantomData, collections::VecDeque, path::PathBuf};
-use bevy::{prelude::{Resource, default}, transform::components::Transform, asset::{AssetId, Asset, Handle}};
+use bevy::{prelude::Resource, transform::components::Transform, asset::{Asset, Handle}};
 use moonshine_save::{save::SaveFilter, prelude::LoadFromFileRequest};
 use std::collections::HashMap;
 use moonshine_save::prelude::SaveIntoFileRequest;

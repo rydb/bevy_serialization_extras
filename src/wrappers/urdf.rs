@@ -10,7 +10,7 @@ use yaserde::YaDeserialize;
 
 use crate::{traits::Structure, queries::{FileCheck, FileCheckItem, FileCheckPicker}, resources::{LoadRequest, AssetSpawnRequest}, loaders::urdf_loader::Urdf};
 
-use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMask, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag};
+use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag};
 
 use std::fs;
 use thiserror::Error;
@@ -92,7 +92,7 @@ impl<'a> FromStructure for Urdf {
                 };
             e
             .insert(JointFlag::default())
-            .insert(MaterialFlag::default())
+            .insert(MaterialFlag::from(link.visual.clone()))
             .insert(VisibilityBundle::default())
             .insert(TransformBundle {
                 local: spawn_request.position, 
@@ -177,9 +177,9 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
                             child: urdf_rs::LinkName { link: joint.reciever.clone() },
                             axis: urdf_rs::Axis { 
                                 xyz:  {
-                                    let x = joint.limit_axes.contains(JointAxesMask::ANG_X) as u32 as f64;
-                                    let y = joint.limit_axes.contains(JointAxesMask::ANG_Y) as u32 as f64;
-                                    let z = joint.limit_axes.contains(JointAxesMask::ANG_Z) as u32 as f64;
+                                    let x = joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X) as u32 as f64;
+                                    let y = joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Y) as u32 as f64;
+                                    let z = joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Z) as u32 as f64;
                                     urdf_rs::Vec3([x, y, z])
                                 }
                             },
