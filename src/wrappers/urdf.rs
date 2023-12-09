@@ -86,28 +86,30 @@ impl<'a> FromStructure for Urdf {
         }
 
         for (key , link) in structured_link_map.iter() {
-            let mut e = commands.spawn_empty();
+            let e = *structured_entities_map.entry(link.name.clone())
+            .or_insert(commands.spawn_empty().id());
 
-            e
+
+            commands.entity(e)
             .insert(Name::new(link.name.clone()))
             .insert(StructureFlag { name: robot.name.clone() })
             .insert(MassFlag {mass: 1.0})
             //.insert(MassFlag { mass: link.inertial.mass.value as f32})
             ;
             match FileCheckPicker::from(link.visual.clone()){
-                    FileCheckPicker::PureComponent(t) => e.insert(t),
-                    FileCheckPicker::PathComponent(u) => e.insert(u),
+                    FileCheckPicker::PureComponent(t) => commands.entity(e).insert(t),
+                    FileCheckPicker::PathComponent(u) => commands.entity(e).insert(u),
                 };
-            e
+            commands.entity(e)
             .insert(MaterialFlag::from(link.visual.clone()))
             .insert(VisibilityBundle::default())
             .insert(TransformBundle {
                 local: spawn_request.position, 
                 ..default()
             })
-            .insert(ColliderFlag::default())
-            .insert(RigidBodyFlag::Dynamic)
-            .insert(CcdFlag::default())
+            // .insert(ColliderFlag::default())
+            // .insert(RigidBodyFlag::Dynamic)
+            // .insert(CcdFlag::default())
             //.insert()
             ;
         }

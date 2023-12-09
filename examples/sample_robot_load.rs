@@ -45,9 +45,17 @@ pub struct UrdfHandles {
 pub fn queue_urdf_load_requests(
     mut urdf_load_requests: ResMut<AssetSpawnRequestQueue<Urdf>>
 ) {
+    // urdf_load_requests.requests.push_front(
+    //     AssetSpawnRequest {
+    //          source: "urdfs/example_bot.xml".to_owned().into(), 
+    //          position: Transform::from_xyz(0.0, 1.0, 0.0), 
+    //          ..Default::default()
+    //     }
+    // )
+
     urdf_load_requests.requests.push_front(
         AssetSpawnRequest {
-             source: "urdfs/example_bot.xml".to_owned().into(), 
+             source: "urdfs/tutorial_bot.xml".to_owned().into(), 
              position: Transform::from_xyz(0.0, 1.0, 0.0), 
              ..Default::default()
         }

@@ -41,7 +41,7 @@ pub fn serialize_structures_as_assets<ThingSet, AssetType> (
         AssetType: Asset + for<'w, 's> IntoHashMap<Query<'w, 's, ThingSet>> + Clone
 {
     let assets_list: HashMap<String, AssetType> = IntoHashMap::into_hashmap(thing_query);
-    println!("assets list is {:#?}", assets_list.keys());
+    //println!("assets list is {:#?}", assets_list.keys());
     for (name, uncached_asset) in assets_list.iter() {
         asset_server.add(uncached_asset.clone());
         //LazyDeserialize::deserialize(uncached_asset.clone(), asset_handle.path());
