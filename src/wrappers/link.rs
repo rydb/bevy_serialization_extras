@@ -11,7 +11,7 @@ use bevy::prelude::*;
 use super::{mesh::{GeometryFlag, GeometryFile}, colliders::ColliderFlag, mass::MassFlag};
 
 /// the "super-structure" that this entity is related to, relevant for serializing disconnected by related entities 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 pub struct StructureFlag {
     pub name: String,
 }

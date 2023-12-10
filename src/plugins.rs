@@ -9,12 +9,12 @@ use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
-use crate::wrappers::link::{Linkage, JointFlag, LinkQuery};
+use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag};
 use crate::wrappers::mass::MassFlag;
 use crate::wrappers::rigidbodies::RigidBodyFlag;
 use crate::wrappers::urdf::{FromStructure, IntoHashMap, LazyDeserialize};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
-use crate::wrappers::mesh::GeometryFlag;
+use crate::wrappers::mesh::{GeometryFlag, GeometryFile};
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::prelude::SaveFilter;
 use crate::ui::update_last_saved_typedata;
@@ -293,6 +293,8 @@ impl Plugin for SerializationPlugin {
         .register_type::<Camera3dDepthTextureUsage>()
         .register_type::<InheritedVisibility>()
         .register_type::<ScreenSpaceTransmissionQuality>()
+        .register_type::<GeometryFile>()
+        .register_type::<StructureFlag>()
         //.add_systems(Update, from_structure::<Linkage, ImpulseJoint>)
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<LoadRequest>()))
