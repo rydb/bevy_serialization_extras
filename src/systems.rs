@@ -112,7 +112,7 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
 
 /// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Thing, WrapperThing>(
-    thing_query: Query<(Entity, &Thing)>,
+    thing_query: Query<(Entity, &Thing), Without<WrapperThing>>,
     mut commands: Commands,
 )
     where
@@ -147,7 +147,7 @@ pub fn deserialize_as_one<T, U>(
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (
     things: ResMut<Assets<Thing>>,
-    thing_query: Query<(Entity, &Handle<Thing>)>,
+    thing_query: Query<(Entity, &Handle<Thing>), Without<WrapperThing>>,
     mut commands: Commands,
 )// -> bool
     where
@@ -155,6 +155,7 @@ pub fn try_serialize_asset_for<Thing, WrapperThing> (
         WrapperThing: Component + for<'a> From<&'a Thing> 
 {
     for (e, thing_handle) in thing_query.iter() {
+        println!("changing Wrapperthing to match changed asset for {:#?}", e);
         match things.get(thing_handle) {
             Some(thing) => {
                 commands.entity(e).insert(
@@ -166,12 +167,32 @@ pub fn try_serialize_asset_for<Thing, WrapperThing> (
     }
     //return true;
 }
+/// takes a wrapper componnet, and deserializes it back into its unserializable asset handle varaint
+pub fn deserialize_asset_for<WrapperThing, Thing> (
+    mut things: ResMut<Assets<Thing>>,
+    wrapper_thing_query: Query<(Entity, &WrapperThing), Or<(Changed<WrapperThing>, Without<Handle<Thing>>)>>,
+    mut commands: Commands,
+) 
+    where
+        WrapperThing: Component,
+        Thing: Asset + for<'a> From<&'a WrapperThing>,
+{
+    for (e, wrapper_thing) in wrapper_thing_query.iter() {
+        println!("converting wrapper thing {:#?}", e);
+        let thing = Thing::from(wrapper_thing);
+        let thing_handle = things.add(thing);
+
+        commands.entity(e).insert(
+            thing_handle
+        );
+    }
+}
 
 /// takes a wrapper component, and attempts to deserialize it into its asset handle through [`Unwrap`]
 /// this is components that rely on file paths.
 pub fn deserialize_wrapper_for<WrapperThing, Thing> (
     mut things: ResMut<Assets<Thing>>,
-    wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Handle<Thing>>>,
+    wrapper_thing_query: Query<(Entity, &WrapperThing), Or<(Without<Handle<Thing>>, Changed<WrapperThing>)>>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) 
@@ -199,29 +220,10 @@ pub fn deserialize_wrapper_for<WrapperThing, Thing> (
     }
 }
 
-/// takes a wrapper componnet, and deserializes it back into its unserializable asset handle varaint
-pub fn deserialize_asset_for<WrapperThing, Thing> (
-    mut things: ResMut<Assets<Thing>>,
-    wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Handle<Thing>>>,
-    mut commands: Commands,
-) 
-    where
-        WrapperThing: Component,
-        Thing: Asset + for<'a> From<&'a WrapperThing>,
-{
-    for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        let thing = Thing::from(wrapper_thing);
-        let thing_handle = things.add(thing);
-
-        commands.entity(e).insert(
-            thing_handle
-        );
-    }
-}
 
 /// deserializes a wrapper component into its unserializable component variant.
 pub fn deserialize_for<WrapperThing, Thing>(
-    wrapper_thing_query: Query<(Entity, &WrapperThing), Without<Thing>>,
+    wrapper_thing_query: Query<(Entity, &WrapperThing), Or<(Without<Thing>, Changed<WrapperThing>)>>,
     mut commands: Commands,
 ) 
     where

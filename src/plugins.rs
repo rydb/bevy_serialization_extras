@@ -22,6 +22,14 @@ use super::systems::*;
 use super::resources::*;
 
 
+// pub struct SaveRequest {
+
+// }
+
+// pub struct LoadRequest {
+
+// }
+
 pub struct SerializeQueryFor<S, T, U> {
     query: PhantomData<fn() -> S>,
     thing: PhantomData<fn() -> T>,
@@ -100,12 +108,13 @@ impl<T, U> Plugin for SerializeComponentFor<T, U>
         .add_systems(PreUpdate,
             (
              serialize_for::<T, U>,
-            ).before(SaveSet::Save)
+            )//.run_if(resource_added::<SaveRequest>())
+              //.before(SaveSet::Save)
         )
         .add_systems(Update, 
-            (
+            //(
                 deserialize_for::<U, T>
-            ).after(LoadSet::PostLoad)
+            //)//.after(LoadSet::PostLoad)
         )
         ;
     }
@@ -136,12 +145,12 @@ impl<T, U> Plugin for SerializeAssetFor<T, U>
         .add_systems(PreUpdate,
             (
              try_serialize_asset_for::<T, U>,
-            ).before(SaveSet::Save)
+            )//.after(resource_added::<SaveRequest>())
         )
         .add_systems(Update, 
-            (
+            //(
                 deserialize_asset_for::<U, T>
-            ).after(LoadSet::PostLoad)
+            //).after(LoadSet::PostLoad)
         )
         ;
     }

@@ -2,18 +2,17 @@
 
 use std::path::PathBuf;
 
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow, render::mesh::shape::Cube};
 use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
-use egui::TextEdit;
+use egui::{TextEdit, text::LayoutJob, TextFormat, ScrollArea};
 use moonshine_save::save::Save;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
-use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin};
+use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin, dynamics::{ImpulseJoint, RigidBody, PrismaticJointBuilder}};
 
 use bevy_serialization_extras::ui::*;
-const SAVES_LOCATION: &str = "assets/saves";
 
 
 fn main() {
@@ -31,11 +30,87 @@ fn main() {
         .add_systems(Startup, queue_urdf_load_requests)
         //.add_systems(Update, load_urdfs_handles_into_registry)
         .add_systems(Startup, setup)
+        .add_systems(Startup, minimal_viable_joint)
         //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         .add_systems(Update, manage_serialization_ui)
+        .add_systems(Update, display_rapier_joint_info)
         .run();
 }
 
+
+pub fn minimal_viable_joint(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>, 
+    mut materials: ResMut<Assets<StandardMaterial>>
+) {
+    let joint = PrismaticJointBuilder::new(Vec3::X)
+    .local_anchor1(Vec3::new(0.0, 0.0, 1.0))
+    .local_anchor2(Vec3::new(0.0, 0.0, -3.0))
+    .motor_velocity(1.0, 0.5);
+
+    let cube1 = commands.spawn( (
+
+        PbrBundle {
+            mesh: meshes.add(shape::Cube::new(0.2).into()),
+            transform: Transform::from_xyz(0.0, 1.0, 0.0),
+            material: materials.add(Color::BLUE.into()),
+            ..default()
+        },
+        RigidBody::Dynamic,   
+    )
+    ).id();
+    let cube2 = commands.spawn(
+        (
+        PbrBundle {
+            mesh: meshes.add(shape::Cube::new(0.2).into()),
+            transform: Transform::from_xyz(0.0, 1.0, 0.5),
+            material: materials.add(Color::WHITE.into()),
+            ..default()
+        },
+        RigidBody::Dynamic,
+        ImpulseJoint::new(cube1, joint),
+        )
+        
+    ).id();
+}
+
+// #[derive(Component)]
+// pub struct RapierJointWindow;
+
+pub fn display_rapier_joint_info(
+    mut rapier_joint_window: Query<&mut EguiContext, With<PrimaryWindow>>,
+    rapier_joints: Query<&ImpulseJoint>,
+) {
+    for mut context in rapier_joint_window.iter_mut() { 
+        egui::Window::new("Rapier Joint Info textbox")
+        .show(context.get_mut(), |ui|{
+            println!("number of joints {:#?}", rapier_joints.iter().len());
+
+            for joint in rapier_joints.iter() {
+                ScrollArea::vertical().show(
+                    ui, |ui| {
+                        let joint_as_string = format!("{:#?}", joint);
+                        let job = LayoutJob::single_section(
+                            joint_as_string,
+                            TextFormat::default()
+                        );
+                        ui.label(job);
+                    }
+                );
+
+            }
+        })
+        ;
+    }
+}
+
+// pub fn print_rapier_joint_info(
+//     rapier_joints: Query<&ImpulseJoint>, 
+// ) {
+//     for joint in rapier_joints.iter() {
+//         println!("joint: {:#?}", joint)
+//     }
+// }
 
 #[derive(Resource, Default)]
 pub struct UrdfHandles {
@@ -53,47 +128,14 @@ pub fn queue_urdf_load_requests(
     //     }
     // )
 
-    urdf_load_requests.requests.push_front(
-        AssetSpawnRequest {
-             source: "urdfs/tutorial_bot.xml".to_owned().into(), 
-             position: Transform::from_xyz(0.0, 1.0, 0.0), 
-             ..Default::default()
-        }
-    )
+    // urdf_load_requests.requests.push_front(
+    //     AssetSpawnRequest {
+    //          source: "urdfs/tutorial_bot.xml".to_owned().into(), 
+    //          position: Transform::from_xyz(0.0, 1.0, 0.0), 
+    //          ..Default::default()
+    //     }
+    // )
 }
-
-// pub fn queue_urdf_load_requests(
-//     //mut urdfs: ResMut<Urdfs>,
-//     asset_server: ResMut<AssetServer>,
-//     //mut urdf_load_requests: ResMut<ResLoadRequests<Urdfs>>,
-//     //mut urdfs: ResMut<Assets<Urdf>>,
-//     mut urdf_handles_vec: ResMut<UrdfHandles>,
-// ) {
-// //    let request = ResLoadRequest {
-// //         item_id: "myfirst".to_owned(),
-// //         position: Transform { translation: Vec3 {x: 0.0, y: 2.0, z: 0.0}.into(), ..default()}
-// //    };
-//    let example_bot: Handle<Urdf> = asset_server.load("urdfs/example_bot.xml");   
-//    println!("example_bot path is {:#?}", example_bot.path());
-//    urdf_handles_vec.handle_vec.push(example_bot);
-//    //urdf_load_requests.requests.push_back(request)
-// }
-
-// pub fn load_urdfs_handles_into_registry(
-//     mut urdf_handles_vec: ResMut<UrdfHandles>,
-//     urdfs: Res<Assets<Urdf>>,
-//     //mut cached_urdfs: ResMut<Urdfs>
-// ) {
-//     for handle in urdf_handles_vec.handle_vec.pop() {
-//         if let Some(urdf) = urdfs.get(handle) {
-//             let robot_name = urdf.robot.name.clone();
-//             println!("adding the following robot to urdf registry: {:#?}", robot_name);
-//             //cached_urdfs.world_urdfs.insert(robot_name.clone(), urdf.robot.clone());
-//             //println!("cached_urdfs are {:#?}", cached_urdfs.world_urdfs.keys());
-//         }
-//     }
-
-// }
 
 /// set up a simple 3D scene
 fn setup(
@@ -117,8 +159,6 @@ fn setup(
         )
     );
     
-    //urdfs.world_urdfs.insert("", urdf_rs::read_file("assets/urdfs/example_bot.xml"));
-
     // light
     commands.spawn(
         (
@@ -148,69 +188,3 @@ fn setup(
 pub struct SetSaveFile {
     pub name: String,
 }
-
-// pub fn save_file_selection(
-//     mut primary_window_query: Query<&mut EguiContext, With<PrimaryWindow>>,
-//     mut save_file_textbox: ResMut<SetSaveFile>,
-//     mut commands: Commands,
-
-// ) {
-//     for mut context in primary_window_query.iter_mut() {
-//         let menu_name = "Select a save to load";
-//         let mut saves_path = PathBuf::default();
-//         if let Ok(path_check) = env::current_dir()  {
-//             saves_path = path_check;
-//             saves_path.push(SAVES_LOCATION)
-//         }
-//         egui::TopBottomPanel::bottom(menu_name)
-//         .show(context.get_mut(), |ui| {
-//                 ui.group(|ui| {
-//                     ui.label("Save File: (push enter to save, leave out .ron)");
-//                     ui.add(TextEdit::singleline(&mut save_file_textbox.name));
-
-//                     ui.horizontal(|ui| {
-//                         if ui.button("save").clicked() {
-//                             commands.insert_resource(
-//                                 SaveRequest {
-//                                     path: SAVES_LOCATION.to_owned() + "/" + &save_file_textbox.name + ".ron"
-//                                 }
-//                             )
-//                         }
-//                         if ui.button("load").clicked() {
-//                             commands.insert_resource(
-//                                 LoadRequest {
-//                                     path: SAVES_LOCATION.to_owned() + "/" + &save_file_textbox.name + ".ron"
-//                                 }
-//                             )
-//                         }
-                        
-//                     });
-
-
-//                 });
-
-
-//                 if let Ok(folder) = saves_path.read_dir(){
-//                     for file_check in folder {
-//                         match file_check {
-//                             Ok(file) => {
-//                                 let file_name = file.file_name().to_str().unwrap().to_owned();
-//                                 if ui.button(&file_name).clicked() {
-//                                     commands.insert_resource(
-//                                         SetSaveFile {
-//                                             name: file_name.replace(".ron", "")
-//                                         }
-//                                     )
-//                                 }
-//                             }
-//                             _ => {}
-//                         }
-//                     }
-                    
-//                 };
-//             }
-    
-//     );
-//     }
-// }
-
