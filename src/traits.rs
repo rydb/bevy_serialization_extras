@@ -1,4 +1,4 @@
-use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World, Entity}, ecs::{query::WorldQuery, bundle::Bundle}};
+use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World, Entity}, ecs::{query::WorldQuery, bundle::Bundle, component::Component}};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing. 
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
@@ -21,6 +21,10 @@ pub trait Structure<T> {
     fn structure(value: T) -> String;
 }
 
+
+// pub trait ChangeChecked<T> {
+//     type ChangeAlias = u8;
+// }
 
 pub trait AsBundle<T: Bundle> {
     fn into_bundle(self) -> T;

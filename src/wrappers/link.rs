@@ -53,7 +53,7 @@ pub struct Linkage {
     entity: Entity,
     // It is required that all reference lifetimes are explicitly annotated, just like in any
     // struct. Each lifetime should be 'static.
-    link: LinkQuery,
+    //link: LinkQuery,
     joint: &'static JointFlag,
 }
 
@@ -136,6 +136,46 @@ impl From<&JointFlag> for GenericJoint {
     }
 }
 
+impl From<GenericJoint> for JointFlag {
+    fn from(value: GenericJoint) -> Self {
+        //FIXME: implement this properly
+        let joint_limit = JointLimitWrapper {
+            lower: value.limits[0].min.into(),
+            upper: value.limits[0].max.into(),
+            effort: Default::default(),
+            velocity: value.limits[0].impulse.into(),
+        };
+        Self {
+            //FIXME: this is probably wrong...
+            offset: Transform::from_xyz(0.0, 0.0, 0.0),
+            reciever: "".to_owned(),
+            //FIXME: this is probably wrong...
+            limit: joint_limit,
+            //FIXME: implement this properly
+            dynamics: Default::default(),
+            local_frame1: Transform {
+                translation: value.local_frame1.translation.into(),
+                rotation: value.local_frame1.rotation.into(),
+                //FIXME: implement this properly
+                scale: default()
+            },
+            local_frame2: Transform {
+                translation: value.local_frame2.translation.into(),
+                rotation: value.local_frame2.rotation.into(),
+                //FIXME: implement this properly
+                scale: default()
+            },
+            locked_axes: JointAxesMaskWrapper::from_bits_truncate(value.locked_axes.bits()),
+            limit_axes: JointAxesMaskWrapper::from_bits_truncate(value.limit_axes.bits()),
+            motor_axes: JointAxesMaskWrapper::from_bits_truncate(value.motor_axes.bits()),
+            coupled_axes: JointAxesMaskWrapper::from_bits_truncate(value.coupled_axes.bits()),
+            contacts_enabled: value.contacts_enabled,
+            enabled: value.is_enabled(),
+
+        }
+    }
+}
+
 impl From<&LinkageItem<'_>> for ImpulseJoint {
     fn from(value: &LinkageItem) -> Self {
         let joint = GenericJoint::from(value.joint);
@@ -149,9 +189,7 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
 
 impl From<&ImpulseJoint> for JointFlag {
     fn from(value: &ImpulseJoint) -> Self {
-        Self {
-            ..default()
-        }
+        return Self::from(value.data.raw);
     }
 }
 

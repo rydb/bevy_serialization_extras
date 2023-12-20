@@ -3,17 +3,18 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow, render::mesh::shape::Cube};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf, wrappers::link::{Linkage, LinkQuery}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::{TextEdit, text::LayoutJob, TextFormat, ScrollArea};
 use moonshine_save::save::Save;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
-use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin, dynamics::{ImpulseJoint, RigidBody, PrismaticJointBuilder}};
+use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin, dynamics::{ImpulseJoint, RigidBody, PrismaticJointBuilder, RapierImpulseJointHandle}};
 
 use bevy_serialization_extras::ui::*;
 
+//RapierImpulseJointHandle;
 
 fn main() {
 
@@ -34,9 +35,19 @@ fn main() {
         //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         .add_systems(Update, manage_serialization_ui)
         .add_systems(Update, display_rapier_joint_info)
+        //.add_systems(Update, print_links)
         .run();
 }
 
+// pub fn print_links(
+//     robot_joints: Query<Linkage>,
+
+// ) {
+//     //println!("printing found linkages");
+//     for joint in robot_joints.iter() {
+//         println!("found robot joint");
+//     }
+// }
 
 pub fn minimal_viable_joint(
     mut commands: Commands,
@@ -57,8 +68,13 @@ pub fn minimal_viable_joint(
             ..default()
         },
         RigidBody::Dynamic,   
+
     )
-    ).id();
+    )
+    .id();
+    commands.entity(cube1).insert(
+            ImpulseJoint::new(cube1, joint),
+    );
     let cube2 = commands.spawn(
         (
         PbrBundle {
@@ -68,7 +84,6 @@ pub fn minimal_viable_joint(
             ..default()
         },
         RigidBody::Dynamic,
-        ImpulseJoint::new(cube1, joint),
         )
         
     ).id();
@@ -84,7 +99,7 @@ pub fn display_rapier_joint_info(
     for mut context in rapier_joint_window.iter_mut() { 
         egui::Window::new("Rapier Joint Info textbox")
         .show(context.get_mut(), |ui|{
-            println!("number of joints {:#?}", rapier_joints.iter().len());
+            //println!("number of joints {:#?}", rapier_joints.iter().len());
 
             for joint in rapier_joints.iter() {
                 ScrollArea::vertical().show(

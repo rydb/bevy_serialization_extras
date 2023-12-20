@@ -120,8 +120,8 @@ pub fn serialize_for<Thing, WrapperThing>(
         WrapperThing: Component + for<'a> From<&'a Thing>  
 {
     for (e, f) in thing_query.iter() {
+        println!("creating wrapper thing from thing");
         commands.entity(e).insert(
-
             WrapperThing::from(f)
         );
     }
@@ -130,13 +130,15 @@ pub fn serialize_for<Thing, WrapperThing>(
 /// Takes a query based interpretation of thing(`thing` that is composted of several components), and decomposes it into a single component
 pub fn deserialize_as_one<T, U>(
     mut commands: Commands,
-    structure_query: Query<(Entity, T)>,
+    structure_query: Query<(Entity, T), Without<U>>,
 ) 
     where
         T: WorldQuery,
         U: Component + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
 {
+    //println!("converting composed query into singular component");
     for (e, thing_query) in structure_query.into_iter() {
+        println!("creating thing from wrapperthing {:#?}", e);
         let unwrapped_thing = U::from(&thing_query);
         commands.entity(e).insert(
             unwrapped_thing
