@@ -9,6 +9,7 @@ use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
+use crate::traits::ChangeChecked;
 use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag};
 use crate::wrappers::mass::MassFlag;
 use crate::wrappers::rigidbodies::RigidBodyFlag;
@@ -38,7 +39,7 @@ pub struct SerializeQueryFor<S, T, U> {
 
 impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
     where
-        S: 'static + WorldQuery,
+        S: 'static + WorldQuery + ChangeChecked,
         T: 'static + Component + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
         U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration
 {

@@ -130,10 +130,10 @@ pub fn serialize_for<Thing, WrapperThing>(
 /// Takes a query based interpretation of thing(`thing` that is composted of several components), and decomposes it into a single component
 pub fn deserialize_as_one<T, U>(
     mut commands: Commands,
-    structure_query: Query<(Entity, T), Without<U>>,
+    structure_query: Query<(Entity, T), Or<(Without<U>, Changed<T::ChangeCheckedComp>)>>,
 ) 
     where
-        T: WorldQuery,
+        T: WorldQuery + ChangeChecked,
         U: Component + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
 {
     //println!("converting composed query into singular component");

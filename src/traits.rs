@@ -21,10 +21,13 @@ pub trait Structure<T> {
     fn structure(value: T) -> String;
 }
 
+// component on a query that is checked for changes
+//#TODO make this work with a set of components, or better, change to use a "component iter" to have this work for all components in query
+pub trait ChangeChecked {
+    type ChangeCheckedComp: Component;
+}
 
-// pub trait ChangeChecked<T> {
-//     type ChangeAlias = u8;
-// }
+
 
 pub trait AsBundle<T: Bundle> {
     fn into_bundle(self) -> T;

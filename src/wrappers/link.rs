@@ -3,7 +3,7 @@ use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::Get
 use bevy_rapier3d::{prelude::ImpulseJoint, na::SimdBool, parry::math::Isometry};
 use urdf_rs::{Joint, JointLimit};
 use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
-use crate::{traits::ManagedTypeRegistration, queries::FileCheck};
+use crate::{traits::{ManagedTypeRegistration, ChangeChecked}, queries::FileCheck};
 use bevy::prelude::*;
 
 
@@ -26,6 +26,8 @@ pub struct LinkQuery {
     pub collision: Option<&'static ColliderFlag>,
     pub joint: Option<&'static JointFlag>,
 }
+
+
 
 #[derive(Default, Reflect, Clone)]
 pub struct Dynamics {
@@ -55,6 +57,10 @@ pub struct Linkage {
     // struct. Each lifetime should be 'static.
     //link: LinkQuery,
     joint: &'static JointFlag,
+}
+
+impl ChangeChecked for Linkage {
+    type ChangeCheckedComp = JointFlag;
 }
 
 impl From<&Joint> for JointFlag {

@@ -19,7 +19,7 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default(),
         ))
-        .add_plugins(SerializationPlugin)
+        //.add_plugins(SerializationPlugin)
         .add_systems(Startup, setup_graphics)
         .add_systems(Startup, create_revolute_joints)
         .add_plugins(WorldInspectorPlugin::new())
