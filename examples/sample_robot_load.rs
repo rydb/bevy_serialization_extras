@@ -31,7 +31,6 @@ fn main() {
         .add_systems(Startup, queue_urdf_load_requests)
         //.add_systems(Update, load_urdfs_handles_into_registry)
         .add_systems(Startup, setup)
-        .add_systems(Startup, minimal_viable_joint)
         //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         .add_systems(Update, manage_serialization_ui)
         .add_systems(Update, display_rapier_joint_info)
@@ -143,13 +142,13 @@ pub fn queue_urdf_load_requests(
     //     }
     // )
 
-    // urdf_load_requests.requests.push_front(
-    //     AssetSpawnRequest {
-    //          source: "urdfs/tutorial_bot.xml".to_owned().into(), 
-    //          position: Transform::from_xyz(0.0, 1.0, 0.0), 
-    //          ..Default::default()
-    //     }
-    // )
+    urdf_load_requests.requests.push_front(
+        AssetSpawnRequest {
+             source: "urdfs/tutorial_bot.xml".to_owned().into(), 
+             position: Transform::from_xyz(0.0, 1.0, 0.0), 
+             ..Default::default()
+        }
+    )
 }
 
 /// set up a simple 3D scene

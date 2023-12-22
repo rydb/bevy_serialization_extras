@@ -77,12 +77,28 @@ impl<'a> FromStructure for Urdf {
         let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
 
         for (key, joint) in structured_joint_map.iter() {
-            let e = *structured_entities_map.entry(joint.parent.link.clone())
+            let e = *structured_entities_map.entry(joint.child.link.clone())
             .or_insert(commands.spawn_empty().id());
 
-            commands.entity(e)
-            .insert(JointFlag::from(joint))
-            ;
+            for link in structured_link_map.values().filter(|link| link.name == joint.parent.link) {
+                println!("found parent link for joint");
+                let parent_e = *structured_entities_map.entry(link.name.clone())
+                .or_insert(
+                    commands.spawn_empty()
+                    .insert(RigidBodyFlag::Fixed)
+                    .id());
+
+                
+                let mut new_joint = JointFlag::from(joint);
+                new_joint.parent_id = Some(parent_e);
+
+                commands.entity(e)
+                .insert(new_joint)
+                .insert(RigidBodyFlag::Dynamic)
+
+                ;
+            }
+
         }
 
         for (key , link) in structured_link_map.iter() {
@@ -107,8 +123,7 @@ impl<'a> FromStructure for Urdf {
                 local: spawn_request.position, 
                 ..default()
             })
-            // .insert(ColliderFlag::default())
-            // .insert(RigidBodyFlag::Dynamic)
+            .insert(ColliderFlag::default())
             // .insert(CcdFlag::default())
             //.insert()
             ;

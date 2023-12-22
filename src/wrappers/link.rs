@@ -71,7 +71,7 @@ impl From<&Joint> for JointFlag {
                 rotation: Quat::default(),
                 ..default()
             },
-            parent_name: Some(value.child.link.clone()),
+            parent_name: Some(value.parent.link.clone()),
             parent_id: None,
             limit: JointLimitWrapper {
                  lower:  value.limit.lower, 
@@ -102,9 +102,9 @@ impl From<&Joint> for JointFlag {
                 x = x | (3 << unit_axis[2]);
                 JointAxesMaskWrapper::from_bits_truncate(x)
             },
-            limit_axes: JointAxesMaskWrapper::all(),
-            motor_axes: JointAxesMaskWrapper::all(),
-            coupled_axes: JointAxesMaskWrapper::all(),
+            limit_axes: JointAxesMaskWrapper::empty(),
+            motor_axes: JointAxesMaskWrapper::empty(),
+            coupled_axes: JointAxesMaskWrapper::empty(),
             contacts_enabled: true,
             enabled: true
         }
@@ -143,45 +143,6 @@ impl From<&JointFlag> for GenericJoint {
     }
 }
 
-// impl From<GenericJoint> for JointFlag {
-//     fn from(value: GenericJoint) -> Self {
-//         //FIXME: implement this properly
-//         let joint_limit = JointLimitWrapper {
-//             lower: value.limits[0].min.into(),
-//             upper: value.limits[0].max.into(),
-//             effort: Default::default(),
-//             velocity: value.limits[0].impulse.into(),
-//         };
-//         Self {
-//             //FIXME: this is probably wrong...
-//             offset: Transform::from_xyz(0.0, 0.0, 0.0),
-//             reciever: value..to_owned(),
-//             //FIXME: this is probably wrong...
-//             limit: joint_limit,
-//             //FIXME: implement this properly
-//             dynamics: Default::default(),
-//             local_frame1: Transform {
-//                 translation: value.local_frame1.translation.into(),
-//                 rotation: value.local_frame1.rotation.into(),
-//                 //FIXME: implement this properly
-//                 scale: default()
-//             },
-//             local_frame2: Transform {
-//                 translation: value.local_frame2.translation.into(),
-//                 rotation: value.local_frame2.rotation.into(),
-//                 //FIXME: implement this properly
-//                 scale: default()
-//             },
-//             locked_axes: JointAxesMaskWrapper::from_bits_truncate(value.locked_axes.bits()),
-//             limit_axes: JointAxesMaskWrapper::from_bits_truncate(value.limit_axes.bits()),
-//             motor_axes: JointAxesMaskWrapper::from_bits_truncate(value.motor_axes.bits()),
-//             coupled_axes: JointAxesMaskWrapper::from_bits_truncate(value.coupled_axes.bits()),
-//             contacts_enabled: value.contacts_enabled,
-//             enabled: value.is_enabled(),
-
-//         }
-//     }
-// }
 
 impl From<&LinkageItem<'_>> for ImpulseJoint {
     fn from(value: &LinkageItem) -> Self {
@@ -252,62 +213,6 @@ impl From<&ImpulseJoint> for JointFlag {
     }
 }
 
-// #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
-// #[derive(Copy, Clone, Debug, PartialEq)]
-// /// A generic joint.
-// pub struct GenericJoint {
-//     /// The joint’s frame, expressed in the first rigid-body’s local-space.
-//     pub local_frame1: Isometry<Real>,
-//     /// The joint’s frame, expressed in the second rigid-body’s local-space.
-//     pub local_frame2: Isometry<Real>,
-//     /// The degrees-of-freedoms locked by this joint.
-//     pub locked_axes: JointAxesMask,
-//     /// The degrees-of-freedoms limited by this joint.
-//     pub limit_axes: JointAxesMask,
-//     /// The degrees-of-freedoms motorised by this joint.
-//     pub motor_axes: JointAxesMask,
-//     /// The coupled degrees of freedom of this joint.
-//     pub coupled_axes: JointAxesMask,
-//     /// The limits, along each degrees of freedoms of this joint.
-//     ///
-//     /// Note that the limit must also be explicitly enabled by the `limit_axes` bitmask.
-//     pub limits: [JointLimits<Real>; SPATIAL_DIM],
-//     /// The motors, along each degrees of freedoms of this joint.
-//     ///
-//     /// Note that the mostor must also be explicitly enabled by the `motors` bitmask.
-//     pub motors: [JointMotor; SPATIAL_DIM],
-//     /// Are contacts between the attached rigid-bodies enabled?
-//     pub contacts_enabled: bool,
-//     /// Whether or not the joint is enabled.
-//     pub enabled: JointEnabled,
-// }
-
-// impl Default for GenericJoint {
-//     fn default() -> Self {
-//         Self {
-//             local_frame1: Isometry::identity(),
-//             local_frame2: Isometry::identity(),
-//             locked_axes: JointAxesMask::empty(),
-//             limit_axes: JointAxesMask::empty(),
-//             motor_axes: JointAxesMask::empty(),
-//             coupled_axes: JointAxesMask::empty(),
-//             limits: [JointLimits::default(); SPATIAL_DIM],
-//             motors: [JointMotor::default(); SPATIAL_DIM],
-//             contacts_enabled: true,
-//             enabled: JointEnabled::Enabled,
-//         }
-//     }
-// }
-
-// #[derive(Reflect)]
-// struct Foo(u32);
-
-// bitflags::bitflags! {
-//     impl Foo: u32 {
-//         const A = 0;
-//         const B = 1;
-//     }
-// }
 
 #[derive(Reflect, Clone, Default)]
 pub struct JointAxesMaskWrapper(u8);
