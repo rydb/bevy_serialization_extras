@@ -19,11 +19,12 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default(),
         ))
+        //.insert_resource()
         //.add_plugins(SerializationPlugin)
         .add_systems(Startup, setup_graphics)
         .add_systems(Startup, create_revolute_joints)
         .add_plugins(WorldInspectorPlugin::new())
-        //.add_plugins(SerializationPlugin)
+        .add_plugins(SerializationPlugin)
         .add_systems(Update, display_rapier_joint_info)
         .run();
 }
@@ -121,8 +122,8 @@ fn create_revolute_joints(
         let revs = [
             RevoluteJointBuilder::new(z).local_anchor2(Vec3::new(0.0, 0.0, -shift)),
             RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(-shift, 0.0, 0.0)),
-            RevoluteJointBuilder::new(z).local_anchor2(Vec3::new(0.0, 0.0, -shift)),
-            RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(shift, 0.0, 0.0)),
+            // RevoluteJointBuilder::new(z).local_anchor2(Vec3::new(0.0, 0.0, -shift)),
+            // RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(shift, 0.0, 0.0)),
         ];
 
         commands

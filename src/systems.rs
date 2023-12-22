@@ -146,6 +146,10 @@ pub fn deserialize_as_one<T, U>(
     }
 }
 
+pub fn post_processing_combinator() {
+    
+}
+
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (
     things: ResMut<Assets<Thing>>,

@@ -71,7 +71,8 @@ impl From<&Joint> for JointFlag {
                 rotation: Quat::default(),
                 ..default()
             },
-            reciever: value.child.link.clone(),
+            parent_name: Some(value.child.link.clone()),
+            parent_id: None,
             limit: JointLimitWrapper {
                  lower:  value.limit.lower, 
                  upper: value.limit.upper, 
@@ -142,66 +143,113 @@ impl From<&JointFlag> for GenericJoint {
     }
 }
 
-impl From<GenericJoint> for JointFlag {
-    fn from(value: GenericJoint) -> Self {
-        //FIXME: implement this properly
-        let joint_limit = JointLimitWrapper {
-            lower: value.limits[0].min.into(),
-            upper: value.limits[0].max.into(),
-            effort: Default::default(),
-            velocity: value.limits[0].impulse.into(),
-        };
-        Self {
-            //FIXME: this is probably wrong...
-            offset: Transform::from_xyz(0.0, 0.0, 0.0),
-            reciever: "".to_owned(),
-            //FIXME: this is probably wrong...
-            limit: joint_limit,
-            //FIXME: implement this properly
-            dynamics: Default::default(),
-            local_frame1: Transform {
-                translation: value.local_frame1.translation.into(),
-                rotation: value.local_frame1.rotation.into(),
-                //FIXME: implement this properly
-                scale: default()
-            },
-            local_frame2: Transform {
-                translation: value.local_frame2.translation.into(),
-                rotation: value.local_frame2.rotation.into(),
-                //FIXME: implement this properly
-                scale: default()
-            },
-            locked_axes: JointAxesMaskWrapper::from_bits_truncate(value.locked_axes.bits()),
-            limit_axes: JointAxesMaskWrapper::from_bits_truncate(value.limit_axes.bits()),
-            motor_axes: JointAxesMaskWrapper::from_bits_truncate(value.motor_axes.bits()),
-            coupled_axes: JointAxesMaskWrapper::from_bits_truncate(value.coupled_axes.bits()),
-            contacts_enabled: value.contacts_enabled,
-            enabled: value.is_enabled(),
+// impl From<GenericJoint> for JointFlag {
+//     fn from(value: GenericJoint) -> Self {
+//         //FIXME: implement this properly
+//         let joint_limit = JointLimitWrapper {
+//             lower: value.limits[0].min.into(),
+//             upper: value.limits[0].max.into(),
+//             effort: Default::default(),
+//             velocity: value.limits[0].impulse.into(),
+//         };
+//         Self {
+//             //FIXME: this is probably wrong...
+//             offset: Transform::from_xyz(0.0, 0.0, 0.0),
+//             reciever: value..to_owned(),
+//             //FIXME: this is probably wrong...
+//             limit: joint_limit,
+//             //FIXME: implement this properly
+//             dynamics: Default::default(),
+//             local_frame1: Transform {
+//                 translation: value.local_frame1.translation.into(),
+//                 rotation: value.local_frame1.rotation.into(),
+//                 //FIXME: implement this properly
+//                 scale: default()
+//             },
+//             local_frame2: Transform {
+//                 translation: value.local_frame2.translation.into(),
+//                 rotation: value.local_frame2.rotation.into(),
+//                 //FIXME: implement this properly
+//                 scale: default()
+//             },
+//             locked_axes: JointAxesMaskWrapper::from_bits_truncate(value.locked_axes.bits()),
+//             limit_axes: JointAxesMaskWrapper::from_bits_truncate(value.limit_axes.bits()),
+//             motor_axes: JointAxesMaskWrapper::from_bits_truncate(value.motor_axes.bits()),
+//             coupled_axes: JointAxesMaskWrapper::from_bits_truncate(value.coupled_axes.bits()),
+//             contacts_enabled: value.contacts_enabled,
+//             enabled: value.is_enabled(),
 
-        }
-    }
-}
+//         }
+//     }
+// }
 
 impl From<&LinkageItem<'_>> for ImpulseJoint {
     fn from(value: &LinkageItem) -> Self {
         let joint = GenericJoint::from(value.joint);
         let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
         Self { 
-            parent: value.entity,
+
+            parent:  match value.joint.parent_id {
+                Some(e) =>  e,
+                None => value.entity
+            },
             data: bevy_rapier_joint, 
         }
     }
 }
 
+// impl From<&JointFlag> for ImpulseJoint {
+//         fn from(value: &JointFlag) -> Self {
+//             let joint = GenericJoint::from(value);
+//             let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
+//             Self { 
+//                 parent: value.entity,
+//                 data: bevy_rapier_joint, 
+//             }
+//         }
+//     }
+
 impl From<&ImpulseJoint> for JointFlag {
     fn from(value: &ImpulseJoint) -> Self {
-        return Self::from(value.data.raw);
+        //return Self::from(value.data.raw);
+        
+        let joint = value.data.raw;
+        let joint_limit = JointLimitWrapper {
+            lower: joint.limits[0].min.into(),
+            upper: joint.limits[0].max.into(),
+            effort: Default::default(),
+            velocity: joint.limits[0].impulse.into(),
+        };
+        Self {
+            //FIXME: this is probably wrong...
+            offset: Transform::from_xyz(0.0, 0.0, 0.0),
+            parent_name: None,
+            parent_id: Some(value.parent),//format!("{:#?}", value.parent),
+            //FIXME: this is probably wrong...
+            limit: joint_limit,
+            //FIXME: implement this properly
+            dynamics: Default::default(),
+            local_frame1: Transform {
+                translation: joint.local_frame1.translation.into(),
+                rotation: joint.local_frame1.rotation.into(),
+                //FIXME: implement this properly
+                scale: default()
+            },
+            local_frame2: Transform {
+                translation: joint.local_frame2.translation.into(),
+                rotation: joint.local_frame2.rotation.into(),
+                //FIXME: implement this properly
+                scale: default()
+            },
+            locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
+            limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
+            motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
+            coupled_axes: JointAxesMaskWrapper::from_bits_truncate(joint.coupled_axes.bits()),
+            contacts_enabled: joint.contacts_enabled,
+            enabled: joint.is_enabled(),
+
+        }
     }
-}
-
-/// take the properties of a joint, and infer what joint type it is based on those properties.
-pub fn infer_joint_type() {
-
 }
 
 // #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
@@ -300,6 +348,7 @@ bitflags::bitflags! {
         const ANG_AXES = Self::ANG_X.bits() | Self::ANG_Y.bits() | Self::ANG_Z.bits();
     }
 }
+    //pub axis: 
 
 // pub struct LazyIsometry {
 //     transform: Transform,
@@ -314,11 +363,14 @@ pub struct JointFlag {
     //pub name: JointStructure,
     //pub joint_type:
     pub offset: Transform,
-    // the parent is the entity holding the impulse joint, the "parent", is implied. A joint parent/reciever cannot exist if the parent doesnt exist,
-    // but the exact parent is liable to change at runtime. Making the "parent", distiction redundant. 
-    //pub parent: String,
-    pub reciever: String,
-    //pub axis: 
+
+    //name of the parent "link" of the joint. Some joints may not have named parents, so this is optional
+    pub parent_name: Option<String>,
+    //the parent entity of this joint. Some joint parents may be referenced by name only, so this has have to be populated later down
+    //the deserialization pipeline.
+    pub parent_id: Option<Entity>,
+
+
     pub limit: JointLimitWrapper,
     pub dynamics: Dynamics,
     //pub mimic: Option<Mimic>
@@ -348,6 +400,7 @@ pub struct JointFlag {
     pub enabled: bool,
 
 }
+
 
 impl ManagedTypeRegistration for JointFlag {
     fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {

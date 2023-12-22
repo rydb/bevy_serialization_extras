@@ -170,6 +170,7 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
                 Some(joint) => {
                     let link_name = link.name.unwrap_or(&Name::new(entry.robot.joints.len().to_string())).to_string();
                     let joint_name = link_name.clone() + "_joint";
+                    let joint_parent = joint.parent_name.clone().unwrap_or_default();
                     //let urdf_link_name = link_name + "_link";
                     entry.robot.joints.push
                     (
@@ -186,8 +187,8 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
                                 }
                                 
                             },
-                            parent: urdf_rs::LinkName { link: link_name.clone() },
-                            child: urdf_rs::LinkName { link: joint.reciever.clone() },
+                            parent: urdf_rs::LinkName { link: joint_parent.clone() },
+                            child: urdf_rs::LinkName { link: link_name.clone() },
                             axis: urdf_rs::Axis { 
                                 xyz:  {
                                     let x = joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X) as u32 as f64;

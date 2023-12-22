@@ -31,21 +31,23 @@ use super::resources::*;
 
 // }
 
+pub fn no_post_processing(){}
+
 pub struct SerializeQueryFor<S, T, U> {
     query: PhantomData<fn() -> S>,
     thing: PhantomData<fn() -> T>,
     wrapper_thing: PhantomData<fn() -> U>,
+    //post_processing: Vec<fn() -> ()>,
 }
 
 impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
     where
         S: 'static + WorldQuery + ChangeChecked,
         T: 'static + Component + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
-        U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration
+        U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration,
 {
     fn build(&self, app: &mut App) {
         type L = SerializeFilter;
-
         let mut skip_list = app.world
             .get_resource_or_insert_with::<L>(| |L::default());
 
@@ -68,6 +70,10 @@ impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
             ).after(LoadSet::PostLoad)
         )
         ;
+        // for func in self.post_processing.clone() {
+        //     app.add_systems(PostUpdate, func)
+        //     ;
+        // }
     }
 }
 
@@ -77,6 +83,7 @@ impl<S, T, U> Default for SerializeQueryFor<S, T, U> {
             query: PhantomData,
             thing: PhantomData,
             wrapper_thing: PhantomData,
+            //post_processing: Vec::new()
         }
     }
 }
