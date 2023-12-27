@@ -10,7 +10,7 @@ use yaserde::YaDeserialize;
 
 use crate::{traits::Structure, queries::{FileCheck, FileCheckItem, FileCheckPicker}, resources::{LoadRequest, AssetSpawnRequest}, loaders::urdf_loader::Urdf};
 
-use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag};
+use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
 
 use std::fs;
 use thiserror::Error;
@@ -124,7 +124,8 @@ impl<'a> FromStructure for Urdf {
                 ..default()
             })
             .insert(ColliderFlag::default())
-            // .insert(CcdFlag::default())
+            .insert(SolverGroupsFlag::default())
+            //.insert(CcdFlag::default())
             //.insert()
             ;
         }

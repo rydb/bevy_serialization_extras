@@ -14,7 +14,6 @@ use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDeb
 
 use bevy_serialization_extras::ui::*;
 
-//RapierImpulseJointHandle;
 
 fn main() {
 
@@ -37,16 +36,6 @@ fn main() {
         //.add_systems(Update, print_links)
         .run();
 }
-
-// pub fn print_links(
-//     robot_joints: Query<Linkage>,
-
-// ) {
-//     //println!("printing found linkages");
-//     for joint in robot_joints.iter() {
-//         println!("found robot joint");
-//     }
-// }
 
 pub fn minimal_viable_joint(
     mut commands: Commands,

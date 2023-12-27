@@ -3,6 +3,7 @@ use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy::ecs::query::WorldQuery;
 use bevy_rapier3d::dynamics::{RigidBody, AdditionalMassProperties};
+use bevy_rapier3d::geometry::SolverGroups;
 use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
 use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on_request};
 use moonshine_save::save::SaveSet;
@@ -13,6 +14,7 @@ use crate::traits::ChangeChecked;
 use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag};
 use crate::wrappers::mass::MassFlag;
 use crate::wrappers::rigidbodies::RigidBodyFlag;
+use crate::wrappers::solvergroupfilter::SolverGroupsFlag;
 use crate::wrappers::urdf::{FromStructure, IntoHashMap, LazyDeserialize};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::{GeometryFlag, GeometryFile};
@@ -90,15 +92,22 @@ impl<S, T, U> Default for SerializeQueryFor<S, T, U> {
 
 /// plugin for serialization for WrapperComponent -> Component, Component -> WrapperComponent
 #[derive(Default)]
-pub struct SerializeComponentFor<T, U> {
+pub struct SerializeComponentFor<T, U>
+    where
+        T: 'static + Component + for<'a> From<&'a U>,
+        U: 'static + Component + ManagedTypeRegistration  + for<'a> From<&'a T>
+
+{
     thing: PhantomData<fn() -> T>,
     wrapper_thing: PhantomData<fn() -> U>,
 }
 
 impl<T, U> Plugin for SerializeComponentFor<T, U>
+    // until trait alaises are stabalized, trait bounds have to be manually duplicated...
     where
         T: 'static + Component + for<'a> From<&'a U>,
-        U: 'static + Component + ManagedTypeRegistration  + for<'a> From<&'a T> {
+        U: 'static + Component + ManagedTypeRegistration  + for<'a> From<&'a T>
+ {
     fn build(&self, app: &mut App) {
         type L = SerializeFilter;
         let mut skip_list = app.world
@@ -285,6 +294,7 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
         .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
         .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
+        .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
         ;
 
         app

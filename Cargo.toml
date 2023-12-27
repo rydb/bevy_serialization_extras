@@ -24,8 +24,12 @@ multimap = "0.9.1"
 strum = "0.25"
 strum_macros = "0.25"
 bitflags = "2.4.1"
+nalgebra = "0.32"
 #serde = "1.0.*"
 yaserde = "0.8"
+derive_more = "0.99"
+# You can specify the types of derives that you need for less time spent
+# compiling. For the full list of features see this crate its `Cargo.toml`.
 
 [dev-dependencies]
 bevy = {version = "0.12", features = ["dynamic_linking"]}

@@ -1,11 +1,12 @@
 
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
 use bevy_rapier3d::{prelude::ImpulseJoint, na::SimdBool, parry::math::Isometry};
-use urdf_rs::{Joint, JointLimit};
+use nalgebra::{Matrix3x4, Matrix3xX, Matrix, Matrix3, Vector3};
+use urdf_rs::{Joint, JointLimit, Pose};
 use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
 use crate::{traits::{ManagedTypeRegistration, ChangeChecked}, queries::FileCheck};
 use bevy::prelude::*;
-
+use derive_more::From;
 
 
 use super::{mesh::{GeometryFlag, GeometryFile}, colliders::ColliderFlag, mass::MassFlag};
@@ -63,12 +64,55 @@ impl ChangeChecked for Linkage {
     type ChangeCheckedComp = JointFlag;
 }
 
+/// enum for convinience functions from converting to different cordinate systems
+pub enum CordBasis {
+    Bevy(Transform), //x right, y up, z backwards
+    Urdf(Transform), //x forward, y left, z Up
+}
+
+#[derive(From)]
+pub struct UrdfTransform(Pose);
+
+impl From<UrdfTransform> for Transform {
+    fn from(value: UrdfTransform) -> Self {
+        // let bevy_cord_matrix = Matrix3::new(
+        //     1, 0, 0,
+        //     0, 1, 0,
+        //     0, 0, 1
+        // );
+        let urdf_cord_flip = Matrix3::new(
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, -1.0,
+        );
+        let urdf_rotation_flip = Matrix3::new(
+            -1.0, 0.0, 0.0,
+            0.0, -1.0, 0.0,
+            0.0, 0.0, -1.0,
+        );
+        let pos = value.0;
+        
+        let compliant_trans = 
+            urdf_cord_flip * Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
+        let compliant_rot = 
+            urdf_rotation_flip *  Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
+
+        Self {
+            translation:  Vec3::new(compliant_trans.x as f32, compliant_trans.y as f32, compliant_trans.z as f32),
+            rotation: Quat::from_euler(EulerRot::XYZ, compliant_rot.x as f32, compliant_rot.y as f32, compliant_rot.z as f32),
+            ..default()
+        }
+    }
+} 
+
+
+
 impl From<&Joint> for JointFlag {
     fn from(value: &Joint) -> Self {
         Self {
             offset: Transform {
-                translation: Vec3::new(value.origin.xyz.0[0] as f32, value.origin.xyz.0[1] as f32, value.origin.xyz.0[2] as f32),
-                rotation: Quat::default(),
+                // translation: Vec3::new(value.origin.xyz.0[0] as f32, value.origin.xyz.0[1] as f32, value.origin.xyz.0[2] as f32),
+                // rotation: Quat::default(),
                 ..default()
             },
             parent_name: Some(value.parent.link.clone()),
@@ -90,7 +134,7 @@ impl From<&Joint> for JointFlag {
                     
                 }
             },
-            local_frame1: Transform::default(),
+            local_frame1: UrdfTransform::from(value.origin.clone()).into(),
             local_frame2: Transform::default(),
             locked_axes: {
                 //clamp axis to between 0-1 for simplicity and for bitmask flipping
