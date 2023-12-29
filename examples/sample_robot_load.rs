@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow, render::mesh::shape::Cube};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf, wrappers::link::{Linkage, LinkQuery}};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf, wrappers::link::{Linkage, LinkQuery, JointFlag, JointAxesMaskWrapper}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::{TextEdit, text::LayoutJob, TextFormat, ScrollArea};
 use moonshine_save::save::Save;
@@ -11,6 +11,8 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
 use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin, dynamics::{ImpulseJoint, RigidBody, PrismaticJointBuilder, RapierImpulseJointHandle}};
+use bitvec::{prelude::*, view::BitView};
+
 
 use bevy_serialization_extras::ui::*;
 
@@ -31,8 +33,9 @@ fn main() {
         //.add_systems(Update, load_urdfs_handles_into_registry)
         .add_systems(Startup, setup)
         //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
-        .add_systems(Update, manage_serialization_ui)
+        //.add_systems(Update, manage_serialization_ui)
         .add_systems(Update, display_rapier_joint_info)
+        //.add_systems(Update, edit_jointflag_widget)
         //.add_systems(Update, print_links)
         .run();
 }
@@ -101,6 +104,52 @@ pub fn display_rapier_joint_info(
                     }
                 );
 
+            }
+        })
+        ;
+    }
+}
+
+pub fn edit_jointflag_widget(
+    mut rapier_joint_window: Query<&mut EguiContext, With<PrimaryWindow>>,
+    mut joint_flags: Query<&mut JointFlag>,
+) {
+    for mut context in rapier_joint_window.iter_mut() {
+        egui::Window::new("Joint Flag Bits")
+        .show(context.get_mut(), |ui|{
+            for mut joint in joint_flags.iter_mut() {
+                
+
+                ui.label("limit axis bits");
+                ui.horizontal(|ui| {
+                    let mut limit_axis_bits = joint.limit_axes.bits().clone();
+                    let limit_axis_bitvec = limit_axis_bits.view_bits_mut::<Msb0>();
+
+                    for mut bit in limit_axis_bitvec.iter_mut(){
+                        //let mut bit_value = bit;
+                        
+                        ui.checkbox(&mut bit, "");
+    
+                    }
+                    joint.limit_axes = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
+
+                });
+                
+                ui.label("locked axis bits");
+                ui.horizontal(|ui| {
+                    let mut locked_axis_bits = joint.locked_axes.bits().clone();
+                    let limit_axis_bitvec = locked_axis_bits.view_bits_mut::<Msb0>();
+
+                    for mut bit in limit_axis_bitvec.iter_mut(){
+                        //let mut bit_value = bit;
+                        
+                        ui.checkbox(&mut bit, "");
+    
+                    }
+                    joint.locked_axes = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
+
+                });            
+                
             }
         })
         ;

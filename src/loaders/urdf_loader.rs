@@ -1,7 +1,6 @@
 //! urdf loarder for robots. Should create a
 //! unique urdf resource for models to read from.
 
-use bevy::asset::LoadedAsset;
 use bevy::utils::thiserror;
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},

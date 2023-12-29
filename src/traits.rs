@@ -1,4 +1,4 @@
-use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, prelude::{World, Entity}, ecs::{query::WorldQuery, bundle::Bundle, component::Component}};
+use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, ecs::{bundle::Bundle, component::Component}};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing. 
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
@@ -33,22 +33,7 @@ pub trait AsBundle<T: Bundle> {
     fn into_bundle(self) -> T;
 }
 
-/// A trait to be applied to bound queries to fetch the current entity of a specific query iteration.
-// pub trait AssociatedEntity<T> {
-//     fn associated_entity(value: T) -> Entity;
-// }
-
 /// denotes that this struct unfolds into something else. Usually means that the struct is "object oriented", and can be unfolded into an ECS compliant variant. 
 pub trait Unfold<T> {
     fn unfolded(value: T) -> Self;
 }
-
-// creates the struct via components that reference the same structure, but are individually distributed.
-// pub trait FromStructure<T: WorldQuery>: Sized {
-//     fn from_world(world: &World) -> Self;
-// }
-
-
-// pub trait CollectFromQuery<T> {
-//     fn return_vecs() -> Vec<Vec<_>>;
-// }

@@ -1,18 +1,14 @@
 
-use std::{collections::{HashMap, VecDeque}, ffi::IntoStringError, rc::Rc, borrow::Cow, fs::File, io::Write};
+use std::collections::HashMap;
 
 // use bevy::core::Name;
-use bevy::{prelude::*, ecs::{query::WorldQuery, system::EntityCommands}, utils::{hashbrown::hash_map::IntoIter, thiserror}, transform::commands};
-use egui::Link;
-use moonshine_save::save::Save;
+use bevy::{prelude::*, utils::thiserror};
 use urdf_rs::{Robot, Joint, Pose, UrdfError};
-use yaserde::YaDeserialize;
 
-use crate::{traits::Structure, queries::{FileCheck, FileCheckItem, FileCheckPicker}, resources::{LoadRequest, AssetSpawnRequest}, loaders::urdf_loader::Urdf};
+use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf};
 
-use super::{mesh::{GeometryFlag, GeometryFile, GeometrySource}, material::{MaterialFlag, MaterialFile, MaterialSource}, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, LinkageItem, LinkQueryItem, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
+use super::{material::MaterialFlag, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
 
-use std::fs;
 use thiserror::Error;
 
 #[non_exhaustive]
@@ -46,6 +42,8 @@ impl<'a> FromStructure for Urdf {
     fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>){
         //let name = request.item.clone();
         //let robot = value.world_urdfs.get(&request.item).unwrap();
+        println!("urdf is {:#?}", value.clone());
+
         let robot = value.robot;
 
         let mut structured_link_map = HashMap::new();
@@ -133,22 +131,6 @@ impl<'a> FromStructure for Urdf {
 }
 
 
-// impl<'a> IntoIterator for LinkQueryItem<'a> {
-//     type Item = EntityCommands;
-//     fn into_iter(self) -> Self::IntoIter {
-        
-//     }
-// }
-
-// impl<'a> ComponentIter for LinkQueryItem<'a> {
-//     fn spawn_iter(commands: Commands) {
-//         commands.spawn()
-//     }
-// }
-
-
-
-
 pub trait ComponentIter {
     fn spawn_iter(commands: Commands);
 }
@@ -196,9 +178,9 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
                             //(TODO) implement this properly have this be a consequence of joint data via a function. This is a placeholder.
                             joint_type: urdf_rs::JointType::Continuous,
                             origin: Pose {
-                                xyz: urdf_rs::Vec3([joint.offset.translation.x.into(), joint.offset.translation.y.into(), joint.offset.translation.z.into()]),
+                                xyz: urdf_rs::Vec3([joint.local_frame1.translation.x.into(), joint.local_frame1.translation.y.into(), joint.local_frame1.translation.z.into()]),
                                 rpy: {
-                                    let rot = joint.offset.rotation.to_euler(EulerRot::XYZ);
+                                    let rot = joint.local_frame1.rotation.to_euler(EulerRot::XYZ);
                                     urdf_rs::Vec3([rot.0.into(), rot.1.into(), rot.2.into()])
                                 }
                                 

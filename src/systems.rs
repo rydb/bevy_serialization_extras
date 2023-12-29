@@ -1,35 +1,9 @@
-use std::{collections::{HashMap, VecDeque}, str::FromStr};
+use std::collections::{HashMap, VecDeque};
 
-use bevy::{prelude::*, ecs::{query::{WorldQuery, self, ReadOnlyWorldQuery}, system::ReadOnlySystemParam}, asset::io::AssetSource};
-use multimap::MultiMap;
+use bevy::{prelude::*, ecs::query::WorldQuery};
 use crate::{traits::*, wrappers::urdf::{FromStructure, IntoHashMap, LazyDeserialize}, resources::{AssetSpawnRequestQueue, RequestFrom}};
 
 use bevy::asset::Asset;
-
-// pub fn serialize_as_one<F, ThingSet, WrapperThing>(
-//     mut commands: Commands,
-// ) 
-//     where
-//         F: ReadOnlyWorldQuery,
-//         ThingSet: Structure<ThingSet>
-// {
-    
-
-// }
-
-// pub fn deserialize_as_many_for<Thing, WrapperThing>(
-//     thing_query: Query<&Thing>,
-//     mut commands: Commands,
-// ) 
-//     where
-//     Thing: Component,
-//     WrapperThing: Component + for<'a> From<&'a Thing>  
-// {
-//     for f in thing_query.iter() {
-
-//     }
-
-// }
 
 pub fn serialize_structures_as_assets<ThingSet, AssetType> (
     thing_query: Query<ThingSet>,
@@ -265,11 +239,3 @@ pub fn add_view_visibility(
     }
 }
 
-
-// pub fn query_test(
-//     query: Query<(&Name, &Transform)>,
-// ) {
-//     for t in query.iter() {
-
-//     }
-// }

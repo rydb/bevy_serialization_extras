@@ -13,12 +13,12 @@ description = "A crate for managing serialization with moonshine_save + wrappers
 bevy = "0.12"
 bevy_rapier3d = "0.23"
 rapier3d = "0.17.2"
-glam = "0.24"
+glam = "0.25"
 ron = "0.8"
 moonshine-save = "0.3.4"
-bevy_egui = "0.23"
-egui = "0.23"
-egui_extras = "0.23"
+bevy_egui = "0.24"
+egui = "0.24"
+egui_extras = "0.24"
 urdf-rs = "0.8.0"
 multimap = "0.9.1"
 strum = "0.25"
@@ -26,8 +26,9 @@ strum_macros = "0.25"
 bitflags = "2.4.1"
 nalgebra = "0.32"
 #serde = "1.0.*"
-yaserde = "0.8"
+yaserde = "0.9"
 derive_more = "0.99"
+bitvec = "*"
 # You can specify the types of derives that you need for less time spent
 # compiling. For the full list of features see this crate its `Cargo.toml`.
 
@@ -36,7 +37,7 @@ bevy = {version = "0.12", features = ["dynamic_linking"]}
 bevy_ui_extras = "0.3"
 #bevy_editor_extras = "0.1"
 #bevy_mod_raycast = "0.15"
-bevy-inspector-egui = "0.21.0"
+bevy-inspector-egui = "0.22.0"
 #bevy_component_extras = "0.1"
 
 #[features]

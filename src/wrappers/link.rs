@@ -1,8 +1,8 @@
 
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
-use bevy_rapier3d::{prelude::ImpulseJoint, na::SimdBool, parry::math::Isometry};
-use nalgebra::{Matrix3x4, Matrix3xX, Matrix, Matrix3, Vector3};
-use urdf_rs::{Joint, JointLimit, Pose};
+use bevy_rapier3d::prelude::ImpulseJoint;
+use nalgebra::{Matrix3, Vector3};
+use urdf_rs::{Joint, Pose};
 use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
 use crate::{traits::{ManagedTypeRegistration, ChangeChecked}, queries::FileCheck};
 use bevy::prelude::*;
@@ -67,7 +67,7 @@ impl ChangeChecked for Linkage {
 /// enum for convinience functions from converting to different cordinate systems
 pub enum CordBasis {
     Bevy(Transform), //x right, y up, z backwards
-    Urdf(Transform), //x forward, y left, z Up
+    Urdf(Transform), // right hand rule
 }
 
 #[derive(From)]
@@ -80,23 +80,36 @@ impl From<UrdfTransform> for Transform {
         //     0, 1, 0,
         //     0, 0, 1
         // );
+        // based on this explanation
+        //https://towardsdatascience.com/change-of-basis-3909ef4bed43
+        // let urdf_cord_flip = Matrix3::new(
+        //     1.0, 0.0, 0.0,
+        //     0.0, 1.0, 0.0,
+        //     0.0, 0.0, 1.0,
+        // );
         let urdf_cord_flip = Matrix3::new(
             1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0,
             0.0, 1.0, 0.0,
-            0.0, 0.0, -1.0,
         );
+        // based on this explanation
+        //https://stackoverflow.com/questions/31191752/right-handed-euler-angles-xyz-to-left-handed-euler-angles-xyz
         let urdf_rotation_flip = Matrix3::new(
-            -1.0, 0.0, 0.0,
-            0.0, -1.0, 0.0,
-            0.0, 0.0, -1.0,
+            1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0,
+            0.0, 1.0, 0.0,
         );
         let pos = value.0;
         
         let compliant_trans = 
-            urdf_cord_flip * Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
+            /*urdf_cord_flip * */Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
         let compliant_rot = 
-            urdf_rotation_flip *  Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
+            urdf_rotation_flip * Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
 
+
+        println!("origin is {:#?}", pos);
+        // let mut new_trans = Transform::from_translation(Vec3::new(compliant_trans.x as f32, compliant_trans.y as f32, compliant_trans.z as f32));
+        // new_trans.rotate_local_x(180.0);
         Self {
             translation:  Vec3::new(compliant_trans.x as f32, compliant_trans.y as f32, compliant_trans.z as f32),
             rotation: Quat::from_euler(EulerRot::XYZ, compliant_rot.x as f32, compliant_rot.y as f32, compliant_rot.z as f32),
@@ -138,13 +151,14 @@ impl From<&Joint> for JointFlag {
             local_frame2: Transform::default(),
             locked_axes: {
                 //clamp axis to between 0-1 for simplicity and for bitmask flipping
-                let unit_axis = value.axis.xyz.0
-                .map(|n| n.clamp(0.0, 1.0))
-                .map(|n| n as u8);
-                let mut x = 1 << unit_axis[0];
-                x = x | (2 << unit_axis[1]);
-                x = x | (3 << unit_axis[2]);
-                JointAxesMaskWrapper::from_bits_truncate(x)
+                // let unit_axis = value.axis.xyz.0
+                // .map(|n| n.clamp(0.0, 1.0))
+                // .map(|n| n as u8);
+                // let mut x = 1 << unit_axis[0];
+                // x = x | (2 << unit_axis[1]);
+                // x = x | (3 << unit_axis[2]);
+                // JointAxesMaskWrapper::from_bits_truncate(x)
+                JointAxesMaskWrapper::LOCKED_FIXED_AXES
             },
             limit_axes: JointAxesMaskWrapper::empty(),
             motor_axes: JointAxesMaskWrapper::empty(),

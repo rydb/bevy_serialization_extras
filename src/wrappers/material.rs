@@ -1,4 +1,4 @@
-use bevy::{prelude::*, ecs::query::WorldQuery};
+use bevy::prelude::*;
 use urdf_rs::Visual;
 
 
