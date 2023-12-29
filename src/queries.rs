@@ -24,6 +24,7 @@ pub enum FileCheckPicker<T,U>
 
 impl<T: Component + Default, U: Component> Default for FileCheckPicker<T, U> {
     fn default() -> Self {
+        //FileCheckItem
         Self::PureComponent(T::default())
     }
 }

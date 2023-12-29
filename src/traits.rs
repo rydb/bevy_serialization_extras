@@ -1,4 +1,4 @@
-use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, ecs::{bundle::Bundle, component::Component}};
+use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, ecs::{bundle::Bundle, component::Component}, utils::thiserror};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing. 
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
@@ -13,6 +13,27 @@ pub trait Unwrap<T>: Sized {
 pub trait ManagedTypeRegistration: GetTypeRegistration {
     /// takes all fields of this enum/struc/etc.., and returns a vec with their type registrations.
     fn get_all_type_registrations() -> Vec<TypeRegistration>;
+}
+
+use thiserror::Error;
+use urdf_rs::UrdfError;
+
+#[non_exhaustive]
+#[derive(Error, Debug)]
+pub enum LoadError {
+    #[error("Failed load urdf")]
+    Io(#[from] UrdfError),
+
+    // #[error("Failed to parse urdf")]
+    // SaveError,
+}
+
+/// deserialize trait that works by offloading deserialization to desired format's deserializer
+pub trait LazyDeserialize
+    where
+        Self: Sized
+{
+    fn deserialize(absolute_path: String) -> Result<Self, LoadError>;
 }
 
 ///trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)

@@ -75,18 +75,8 @@ pub struct UrdfTransform(Pose);
 
 impl From<UrdfTransform> for Transform {
     fn from(value: UrdfTransform) -> Self {
-        // let bevy_cord_matrix = Matrix3::new(
-        //     1, 0, 0,
-        //     0, 1, 0,
-        //     0, 0, 1
-        // );
         // based on this explanation
         //https://towardsdatascience.com/change-of-basis-3909ef4bed43
-        // let urdf_cord_flip = Matrix3::new(
-        //     1.0, 0.0, 0.0,
-        //     0.0, 1.0, 0.0,
-        //     0.0, 0.0, 1.0,
-        // );
         let urdf_cord_flip = Matrix3::new(
             1.0, 0.0, 0.0,
             0.0, 0.0, 1.0,

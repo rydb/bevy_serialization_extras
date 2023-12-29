@@ -5,29 +5,13 @@ use std::collections::HashMap;
 use bevy::{prelude::*, utils::thiserror};
 use urdf_rs::{Robot, Joint, Pose, UrdfError};
 
-use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf};
+use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf, traits::{LazyDeserialize, LoadError}};
 
 use super::{material::MaterialFlag, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
 
-use thiserror::Error;
 
-#[non_exhaustive]
-#[derive(Error, Debug)]
-pub enum LoadError {
-    #[error("Failed load urdf")]
-    Io(#[from] UrdfError),
 
-    // #[error("Failed to parse urdf")]
-    // SaveError,
-}
 
-/// deserialize trait that works by offloading deserialization to desired format's deserializer
-pub trait LazyDeserialize
-    where
-        Self: Sized
-{
-    fn deserialize(absolute_path: String) -> Result<Self, LoadError>;
-}
 
 impl LazyDeserialize for Urdf {
     fn deserialize(absolute_path: String) -> Result<Self, LoadError>{

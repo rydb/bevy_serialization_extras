@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use bevy::{prelude::*, ecs::query::WorldQuery};
-use crate::{traits::*, wrappers::urdf::{FromStructure, IntoHashMap, LazyDeserialize}, resources::{AssetSpawnRequestQueue, RequestFrom}};
+use crate::{traits::*, wrappers::urdf::{FromStructure, IntoHashMap}, resources::{AssetSpawnRequestQueue, RequestFrom}};
 
 use bevy::asset::Asset;
 
@@ -120,9 +120,6 @@ pub fn deserialize_as_one<T, U>(
     }
 }
 
-pub fn post_processing_combinator() {
-    
-}
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing> (

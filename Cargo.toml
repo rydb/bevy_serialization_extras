@@ -10,6 +10,7 @@ description = "A crate for managing serialization with moonshine_save + wrappers
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+querybundle_derive = {path = "querybundle_derive"}
 bevy = "0.12"
 bevy_rapier3d = "0.23"
 rapier3d = "0.17.2"
