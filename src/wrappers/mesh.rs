@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy::reflect::GetTypeRegistration;
 use nalgebra::{Matrix3, Vector3};
 use urdf_rs::Visual;
+use crate::asset_source::AssetSource;
 use crate::queries::FileCheckPicker;
 use crate::traits::{Unwrap, ManagedTypeRegistration};
 use crate::wrappers::mesh::shape::Cube;
@@ -17,24 +18,24 @@ pub struct GeometryFlag{
     primitive: MeshPrimitive,
 }
 
-#[derive(Component, Reflect, Clone, EnumIter)]
-#[reflect(Component)]
-pub enum GeometrySource {
-    Primitive(GeometryFlag),
-    File(GeometryFile),
-}
+// #[derive(Component, Reflect, Clone, EnumIter)]
+// #[reflect(Component)]
+// pub enum GeometrySource {
+//     Primitive(GeometryFlag),
+//     File(GeometryFile),
+// }
 
-impl Default for GeometrySource {
-    fn default() -> Self {
-        Self::Primitive(GeometryFlag::default())
-    }
-}
+// impl Default for GeometrySource {
+//     fn default() -> Self {
+//         Self::Primitive(GeometryFlag::default())
+//     }
+// }
 
 
 #[derive(Default, Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFile {
-    pub path: String
+    pub source: String
 }
 
 impl ManagedTypeRegistration for GeometryFlag {
@@ -90,6 +91,7 @@ impl From<Plane> for GeometryFlag {
 impl From<Vec<Visual>> for FileCheckPicker<GeometryFlag, GeometryFile> {
     fn from(value: Vec<Visual>) -> Self {
         if let Some(visual) = value.first() {
+
             let urdf_geometry = &visual.geometry;
 
             let flag_geometry = match urdf_geometry {
@@ -137,17 +139,34 @@ impl From<Vec<Visual>> for FileCheckPicker<GeometryFlag, GeometryFile> {
                         }
                     }
                 ),
-                urdf_rs::Geometry::Mesh { filename, .. } => FileCheckPicker::PathComponent(
+                urdf_rs::Geometry::Mesh { filename, .. } => {
+                    let asset_source = AssetSource::Package(filename.clone());
+
+                    let asset_path = parse_urdf_source(asset_source);
+                    FileCheckPicker::PathComponent(
+                    //AssetSource::Package(filename.clone());
                     GeometryFile {
-                        path: filename.clone(),
+                        //source: AssetSource::Package(filename.clone()),
+                        source: asset_path
                     }
                 )
+                }
             };
             return flag_geometry
         } else {
-            Self::default()
+            panic!("Multi-model links are not implemented.");
+            //Self::default()
         }
     }
+}
+
+fn parse_urdf_source(source: AssetSource) -> String {
+
+    match source {
+        AssetSource::Package(pkg) => pkg.strip_prefix("package://").unwrap().to_owned(),
+        AssetSource::Placeholder(..) => panic!("Asset source not implemented for this asset source.")
+    }
+
 }
 
 impl Unwrap<&GeometryFlag> for Mesh {
@@ -174,5 +193,20 @@ impl Unwrap<&GeometryFlag> for Mesh {
             },
         }
 
+    }
+}
+
+impl Unwrap<&GeometryFile> for Mesh {
+    fn unwrap(value: &GeometryFile) -> Result<Self, String>{
+        return Err(value.source.clone())
+
+    }
+}
+
+impl ManagedTypeRegistration for GeometryFile {
+    fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {
+        let type_registry = Vec::new();
+
+        type_registry
     }
 }

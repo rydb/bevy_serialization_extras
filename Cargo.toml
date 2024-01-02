@@ -30,6 +30,7 @@ nalgebra = "0.32"
 yaserde = "0.9"
 derive_more = "0.99"
 bitvec = "*"
+bevy_obj = "0.12"
 # You can specify the types of derives that you need for less time spent
 # compiling. For the full list of features see this crate its `Cargo.toml`.
 

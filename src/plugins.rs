@@ -2,6 +2,7 @@
 use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy::ecs::query::WorldQuery;
+use bevy_obj::ObjPlugin;
 use bevy_rapier3d::dynamics::{RigidBody, AdditionalMassProperties};
 use bevy_rapier3d::geometry::SolverGroups;
 use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
@@ -287,9 +288,11 @@ impl Plugin for SerializationPlugin {
 
         .add_plugins(UrdfLoaderPlugin)
 
+        .add_plugins(ObjPlugin)
         .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
+        .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh>::default())
         .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
         .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
         .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())

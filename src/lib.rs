@@ -7,5 +7,5 @@ pub mod resources;
 pub mod ui;
 pub mod queries;
 pub mod loaders;
-
+pub mod asset_source;
 
