@@ -21,7 +21,7 @@ use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits:
 use crate::wrappers::mesh::{GeometryFlag, GeometryFile};
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::prelude::SaveFilter;
-use crate::ui::update_last_saved_typedata;
+use crate::ui::{update_last_saved_typedata, UtilitySelection};
 use super::systems::*;
 use super::resources::*;
 
@@ -285,7 +285,7 @@ impl Plugin for SerializationPlugin {
         .insert_resource(ComponentsOnSave::default())
         .insert_resource(TypeRegistryOnSave::default())
         .insert_resource(RefreshCounter::default())
-
+        .insert_resource(UtilitySelection::default())
         .add_plugins(UrdfLoaderPlugin)
 
         .add_plugins(ObjPlugin)

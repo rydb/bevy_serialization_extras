@@ -92,7 +92,7 @@ impl From<UrdfTransform> for Transform {
         let pos = value.0;
         
         let compliant_trans = 
-            /*urdf_cord_flip * */Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
+            urdf_cord_flip * Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
         let compliant_rot = 
             urdf_rotation_flip * Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
 

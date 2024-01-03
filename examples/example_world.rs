@@ -29,7 +29,7 @@ fn main() {
 
         .add_systems(Startup, setup)
         .add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
-        .add_systems(Update, manage_serialization_ui)
+        .add_systems(Update, debug_widgets_window)
         //.add_systems(Update, axis_mask_test)
         .run();
 }

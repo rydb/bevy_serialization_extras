@@ -114,11 +114,6 @@ impl<'a> FromStructure for Urdf {
     }
 }
 
-
-pub trait ComponentIter {
-    fn spawn_iter(commands: Commands);
-}
-
 pub trait FromStructure
     where
         Self: Sized + Asset

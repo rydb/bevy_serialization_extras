@@ -34,135 +34,14 @@ fn main() {
         .add_systems(Startup, setup)
         //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         //.add_systems(Update, manage_serialization_ui)
-        .add_systems(Update, display_rapier_joint_info)
+        .add_systems(Update, debug_widgets_window)
         //.add_systems(Update, edit_jointflag_widget)
         //.add_systems(Update, print_links)
         .run();
 }
 
-pub fn minimal_viable_joint(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>, 
-    mut materials: ResMut<Assets<StandardMaterial>>
-) {
-    let joint = PrismaticJointBuilder::new(Vec3::X)
-    .local_anchor1(Vec3::new(0.0, 0.0, 1.0))
-    .local_anchor2(Vec3::new(0.0, 0.0, -3.0))
-    .motor_velocity(1.0, 0.5);
 
-    let cube1 = commands.spawn( (
 
-        PbrBundle {
-            mesh: meshes.add(shape::Cube::new(0.2).into()),
-            transform: Transform::from_xyz(0.0, 1.0, 0.0),
-            material: materials.add(Color::BLUE.into()),
-            ..default()
-        },
-        RigidBody::Dynamic,   
-
-    )
-    )
-    .id();
-    commands.entity(cube1).insert(
-            ImpulseJoint::new(cube1, joint),
-    );
-    let cube2 = commands.spawn(
-        (
-        PbrBundle {
-            mesh: meshes.add(shape::Cube::new(0.2).into()),
-            transform: Transform::from_xyz(0.0, 1.0, 0.5),
-            material: materials.add(Color::WHITE.into()),
-            ..default()
-        },
-        RigidBody::Dynamic,
-        )
-        
-    ).id();
-}
-
-// #[derive(Component)]
-// pub struct RapierJointWindow;
-
-pub fn display_rapier_joint_info(
-    mut rapier_joint_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-    rapier_joints: Query<&ImpulseJoint>,
-) {
-    for mut context in rapier_joint_window.iter_mut() { 
-        egui::Window::new("Rapier Joint Info textbox")
-        .show(context.get_mut(), |ui|{
-            //println!("number of joints {:#?}", rapier_joints.iter().len());
-
-            for joint in rapier_joints.iter() {
-                ScrollArea::vertical().show(
-                    ui, |ui| {
-                        let joint_as_string = format!("{:#?}", joint);
-                        let job = LayoutJob::single_section(
-                            joint_as_string,
-                            TextFormat::default()
-                        );
-                        ui.label(job);
-                    }
-                );
-
-            }
-        })
-        ;
-    }
-}
-
-pub fn edit_jointflag_widget(
-    mut rapier_joint_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-    mut joint_flags: Query<&mut JointFlag>,
-) {
-    for mut context in rapier_joint_window.iter_mut() {
-        egui::Window::new("Joint Flag Bits")
-        .show(context.get_mut(), |ui|{
-            for mut joint in joint_flags.iter_mut() {
-                
-
-                ui.label("limit axis bits");
-                ui.horizontal(|ui| {
-                    let mut limit_axis_bits = joint.limit_axes.bits().clone();
-                    let limit_axis_bitvec = limit_axis_bits.view_bits_mut::<Msb0>();
-
-                    for mut bit in limit_axis_bitvec.iter_mut(){
-                        //let mut bit_value = bit;
-                        
-                        ui.checkbox(&mut bit, "");
-    
-                    }
-                    joint.limit_axes = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
-
-                });
-                
-                ui.label("locked axis bits");
-                ui.horizontal(|ui| {
-                    let mut locked_axis_bits = joint.locked_axes.bits().clone();
-                    let limit_axis_bitvec = locked_axis_bits.view_bits_mut::<Msb0>();
-
-                    for mut bit in limit_axis_bitvec.iter_mut(){
-                        //let mut bit_value = bit;
-                        
-                        ui.checkbox(&mut bit, "");
-    
-                    }
-                    joint.locked_axes = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
-
-                });            
-                
-            }
-        })
-        ;
-    }
-}
-
-// pub fn print_rapier_joint_info(
-//     rapier_joints: Query<&ImpulseJoint>, 
-// ) {
-//     for joint in rapier_joints.iter() {
-//         println!("joint: {:#?}", joint)
-//     }
-// }
 
 #[derive(Resource, Default)]
 pub struct UrdfHandles {
@@ -180,20 +59,20 @@ pub fn queue_urdf_load_requests(
     //     }
     // )
 
-    // urdf_load_requests.requests.push_front(
-    //     AssetSpawnRequest {
-    //          source: "urdfs/tutorial_bot.xml".to_owned().into(), 
-    //          position: Transform::from_xyz(0.0, 1.0, 0.0), 
-    //          ..Default::default()
-    //     }
-    // );
     urdf_load_requests.requests.push_front(
         AssetSpawnRequest {
-             source: "urdf_tutorial/urdfs/model_load_test.xml".to_owned().into(), 
+             source: "urdfs/tutorial_bot.xml".to_owned().into(), 
              position: Transform::from_xyz(0.0, 1.0, 0.0), 
              ..Default::default()
         }
-    )
+    );
+    // urdf_load_requests.requests.push_front(
+    //     AssetSpawnRequest {
+    //          source: "urdf_tutorial/urdfs/model_load_test.xml".to_owned().into(), 
+    //          position: Transform::from_xyz(0.0, 1.0, 0.0), 
+    //          ..Default::default()
+    //     }
+    // )
     ;
 }
 
