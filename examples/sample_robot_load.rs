@@ -61,7 +61,7 @@ pub fn queue_urdf_load_requests(
 
     urdf_load_requests.requests.push_front(
         AssetSpawnRequest {
-             source: "urdfs/tutorial_bot.xml".to_owned().into(), 
+             source: "urdf_tutorial/urdfs/tutorial_bot.xml".to_owned().into(), 
              position: Transform::from_xyz(0.0, 1.0, 0.0), 
              ..Default::default()
         }

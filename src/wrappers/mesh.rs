@@ -18,20 +18,6 @@ pub struct GeometryFlag{
     primitive: MeshPrimitive,
 }
 
-// #[derive(Component, Reflect, Clone, EnumIter)]
-// #[reflect(Component)]
-// pub enum GeometrySource {
-//     Primitive(GeometryFlag),
-//     File(GeometryFile),
-// }
-
-// impl Default for GeometrySource {
-//     fn default() -> Self {
-//         Self::Primitive(GeometryFlag::default())
-//     }
-// }
-
-
 #[derive(Default, Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFile {

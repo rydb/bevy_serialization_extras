@@ -200,6 +200,21 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
     }
 }
 
+//flags entity geometry as already shifted to account for urdf origin
+#[derive(Component, Clone, Copy)]
+pub struct GeometryUrdfShifted;
+
+/// take a model's vertices, and shift them by urdf offset
+/// 
+/// urdfs shift origin of the geometry it self, so to make "geometry" origins match their urdfs, the geometry it self must be shifted
+pub fn urdf_origin_shift(
+    unshifted_models: Query<&Handle<Mesh>, With<GeometryUrdfShifted>>,
+) {
+    for model in unshifted_models.iter() {
+        
+    }
+}
+
 // /// Top level struct to access urdf.
 // #[derive(Debug, YaDeserialize, YaSerialize, Clone)]
 // #[yaserde(rename = "robot", namespace = "http://www.ros.org")]

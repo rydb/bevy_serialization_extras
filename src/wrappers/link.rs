@@ -85,9 +85,9 @@ impl From<UrdfTransform> for Transform {
         // based on this explanation
         //https://stackoverflow.com/questions/31191752/right-handed-euler-angles-xyz-to-left-handed-euler-angles-xyz
         let urdf_rotation_flip = Matrix3::new(
-            1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            0.0, -1.0, 0.0,
             0.0, 0.0, 1.0,
-            0.0, 1.0, 0.0,
         );
         let pos = value.0;
         
