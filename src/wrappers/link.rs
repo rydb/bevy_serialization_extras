@@ -2,7 +2,7 @@
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
 use bevy_rapier3d::prelude::ImpulseJoint;
 use nalgebra::{Matrix3, Vector3};
-use urdf_rs::{Joint, Pose};
+use urdf_rs::{Joint, Pose, Link, Visual};
 use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
 use crate::{traits::{ManagedTypeRegistration, ChangeChecked}, queries::FileCheck};
 use bevy::prelude::*;
@@ -44,6 +44,8 @@ pub struct JointLimitWrapper {
     pub velocity: f64,
 }
 
+
+
 /// Recieves joint movements from joint sender flag
 #[derive(Component)]
 pub struct JointRecieverFlag {
@@ -68,6 +70,23 @@ impl ChangeChecked for Linkage {
 pub enum CordBasis {
     Bevy(Transform), //x right, y up, z backwards
     Urdf(Transform), // right hand rule
+}
+
+#[derive(Component, Reflect)]
+pub struct LinkFlag{
+    pub geom_offset: Vec3
+}
+
+impl From<&Link> for LinkFlag {
+    fn from(value: &Link) -> Self {
+        let visual = value.visual.first()
+        .unwrap_or(&Visual::default())
+        .to_owned();
+        Self {
+            //FIXME: implement this properly to account for urdfs with multiple visual elements 
+            geom_offset: Vec3::from_array([visual.origin.xyz[0] as f32, visual.origin.xyz[1] as f32, visual.origin.xyz[2] as f32])
+        }
+    }
 }
 
 #[derive(From)]
@@ -114,7 +133,7 @@ impl From<&Joint> for JointFlag {
     fn from(value: &Joint) -> Self {
         Self {
             offset: Transform {
-                // translation: Vec3::new(value.origin.xyz.0[0] as f32, value.origin.xyz.0[1] as f32, value.origin.xyz.0[2] as f32),
+                 translation: Vec3::new(value.origin.xyz.0[0] as f32, value.origin.xyz.0[1] as f32, value.origin.xyz.0[2] as f32),
                 // rotation: Quat::default(),
                 ..default()
             },

@@ -5,10 +5,10 @@ use std::collections::HashMap;
 use bevy::{prelude::*, utils::thiserror};
 use urdf_rs::{Robot, Joint, Pose, UrdfError};
 
-use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf, traits::{LazyDeserialize, LoadError}};
+use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf, traits::{LazyDeserialize, LoadError}, wrappers::link::LinkFlag};
 
 use super::{material::MaterialFlag, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
-
+use bevy::render::mesh::VertexAttributeValues::Float32x3;
 
 
 
@@ -26,7 +26,7 @@ impl<'a> FromStructure for Urdf {
     fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>){
         //let name = request.item.clone();
         //let robot = value.world_urdfs.get(&request.item).unwrap();
-        println!("urdf is {:#?}", value.clone());
+        //println!("urdf is {:#?}", value.clone());
 
         let robot = value.robot;
 
@@ -63,7 +63,7 @@ impl<'a> FromStructure for Urdf {
             .or_insert(commands.spawn_empty().id());
 
             for link in structured_link_map.values().filter(|link| link.name == joint.parent.link) {
-                println!("found parent link for joint");
+                //println!("found parent link for joint");
                 let parent_e = *structured_entities_map.entry(link.name.clone())
                 .or_insert(
                     commands.spawn_empty()
@@ -90,6 +90,7 @@ impl<'a> FromStructure for Urdf {
 
             commands.entity(e)
             .insert(Name::new(link.name.clone()))
+            .insert(LinkFlag::from(link))
             .insert(StructureFlag { name: robot.name.clone() })
             .insert(MassFlag {mass: 1.0})
             //.insert(MassFlag { mass: link.inertial.mass.value as f32})
@@ -107,6 +108,7 @@ impl<'a> FromStructure for Urdf {
             })
             .insert(ColliderFlag::default())
             .insert(SolverGroupsFlag::default())
+            .insert(GeometryShiftMarked::default())
             //.insert(CcdFlag::default())
             //.insert()
             ;
@@ -200,20 +202,56 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
     }
 }
 
-//flags entity geometry as already shifted to account for urdf origin
-#[derive(Component, Clone, Copy)]
-pub struct GeometryUrdfShifted;
 
-/// take a model's vertices, and shift them by urdf offset
-/// 
-/// urdfs shift origin of the geometry it self, so to make "geometry" origins match their urdfs, the geometry it self must be shifted
+
 pub fn urdf_origin_shift(
-    unshifted_models: Query<&Handle<Mesh>, With<GeometryUrdfShifted>>,
+    mut unshifted_models: Query<(Entity, &LinkFlag, &mut JointFlag), (Without<GeometryShifted>, With<GeometryShiftMarked>)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut commands: Commands
 ) {
-    for model in unshifted_models.iter() {
-        
+    for (e, link_flag, mut joint_flag) in unshifted_models.iter_mut() {
+        println!("shifting model local_frame 2");
+        joint_flag.local_frame2.translation = link_flag.geom_offset;
+        commands.entity(e).insert(GeometryShifted::default());
     }
 }
+
+#[derive(Component, Clone, Copy, Default)]
+pub struct GeometryShiftMarked;
+
+/// flags entity geometry as already shifted to account for urdf origin
+#[derive(Component, Clone, Copy, Default)]
+pub struct GeometryShifted;
+
+// take a model's vertices, and shift them by urdf offset
+// 
+// urdfs shift origin of the geometry it self, so to make "geometry" origins match their urdfs, the geometry it self must be shifted
+// pub fn urdf_origin_shift(
+//     unshifted_models: Query<(Entity, &LinkFlag, &Handle<Mesh>), (Without<GeometryShifted>, With<GeometryShiftMarked>)>,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     mut commands: Commands
+// ) {
+//     for (e, link_flag, mesh_check) in unshifted_models.iter() {
+//         if let Some(mesh) = meshes.get_mut(mesh_check) {
+//             if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
+//                 match topology {
+//                     Float32x3(vertex_list) => {
+//                         let (x, y, z) = (link_flag.geom_offset.x, link_flag.geom_offset.y, link_flag.geom_offset.z);
+//                         println!("geom offset is {:#?}", link_flag.geom_offset);
+//                         for vertex in vertex_list {
+//                              vertex[0] -= x.clone();
+//                              vertex[1] -= z.clone();
+//                              vertex[2] -= y.clone();
+                             
+//                         }
+//                         commands.entity(e).insert(GeometryShifted::default());
+//                     }
+//                     _ => panic!("{:#?}, is not a support mesh attr type for maping mesh vertex visualizaton tug positions.", topology)
+//                 }
+//             }
+//         }
+//     }
+// }
 
 // /// Top level struct to access urdf.
 // #[derive(Debug, YaDeserialize, YaSerialize, Clone)]

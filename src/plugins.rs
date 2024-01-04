@@ -12,11 +12,11 @@ use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
 use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
 use crate::traits::{ChangeChecked, LazyDeserialize};
-use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag};
+use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag, LinkFlag};
 use crate::wrappers::mass::MassFlag;
 use crate::wrappers::rigidbodies::RigidBodyFlag;
 use crate::wrappers::solvergroupfilter::SolverGroupsFlag;
-use crate::wrappers::urdf::{FromStructure, IntoHashMap};
+use crate::wrappers::urdf::{FromStructure, IntoHashMap, urdf_origin_shift};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::{GeometryFlag, GeometryFile};
 use moonshine_save::prelude::save_default_with;
@@ -316,6 +316,7 @@ impl Plugin for SerializationPlugin {
         .register_type::<ScreenSpaceTransmissionQuality>()
         .register_type::<GeometryFile>()
         .register_type::<StructureFlag>()
+        .register_type::<LinkFlag>()
         //.add_systems(Update, from_structure::<Linkage, ImpulseJoint>)
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<LoadRequest>()))
@@ -329,6 +330,8 @@ impl Plugin for SerializationPlugin {
         .add_systems(Update, add_view_visibility.after(LoadSet::PostLoad))
         .add_systems(Update, 
             load_from_file_on_request::<LoadRequest>())
+        .add_systems(Update, urdf_origin_shift)
+
         ;  
     }
 }
