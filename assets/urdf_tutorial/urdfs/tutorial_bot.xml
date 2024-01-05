@@ -8,6 +8,22 @@
     </visual>
   </link>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   <link name="right_leg">
     <visual>
       <origin rpy="0 1.57075 0" xyz="0 0 -0.3"/>
@@ -16,6 +32,18 @@
       </geometry>
     </visual>
   </link>
+
+
+
+
+
+
+
+
+
+
+
+
 
   <joint name="base_to_right_leg" type="fixed">
     <parent link="base_link"/>
