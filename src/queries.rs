@@ -22,6 +22,23 @@ pub enum FileCheckPicker<T,U>
     PathComponent(U),
 }
 
+impl<'a, T, U> From<FileCheckItem<'a, T, U>> for FileCheckPicker<T, U>
+    where
+        T: Component + Clone + Default,
+        U: Component + Clone,
+{
+    fn from(value: FileCheckItem<'a, T, U>) -> Self {
+        match value.component_file {
+            Some(comp) => {
+                Self::PathComponent(comp.clone())
+            },
+            None => {
+                Self::PureComponent(value.component.clone())
+            }
+        }
+    }
+}
+
 impl<T: Component + Default, U: Component> Default for FileCheckPicker<T, U> {
     fn default() -> Self {
         //FileCheckItem

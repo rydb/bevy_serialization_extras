@@ -12,7 +12,7 @@ use derive_more::From;
 use super::{mesh::{GeometryFlag, GeometryFile}, colliders::ColliderFlag, mass::MassFlag};
 
 /// the "super-structure" that this entity is related to, relevant for serializing disconnected by related entities 
-#[derive(Reflect, Component)]
+#[derive(Reflect, Component, Clone)]
 pub struct StructureFlag {
     pub name: String,
 }
