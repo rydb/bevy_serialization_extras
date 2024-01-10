@@ -91,12 +91,12 @@ impl Spawnable for LinkQuery {
             None => {}
         }
 
-        match item.joint {
-            Some(joint) => {
-                commands.entity(e)
-                .insert(bundle)
-            }
-        }
+        // match item.joint {
+        //     Some(joint) => {
+        //         commands.entity(e)
+        //         .insert(bundle)
+        //     }
+        // }
     }
 }
 
