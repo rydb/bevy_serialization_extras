@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 // use bevy::core::Name;
 use bevy::{prelude::*, utils::thiserror};
-use urdf_rs::{Robot, Joint, Pose, UrdfError};
+use urdf_rs::{Robot, Joint, Pose, UrdfError, Link};
 
 use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf, traits::{LazyDeserialize, LoadError}, wrappers::link::LinkFlag};
 
@@ -21,6 +21,11 @@ impl LazyDeserialize for Urdf {
 }
 
 
+pub struct UrdfLinkage<'a, 'b> {
+    link: &'a Link,
+    joint: Option<&'b Joint>, 
+}
+
 
 impl<'a> FromStructure for Urdf {
     fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>){
@@ -33,15 +38,32 @@ impl<'a> FromStructure for Urdf {
         let mut structured_link_map = HashMap::new();
         let mut structured_joint_map = HashMap::new();
         let mut structured_material_map = HashMap::new();
-        for link in &robot.links {
-            structured_link_map.insert(link.name.clone(), link.clone());
-        }
+
+        let mut structured_linkage_map = HashMap::new();
+
         for joint in &robot.joints {
             structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
         }
         for material in &robot.materials {
             structured_material_map.insert(material.name.clone(), material.clone());
         }
+        for link in &robot.links {
+            structured_link_map.insert(link.name.clone(), link.clone());
+        
+            //let joint_check = structured_joint_map.get(link.name.clone());
+            structured_linkage_map.insert(
+                link.name.clone(),
+                UrdfLinkage {
+                    link: link,
+                    joint: structured_joint_map.get(&link.name.clone())
+                }
+            
+             );
+        }
+        
+        // structured_linkage_map.insert(UrdfLinkage {
+        //     link:
+        // })
         // let query_items =structured_link_map.iter().map(|(key, link)| 
         //     {
         //         LinkQueryItem {
@@ -68,7 +90,8 @@ impl<'a> FromStructure for Urdf {
                 .or_insert(
                     commands.spawn_empty()
                     .insert(RigidBodyFlag::Fixed)
-                    .id());
+                    .id()
+                );
 
                 
                 let mut new_joint = JointFlag::from(joint);
@@ -82,7 +105,58 @@ impl<'a> FromStructure for Urdf {
             }
 
         }
+        // for (key, linkage) in structured_linkage_map.iter() {
+        //     let e = *structured_entities_map.entry(linkage.link.name.clone())
+        //     .or_insert(commands.spawn_empty().id());
 
+        //     if let Some(joint) = linkage.joint{
+        //         for parent_link in structured_link_map.values().filter(|link| link.name == joint.child.link) {
+        //             //println!("found parent link for joint");
+        //             let parent_e = *structured_entities_map.entry(parent_link.name.clone())
+        //             .or_insert(
+        //                 commands.spawn_empty()
+        //                 .insert(RigidBodyFlag::Fixed)
+        //                 .id()
+        //             );
+    
+                    
+        //             //let mut new_joint = JointFlag::from(joint);
+        //             //new_joint.parent_id = Some(parent_e);
+    
+        //             commands.entity(e)
+        //             .insert(JointFlag::from(joint))
+        //             .insert(RigidBodyFlag::Dynamic)
+    
+        //             ;
+        //         }
+        //     }
+
+
+        //     commands.entity(e)
+        //     .insert(Name::new(linkage.link.name.clone()))
+        //     .insert(LinkFlag::from(linkage.link))
+        //     .insert(StructureFlag { name: robot.name.clone() })
+        //     .insert(MassFlag {mass: 1.0})
+        //     //.insert(MassFlag { mass: link.inertial.mass.value as f32})
+        //     ;
+        //     match FileCheckPicker::from(linkage.link.visual.clone()){
+        //             FileCheckPicker::PureComponent(t) => commands.entity(e).insert(t),
+        //             FileCheckPicker::PathComponent(u) => commands.entity(e).insert(u),
+        //         };
+        //     commands.entity(e)
+        //     .insert(MaterialFlag::from(linkage.link.visual.clone()))
+        //     .insert(VisibilityBundle::default())
+        //     .insert(TransformBundle {
+        //         local: spawn_request.position, 
+        //         ..default()
+        //     })
+        //     .insert(ColliderFlag::default())
+        //     .insert(SolverGroupsFlag::default())
+        //     .insert(GeometryShiftMarked::default())
+        //     //.insert(CcdFlag::default())
+        //     //.insert()
+        //     ;
+        // }
         for (key , link) in structured_link_map.iter() {
             let e = *structured_entities_map.entry(link.name.clone())
             .or_insert(commands.spawn_empty().id());

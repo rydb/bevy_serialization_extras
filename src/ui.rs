@@ -67,8 +67,11 @@ pub fn debug_widgets_window(
             
             
                             }
-                            joint.limit_axes = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
-        
+                            let new_joint_mask = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
+                            // stops component from being registered as changed if nothing is happening to it
+                            if joint.limit_axes != new_joint_mask {
+                                joint.limit_axes = new_joint_mask;
+                            }        
                         });
                         
                         ui.label("locked axis bits");
@@ -82,8 +85,11 @@ pub fn debug_widgets_window(
                                 ui.checkbox(&mut bit, "");
             
                             }
-                            joint.locked_axes = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
-        
+                            let new_joint_mask = JointAxesMaskWrapper::from_bits_truncate(limit_axis_bitvec.load_le());
+
+                            if joint.locked_axes != new_joint_mask {
+                                joint.locked_axes = new_joint_mask;
+                            }       
                         });            
                         
                     }

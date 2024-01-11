@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
-
-use bevy::{prelude::*, ecs::query::WorldQuery};
+use core::fmt::Debug;
+use bevy::{prelude::*, ecs::query::WorldQuery, utils::tracing};
 use crate::{traits::*, wrappers::urdf::{FromStructure, IntoHashMap}, resources::{AssetSpawnRequestQueue, RequestFrom}};
 
 use bevy::asset::Asset;
@@ -108,12 +108,12 @@ pub fn deserialize_as_one<T, U>(
 ) 
     where
         T: WorldQuery + ChangeChecked,
-        U: Component + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        U: Component + Debug + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
 {
     //println!("converting composed query into singular component");
     for (e, thing_query) in structure_query.into_iter() {
-        println!("creating thing from wrapperthing {:#?}", e);
         let unwrapped_thing = U::from(&thing_query);
+        info!("[Line {}]: On, {:?}, inserting {:?}", line!(), e, unwrapped_thing);
         commands.entity(e).insert(
             unwrapped_thing
         );

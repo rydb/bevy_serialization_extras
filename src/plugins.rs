@@ -24,7 +24,7 @@ use moonshine_save::prelude::SaveFilter;
 use crate::ui::{update_last_saved_typedata, UtilitySelection};
 use super::systems::*;
 use super::resources::*;
-
+use core::fmt::Debug;
 
 // pub struct SaveRequest {
 
@@ -46,7 +46,7 @@ pub struct SerializeQueryFor<S, T, U> {
 impl<S,T,U> Plugin for SerializeQueryFor<S, T, U>
     where
         S: 'static + WorldQuery + ChangeChecked,
-        T: 'static + Component + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        T: 'static + Component + Debug + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
         U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration,
 {
     fn build(&self, app: &mut App) {

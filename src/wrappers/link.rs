@@ -127,8 +127,6 @@ impl From<UrdfTransform> for Transform {
     }
 } 
 
-
-
 impl From<&Joint> for JointFlag {
     fn from(value: &Joint) -> Self {
         Self {
@@ -281,7 +279,7 @@ impl From<&ImpulseJoint> for JointFlag {
 }
 
 
-#[derive(Reflect, Clone, Default)]
+#[derive(Reflect, PartialEq, Eq, Clone, Default)]
 pub struct JointAxesMaskWrapper(u8);
 
 bitflags::bitflags! {
