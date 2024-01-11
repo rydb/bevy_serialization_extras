@@ -3,16 +3,16 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow, render::mesh::shape::Cube};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf, wrappers::link::{Linkage, LinkQuery, JointFlag, JointAxesMaskWrapper}};
+use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf, wrappers::{link::{Linkage, LinkQuery, JointFlag, JointAxesMaskWrapper}, solvergroupfilter::SolverGroupsFlag}};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::{TextEdit, text::LayoutJob, TextFormat, ScrollArea};
 use moonshine_save::save::Save;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
-use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin, dynamics::{ImpulseJoint, RigidBody, PrismaticJointBuilder, RapierImpulseJointHandle}};
+use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin, dynamics::{ImpulseJoint, RigidBody, PrismaticJointBuilder, RapierImpulseJointHandle}, geometry::Collider};
 use bitvec::{prelude::*, view::BitView};
-
+use bevy_camera_extras::plugins::DefaultCameraPlugin;
 
 use bevy_serialization_extras::ui::*;
 
@@ -27,6 +27,7 @@ fn main() {
         .add_plugins(SerializationPlugin)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
+        .add_plugins(DefaultCameraPlugin)
         //.add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, queue_urdf_load_requests)
@@ -73,7 +74,14 @@ pub fn queue_urdf_load_requests(
     //          ..Default::default()
     //     }
     // )
-    ;
+    // urdf_load_requests.requests.push_front(
+    //     AssetSpawnRequest {
+    //          source: "urdf_tutorial/urdfs/full_urdf_tutorial_bot.xml".to_owned().into(), 
+    //          position: Transform::from_xyz(0.0, 1.0, 0.0), 
+    //          ..Default::default()
+    //     }
+    // );
+    
 }
 
 /// set up a simple 3D scene

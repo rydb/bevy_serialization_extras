@@ -39,8 +39,6 @@ impl<'a> FromStructure for Urdf {
         let mut structured_joint_map = HashMap::new();
         let mut structured_material_map = HashMap::new();
 
-        let mut structured_linkage_map = HashMap::new();
-
         for joint in &robot.joints {
             structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
         }
@@ -49,16 +47,6 @@ impl<'a> FromStructure for Urdf {
         }
         for link in &robot.links {
             structured_link_map.insert(link.name.clone(), link.clone());
-        
-            //let joint_check = structured_joint_map.get(link.name.clone());
-            structured_linkage_map.insert(
-                link.name.clone(),
-                UrdfLinkage {
-                    link: link,
-                    joint: structured_joint_map.get(&link.name.clone())
-                }
-            
-             );
         }
         
         // structured_linkage_map.insert(UrdfLinkage {
@@ -80,83 +68,8 @@ impl<'a> FromStructure for Urdf {
         // ).collect::<Vec<Self>>();
         let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
 
-        for (key, joint) in structured_joint_map.iter() {
-            let e = *structured_entities_map.entry(joint.child.link.clone())
-            .or_insert(commands.spawn_empty().id());
 
-            for link in structured_link_map.values().filter(|link| link.name == joint.parent.link) {
-                //println!("found parent link for joint");
-                let parent_e = *structured_entities_map.entry(link.name.clone())
-                .or_insert(
-                    commands.spawn_empty()
-                    .insert(RigidBodyFlag::Fixed)
-                    .id()
-                );
-
-                
-                let mut new_joint = JointFlag::from(joint);
-                new_joint.parent_id = Some(parent_e);
-
-                commands.entity(e)
-                .insert(new_joint)
-                .insert(RigidBodyFlag::Dynamic)
-
-                ;
-            }
-
-        }
-        // for (key, linkage) in structured_linkage_map.iter() {
-        //     let e = *structured_entities_map.entry(linkage.link.name.clone())
-        //     .or_insert(commands.spawn_empty().id());
-
-        //     if let Some(joint) = linkage.joint{
-        //         for parent_link in structured_link_map.values().filter(|link| link.name == joint.child.link) {
-        //             //println!("found parent link for joint");
-        //             let parent_e = *structured_entities_map.entry(parent_link.name.clone())
-        //             .or_insert(
-        //                 commands.spawn_empty()
-        //                 .insert(RigidBodyFlag::Fixed)
-        //                 .id()
-        //             );
-    
-                    
-        //             //let mut new_joint = JointFlag::from(joint);
-        //             //new_joint.parent_id = Some(parent_e);
-    
-        //             commands.entity(e)
-        //             .insert(JointFlag::from(joint))
-        //             .insert(RigidBodyFlag::Dynamic)
-    
-        //             ;
-        //         }
-        //     }
-
-
-        //     commands.entity(e)
-        //     .insert(Name::new(linkage.link.name.clone()))
-        //     .insert(LinkFlag::from(linkage.link))
-        //     .insert(StructureFlag { name: robot.name.clone() })
-        //     .insert(MassFlag {mass: 1.0})
-        //     //.insert(MassFlag { mass: link.inertial.mass.value as f32})
-        //     ;
-        //     match FileCheckPicker::from(linkage.link.visual.clone()){
-        //             FileCheckPicker::PureComponent(t) => commands.entity(e).insert(t),
-        //             FileCheckPicker::PathComponent(u) => commands.entity(e).insert(u),
-        //         };
-        //     commands.entity(e)
-        //     .insert(MaterialFlag::from(linkage.link.visual.clone()))
-        //     .insert(VisibilityBundle::default())
-        //     .insert(TransformBundle {
-        //         local: spawn_request.position, 
-        //         ..default()
-        //     })
-        //     .insert(ColliderFlag::default())
-        //     .insert(SolverGroupsFlag::default())
-        //     .insert(GeometryShiftMarked::default())
-        //     //.insert(CcdFlag::default())
-        //     //.insert()
-        //     ;
-        // }
+       
         for (key , link) in structured_link_map.iter() {
             let e = *structured_entities_map.entry(link.name.clone())
             .or_insert(commands.spawn_empty().id());
@@ -183,9 +96,25 @@ impl<'a> FromStructure for Urdf {
             .insert(ColliderFlag::default())
             .insert(SolverGroupsFlag::default())
             .insert(GeometryShiftMarked::default())
+            .insert(RigidBodyFlag::Fixed)
             //.insert(CcdFlag::default())
             //.insert()
             ;
+        }
+
+        for (key, joint) in structured_joint_map.iter() {
+            let e = *structured_entities_map.entry(joint.child.link.clone())
+            .or_insert(commands.spawn_empty().id());
+
+            for link in structured_link_map.values().filter(|link| link.name == joint.parent.link) {
+                let new_joint = JointFlag::from(joint);
+
+                commands.entity(e)
+                .insert(new_joint)
+                .insert(RigidBodyFlag::Dynamic)
+                ;
+            }
+
         }
     }
 }
@@ -276,6 +205,36 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
     }
 }
 
+#[derive(Component, Default)]
+pub struct JointBounded;
+
+// get joints and bind them to their named connection if it exists
+pub fn bind_joints_to_entities(
+    mut joints: Query<(Entity, &mut JointFlag), (Without<JointBounded>)>,
+    link_names: Query<(Entity, &Name)>,
+    mut commands: Commands,
+) {
+    for (joint_e, mut joint) in joints.iter_mut() {
+        let joint_parent_name = joint.parent_name.clone();
+        match joint_parent_name {
+            Some(name) => {
+                for (i, (e, link_name)) in link_names.iter()
+                .filter(|(e, link_name)| name == link_name.to_string())
+                .enumerate() {
+                    if i > 0 {
+                        panic!("more then 1 entity with joint name that this joint can bind to! to prevent undefined behaviour, erroring here!")
+                    }
+                    if joint.parent_id != Some(e) {
+                        joint.parent_id = Some(e);
+                        commands.entity(joint_e).insert(JointBounded::default());
+                    }
+
+                }
+            }
+            None => {}
+        }
+    }
+}
 
 
 pub fn urdf_origin_shift(
@@ -285,7 +244,13 @@ pub fn urdf_origin_shift(
 ) {
     for (e, link_flag, mut joint_flag) in unshifted_models.iter_mut() {
         println!("shifting model local_frame 2");
-        joint_flag.local_frame2.translation = link_flag.geom_offset;
+        // match joint_flag.local_frame2 {
+        //     Some(local_frame2) => {
+                
+        //     }
+        // }
+        //joint_flag.local_frame1.translation += link_flag.geom_offset;
+        joint_flag.local_frame2 = Some(Transform::from_translation(-link_flag.geom_offset));
         commands.entity(e).insert(GeometryShifted::default());
     }
 }

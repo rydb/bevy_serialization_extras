@@ -32,6 +32,7 @@ derive_more = "0.99"
 bitvec = "*"
 bevy_obj = "0.12"
 log = "*"
+bevy_camera_extras = "*"
 # You can specify the types of derives that you need for less time spent
 # compiling. For the full list of features see this crate its `Cargo.toml`.
 

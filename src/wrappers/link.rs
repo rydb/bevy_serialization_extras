@@ -111,9 +111,9 @@ impl From<UrdfTransform> for Transform {
         let pos = value.0;
         
         let compliant_trans = 
-            urdf_cord_flip * Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
+            /*urdf_cord_flip * */Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
         let compliant_rot = 
-            urdf_rotation_flip * Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
+            /*urdf_rotation_flip * */Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
 
 
         println!("origin is {:#?}", pos);
@@ -127,8 +127,68 @@ impl From<UrdfTransform> for Transform {
     }
 } 
 
+pub struct UrdfLinkage {
+    pub link: Link,
+    pub joint: Joint
+}
+
+// impl From<&UrdfLinkage> for JointFlag {
+//     fn from(value: &UrdfLinkage) -> Self {
+//         let joint = value.joint;
+//         let link= value.link;
+
+//         let joint_offset = Transform::from(UrdfTransform::from(joint.origin.clone()));
+//         Self {
+//             offset: Transform {
+//                  translation: Vec3::new(joint.origin.xyz.0[0] as f32, joint.origin.xyz.0[1] as f32, joint.origin.xyz.0[2] as f32),
+//                 // rotation: Quat::default(),
+//                 ..default()
+//             },
+//             parent_name: Some(joint.parent.link.clone()),
+//             parent_id: None,
+//             limit: JointLimitWrapper {
+//                  lower:  joint.limit.lower, 
+//                  upper: joint.limit.upper, 
+//                  effort: joint.limit.effort, 
+//                  velocity: joint.limit.velocity
+//             },
+//             dynamics: {
+//                 match joint.dynamics.clone() {
+//                     Some(dynamics) => 
+//                         Dynamics {
+//                             damping: dynamics.damping,
+//                             friction: dynamics.friction,
+//                         },
+//                     None => Dynamics::default()
+                    
+//                 }
+//             },
+//             local_frame1: UrdfTransform::from(joint.origin.clone()).into(),
+//             local_frame2: Transform::default(),
+//             locked_axes: {
+//                 //clamp axis to between 0-1 for simplicity and for bitmask flipping
+//                 // let unit_axis = value.axis.xyz.0
+//                 // .map(|n| n.clamp(0.0, 1.0))
+//                 // .map(|n| n as u8);
+//                 // let mut x = 1 << unit_axis[0];
+//                 // x = x | (2 << unit_axis[1]);
+//                 // x = x | (3 << unit_axis[2]);
+//                 // JointAxesMaskWrapper::from_bits_truncate(x)
+//                 JointAxesMaskWrapper::LOCKED_FIXED_AXES
+//             },
+//             limit_axes: JointAxesMaskWrapper::empty(),
+//             motor_axes: JointAxesMaskWrapper::empty(),
+//             coupled_axes: JointAxesMaskWrapper::empty(),
+//             contacts_enabled: true,
+//             enabled: true
+//         }
+//     }
+// }
+
 impl From<&Joint> for JointFlag {
     fn from(value: &Joint) -> Self {
+        
+        let joint_offset = Transform::from(UrdfTransform::from(value.origin.clone()));
         Self {
             offset: Transform {
                  translation: Vec3::new(value.origin.xyz.0[0] as f32, value.origin.xyz.0[1] as f32, value.origin.xyz.0[2] as f32),
@@ -155,7 +215,7 @@ impl From<&Joint> for JointFlag {
                 }
             },
             local_frame1: UrdfTransform::from(value.origin.clone()).into(),
-            local_frame2: Transform::default(),
+            local_frame2: None,
             locked_axes: {
                 //clamp axis to between 0-1 for simplicity and for bitmask flipping
                 // let unit_axis = value.axis.xyz.0
@@ -191,8 +251,8 @@ impl From<&JointFlag> for GenericJoint {
                 rotation: value.local_frame1.rotation.into()
             },
             local_frame2: Isometry3 {
-                translation: value.local_frame2.translation.into(),
-                rotation: value.local_frame2.rotation.into()
+                translation: value.local_frame2.unwrap_or_default().translation.into(),
+                rotation: value.local_frame2.unwrap_or_default().rotation.into()
             },
             locked_axes: JointAxesMask::from_bits_truncate(value.locked_axes.bits()),
             limit_axes: JointAxesMask::from_bits_truncate(value.limit_axes.bits()),
@@ -261,12 +321,12 @@ impl From<&ImpulseJoint> for JointFlag {
                 //FIXME: implement this properly
                 scale: default()
             },
-            local_frame2: Transform {
+            local_frame2: Some(Transform {
                 translation: joint.local_frame2.translation.into(),
                 rotation: joint.local_frame2.rotation.into(),
                 //FIXME: implement this properly
                 scale: default()
-            },
+            }),
             locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
             limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
             motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
@@ -349,7 +409,7 @@ pub struct JointFlag {
     /// The joint’s frame, expressed in the first rigid-body’s local-space.
     pub local_frame1: Transform,
     // / The joint’s frame, expressed in the second rigid-body’s local-space.
-    pub local_frame2: Transform,
+    pub local_frame2: Option<Transform>,
     // / The degrees-of-freedoms locked by this joint.
     pub locked_axes: JointAxesMaskWrapper,
     /// The degrees-of-freedoms limited by this joint.

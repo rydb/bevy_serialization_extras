@@ -9,7 +9,7 @@ use crate::traits::{Unwrap, ManagedTypeRegistration};
 use crate::wrappers::mesh::shape::Cube;
 use strum_macros::EnumIter;
 use bevy::render::mesh::shape::Plane;
-
+use bevy::render::mesh::VertexAttributeValues::Float32x3;
 
 
 #[derive(Component, Default, Reflect, Clone)]
@@ -75,24 +75,27 @@ impl From<Plane> for GeometryFlag {
 }
 
 impl From<Vec<Visual>> for FileCheckPicker<GeometryFlag, GeometryFile> {
+
+    
     fn from(value: Vec<Visual>) -> Self {
+
+        let urdf_rotation_flip = Matrix3::new(
+            0.0, -1.0, 0.0,
+            0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0,
+        );
+
         if let Some(visual) = value.first() {
 
             let urdf_geometry = &visual.geometry;
 
             let flag_geometry = match urdf_geometry {
                 urdf_rs::Geometry::Box { size } => { 
-                    //flip z and y, and make x negative
-                    let urdf_rotation_flip = Matrix3::new(
-                        1.0, 0.0, 0.0,
-                        0.0, 0.0, 1.0,
-                        0.0, 1.0, 0.0,
-                    );
-                    let bevy_size = urdf_rotation_flip * Vector3::new(size[0], size[1], size[2]);
+
+                    let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
                     FileCheckPicker::PureComponent(
                     
                         GeometryFlag { 
-                            
 
                             primitive:  MeshPrimitive::Box {
                                 //size: (*size).map(|f| f as f32),
@@ -102,14 +105,18 @@ impl From<Vec<Visual>> for FileCheckPicker<GeometryFlag, GeometryFile> {
                     
                     )
                 },
-                urdf_rs::Geometry::Cylinder { radius, length } => FileCheckPicker::PureComponent(
-                    GeometryFlag {
-                        primitive: MeshPrimitive::Cylinder {
-                            radius: *radius as f32,
-                            length: *length as f32,
+                urdf_rs::Geometry::Cylinder { radius, length } => 
+                {
+                    //let bevy_size = Vector3::new(radius, length, radius);
+                    FileCheckPicker::PureComponent(
+                        GeometryFlag {
+                            primitive: MeshPrimitive::Cylinder {
+                                radius: *radius as f32,
+                                length: *length as f32,
+                            }
                         }
-                    }
-                ),
+                    )
+                },
                 urdf_rs::Geometry::Capsule { radius, length } => FileCheckPicker::PureComponent(
                     GeometryFlag {
                         primitive: MeshPrimitive::Capsule {
@@ -159,17 +166,80 @@ impl Unwrap<&GeometryFlag> for Mesh {
     fn unwrap(value: &GeometryFlag) -> Result<Self, String>{
         match value.primitive {
             MeshPrimitive::Box { size } => {
-                return Ok(shape::Box{
+                // return Ok(shape::Box{
+                //     min_x: -size[0] * 0.5,
+                //     max_x: size[0] * 0.5,
+                //     min_y: -size[1] * 0.5,
+                //     max_y: size[1] * 0.5,
+                //     min_z: -size[2] * 0.5,
+                //     max_z: size[2] * 0.5,
+                // }.into())
+                let mut mesh = Mesh::from(shape::Box{
                     min_x: -size[0] * 0.5,
                     max_x: size[0] * 0.5,
                     min_y: -size[1] * 0.5,
                     max_y: size[1] * 0.5,
                     min_z: -size[2] * 0.5,
                     max_z: size[2] * 0.5,
-                }.into())
+                });
+                // let urdf_rotation_flip = Matrix3::new(
+                //     -1.0, 0.0, 0.0,
+                //     0.0, 0.0, 1.0,
+                //     0.0, 1.0, 0.0,
+                // );
+                let urdf_rotation_flip = Matrix3::new(
+                    0.0, 0.0, -1.0,
+                    0.0, 1.0, 0.0,
+                    1.0, 0.0, 0.0,
+                );
+    
+                
+                if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
+                    match topology {
+                        Float32x3(vertex_list) => {
+                            for vertex in vertex_list {
+                            let triangle = Vector3::new(vertex[0], vertex[1], vertex[2]);
+
+                            let new_triangle = urdf_rotation_flip * triangle;
+                                vertex[0] = new_triangle[0];
+                                vertex[1] = new_triangle[1];
+                                vertex[2] = new_triangle[2];
+                                 
+                            }
+                        }
+                        _ => panic!("{:#?}, is not a support mesh attr type for maping mesh vertex visualizaton tug positions.", topology)
+                    }
+                }
+                Ok(mesh)
+
             }
             MeshPrimitive::Cylinder { radius, length } => {
-                Ok(shape::Cylinder{radius: radius, height: length, ..default()}.into())
+                //Ok(shape::Cylinder{radius: radius, height: length, ..default()}.into())
+                let mut mesh = Mesh::from(shape::Cylinder{radius: radius, height: length, ..default()});
+                let urdf_rotation_flip = Matrix3::new(
+                    -1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0,
+                    0.0, 1.0, 0.0,
+                );
+    
+                
+                if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
+                    match topology {
+                        Float32x3(vertex_list) => {
+                            for vertex in vertex_list {
+                            let triangle = Vector3::new(vertex[0], vertex[1], vertex[2]);
+
+                            let new_triangle = urdf_rotation_flip * triangle;
+                                vertex[0] = new_triangle[0];
+                                vertex[1] = new_triangle[1];
+                                vertex[2] = new_triangle[2];
+                                 
+                            }
+                        }
+                        _ => panic!("{:#?}, is not a support mesh attr type for maping mesh vertex visualizaton tug positions.", topology)
+                    }
+                }
+                Ok(mesh)
             },
             MeshPrimitive::Capsule { radius, length } => {
                 Ok(shape::Capsule{radius: radius, depth: length, ..default()}.into())

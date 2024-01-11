@@ -16,7 +16,7 @@ use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag, LinkFl
 use crate::wrappers::mass::MassFlag;
 use crate::wrappers::rigidbodies::RigidBodyFlag;
 use crate::wrappers::solvergroupfilter::SolverGroupsFlag;
-use crate::wrappers::urdf::{FromStructure, IntoHashMap, urdf_origin_shift};
+use crate::wrappers::urdf::{FromStructure, IntoHashMap, urdf_origin_shift, bind_joints_to_entities};
 use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::{GeometryFlag, GeometryFile};
 use moonshine_save::prelude::save_default_with;
@@ -331,7 +331,7 @@ impl Plugin for SerializationPlugin {
         .add_systems(Update, 
             load_from_file_on_request::<LoadRequest>())
         .add_systems(Update, urdf_origin_shift)
-
+        .add_systems(PostUpdate, bind_joints_to_entities)
         ;  
     }
 }
