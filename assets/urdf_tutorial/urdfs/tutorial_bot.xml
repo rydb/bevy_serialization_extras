@@ -14,6 +14,7 @@
       <geometry>
         <box size="0.6 0.1 0.2"/>
       </geometry>
+      <material name="white"/>
     </visual>
   </link>
 
@@ -22,7 +23,7 @@
     <child link="right_leg"/>
     <origin xyz="0 -0.22 0.25"/>
   </joint>
-<!--
+
   <link name="left_leg">
     <visual>
       <origin rpy="0 1.57075 0" xyz="0 0 -0.3"/>
@@ -38,5 +39,5 @@
     <child link="left_leg"/>
     <origin xyz="0 0.22 0.25"/>
   </joint>
--->
+
 </robot>

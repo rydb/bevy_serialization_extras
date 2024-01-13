@@ -1,8 +1,4 @@
-use bevy::{reflect::Reflect, ecs::component::Component};
-
-// pub struct AssetSource<T: Component> {
-
-// }
+use bevy::reflect::Reflect;
 
 #[derive(Debug, Clone, PartialEq, Reflect)]
 pub enum AssetSource {

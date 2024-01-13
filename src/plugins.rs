@@ -2,6 +2,7 @@
 use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy::ecs::query::WorldQuery;
+use bevy::ecs::system::BoxedSystem;
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::dynamics::{RigidBody, AdditionalMassProperties};
 use bevy_rapier3d::geometry::SolverGroups;
@@ -21,7 +22,7 @@ use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits:
 use crate::wrappers::mesh::{GeometryFlag, GeometryFile};
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::prelude::SaveFilter;
-use crate::ui::{update_last_saved_typedata, UtilitySelection};
+use crate::ui::{update_last_saved_typedata, UtilitySelection, CachedUrdf};
 use super::systems::*;
 use super::resources::*;
 use core::fmt::Debug;
@@ -223,17 +224,21 @@ impl<U, T> Default for DeserializeAssetFrom<U, T> {
     }
 }
 
-pub struct SerializeManyAsOneFor<T, U> {
+pub struct SerializeManyAsOneFor<T, U>
+{
     things_query: PhantomData<fn() -> T>,
     composed_things_resource: PhantomData<fn() -> U>,
+    //post_processing_systems: Vec<BoxedSystem<In = ()>>,
 }
 
 
 impl<U, T> Default for SerializeManyAsOneFor<U, T> {
+    
     fn default() -> Self {
         Self {
             things_query: PhantomData,
             composed_things_resource: PhantomData,
+            //post_processing_systems: Vec::new(),
         }
     }
 }
@@ -241,18 +246,10 @@ impl<U, T> Default for SerializeManyAsOneFor<U, T> {
 impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
     where
         T: 'static + WorldQuery,
-        U: 'static + Asset + Default + Clone + for<'w, 's> IntoHashMap<Query<'w, 's, T>> + FromStructure + LazyDeserialize
+        U: 'static + Asset + Default + Clone + for<'w, 's> IntoHashMap<Query<'w, 's, T>> + FromStructure + LazyDeserialize,
 
  {
     fn build(&self, app: &mut App) {
-        // type L = SerializeFilter;
-        // let mut skip_list = app.world
-        //     .get_resource_or_insert_with::<L>(| |L::default());
-
-        // let skip_list_copy = skip_list.clone();
-        // skip_list.filter.components = skip_list_copy.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
-        //skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
-        //app.world.insert_resource(U::default());
         app.world.get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(
             | |AssetSpawnRequestQueue::<U>::default()
         );
@@ -267,11 +264,20 @@ impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
                 deserialize_assets_as_structures::<U>
             ).after(LoadSet::PostLoad)
         )
-
-        
         ;
+        // add post processing systems for things that cannot be made 1:1 without world state dependencies
+        // for system in self.post_processing_systems.clone() {
+        //     app
+        //     .add_systems(
+        //         Update, system
+        //     )
+        //     ;
+        // }
+
     }
 }
+
+pub fn say_hello() {}
 
 /// plugin that adds systems/plugins for serialization. 
 /// `!!!THINGS THAT NEED TO BE SERIALIZED STILL MUST IMPLEMENT .register_type::<T>() IN ORDER TO BE USED!!!`
@@ -286,6 +292,7 @@ impl Plugin for SerializationPlugin {
         .insert_resource(TypeRegistryOnSave::default())
         .insert_resource(RefreshCounter::default())
         .insert_resource(UtilitySelection::default())
+        .insert_resource(CachedUrdf::default())
         .add_plugins(UrdfLoaderPlugin)
 
         .add_plugins(ObjPlugin)
@@ -296,7 +303,14 @@ impl Plugin for SerializationPlugin {
         .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
         .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
         .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
-        .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
+        .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf> 
+        {
+            // post_processing_systems: vec![
+            //     urdf_origin_shift
+            // ],
+            ..default()
+        }
+        )
         .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
         ;
 

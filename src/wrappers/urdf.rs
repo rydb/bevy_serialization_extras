@@ -3,11 +3,12 @@ use std::collections::HashMap;
 
 // use bevy::core::Name;
 use bevy::{prelude::*, utils::thiserror};
+use bevy_rapier3d::geometry::Group;
 use urdf_rs::{Robot, Joint, Pose, UrdfError, Link};
 
 use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf, traits::{LazyDeserialize, LoadError}, wrappers::link::LinkFlag};
 
-use super::{material::MaterialFlag, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
+use super::{material::MaterialFlag, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag, collisiongroupfilter::CollisionGroupsFlag};
 use bevy::render::mesh::VertexAttributeValues::Float32x3;
 
 
@@ -31,7 +32,7 @@ impl<'a> FromStructure for Urdf {
     fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>){
         //let name = request.item.clone();
         //let robot = value.world_urdfs.get(&request.item).unwrap();
-        //println!("urdf is {:#?}", value.clone());
+        //log::info!("urdf is {:#?}", value.clone());
 
         let robot = value.robot;
 
@@ -40,7 +41,7 @@ impl<'a> FromStructure for Urdf {
         let mut structured_material_map = HashMap::new();
 
         for joint in &robot.joints {
-            structured_joint_map.insert(joint.parent.link.clone(), joint.clone());
+            structured_joint_map.insert(joint.child.link.clone(), joint.clone());
         }
         for material in &robot.materials {
             structured_material_map.insert(material.name.clone(), material.clone());
@@ -94,7 +95,14 @@ impl<'a> FromStructure for Urdf {
                 ..default()
             })
             .insert(ColliderFlag::default())
-            .insert(SolverGroupsFlag::default())
+            .insert(SolverGroupsFlag {
+                memberships: Group::GROUP_1,
+                filters: Group::GROUP_2,
+            })
+            // .insert(CollisionGroupsFlag {
+            //     memberships: Group::NONE,
+            //     filters: Group::NONE,
+            // })
             .insert(GeometryShiftMarked::default())
             .insert(RigidBodyFlag::Fixed)
             //.insert(CcdFlag::default())
@@ -106,14 +114,21 @@ impl<'a> FromStructure for Urdf {
             let e = *structured_entities_map.entry(joint.child.link.clone())
             .or_insert(commands.spawn_empty().id());
 
-            for link in structured_link_map.values().filter(|link| link.name == joint.parent.link) {
-                let new_joint = JointFlag::from(joint);
+            log::info!("spawning joint on {:#?}", e);
+            let new_joint = JointFlag::from(joint);
 
-                commands.entity(e)
-                .insert(new_joint)
-                .insert(RigidBodyFlag::Dynamic)
-                ;
-            }
+            commands.entity(e)
+            .insert(new_joint)
+            .insert(RigidBodyFlag::Dynamic)
+            ;
+            // for link in structured_link_map.values().filter(|link| link.name == joint.parent.link) {
+            //     let new_joint = JointFlag::from(joint);
+
+            //     commands.entity(e)
+            //     .insert(new_joint)
+            //     .insert(RigidBodyFlag::Dynamic)
+            //     ;
+            // }
 
         }
     }

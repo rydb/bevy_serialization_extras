@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::wrappers::{rigidbodies::RigidBodyFlag, colliders::ColliderFlag, mass::MassFlag, friction::FrictionFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag};
+use crate::wrappers::{rigidbodies::RigidBodyFlag, colliders::ColliderFlag, mass::MassFlag, friction::FrictionFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag, collisiongroupfilter::CollisionGroupsFlag};
 
 /// a collection of flags, that, when deserialized into a compatible physics component, enable physics for an entity.
 #[derive(Default, Bundle)]
@@ -27,16 +27,16 @@ pub struct PhysicsBundle {
     pub friction: Friction,
     /// sets weather continous or discrete collision is the collision detection for this model. Continous = more accurate/more slow, discrete = faster/more innacurate
     pub continous_collision_setting: Ccd, 
-    /// "for filtering what pair of colliders should have their contacts (or intersection test if at least one of the colliders is a sensor) computed by the narrow-phase. This filtering happens right after the broad-phase, at the beginning of the narrow phase."
+    ///"for filtering what pair of colliders should have their contacts (or intersection test if at least one of the colliders is a sensor) computed by the narrow-phase. This filtering happens right after the broad-phase, at the beginning of the narrow phase."
     pub collision_groups: CollisionGroups,
-    /// "A solver_groups for filtering what pair of colliders should have their contact forces computed. This filtering happens at the end of the narrow-phase, before the constraints solver"
-    pub solver_groups: SolverGroups,
+    // "A solver_groups for filtering what pair of colliders should have their contact forces computed. This filtering happens at the end of the narrow-phase, before the constraints solver"
+    //pub solver_groups: SolverGroups,
 }
 
 impl Default for PhysicsBundle {
     fn default() -> Self{
         Self {
-            rigid_body: RigidBody::Dynamic,
+            rigid_body: RigidBody::Fixed,
             async_collider: AsyncCollider(ComputedColliderShape::ConvexDecomposition
                 (
                     default()
@@ -52,8 +52,8 @@ impl Default for PhysicsBundle {
             //     linvel: (Vec3::default()),
             //     angvel: (Vec3::default()), 
             // },
-            collision_groups: Default::default(),
-            solver_groups: Default::default(),
+            collision_groups: CollisionGroups::default()
+            //solver_groups: Default::default(),
         }
     }
 }

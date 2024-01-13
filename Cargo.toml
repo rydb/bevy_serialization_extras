@@ -39,10 +39,7 @@ bevy_camera_extras = "*"
 [dev-dependencies]
 bevy = {version = "0.12", features = ["dynamic_linking"]}
 bevy_ui_extras = "0.3"
-#bevy_editor_extras = "0.1"
-#bevy_mod_raycast = "0.15"
 bevy-inspector-egui = "0.22.0"
-#bevy_component_extras = "0.1"
 
 #[features]
 #ui-utils = ["dep:egui", "dep:egui_extras", "dep:bevy_egui"]

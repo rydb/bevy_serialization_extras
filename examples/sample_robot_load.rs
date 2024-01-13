@@ -46,12 +46,19 @@ fn main() {
 
 #[derive(Resource, Default)]
 pub struct UrdfHandles {
-    pub handle_vec: Vec<Handle<Urdf>>
+    pub handle_vec: Vec<Handle<Urdf>>,
+
 }
 
 pub fn queue_urdf_load_requests(
-    mut urdf_load_requests: ResMut<AssetSpawnRequestQueue<Urdf>>
+    mut urdf_load_requests: ResMut<AssetSpawnRequestQueue<Urdf>>,
+    mut cached_urdf: ResMut<CachedUrdf>,
+    mut asset_server: Res<AssetServer>,
+
 ) {
+    let load_urdf_path = "urdf_tutorial/urdfs/tutorial_bot.xml";
+    //let load_urdf_path = "urdf_tutorial/urdfs/full_urdf_tutorial_bot.xml";
+    cached_urdf.urdf = asset_server.load(load_urdf_path);
     // urdf_load_requests.requests.push_front(
     //     AssetSpawnRequest {
     //          source: "urdfs/example_bot.xml".to_owned().into(), 
@@ -62,7 +69,7 @@ pub fn queue_urdf_load_requests(
 
     urdf_load_requests.requests.push_front(
         AssetSpawnRequest {
-             source: "urdf_tutorial/urdfs/tutorial_bot.xml".to_owned().into(), 
+             source: load_urdf_path.to_owned().into(), 
              position: Transform::from_xyz(0.0, 1.0, 0.0), 
              ..Default::default()
         }
@@ -89,6 +96,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut cached_urdf: ResMut<CachedUrdf>
     //mut urdfs: ResMut<Urdfs>
 ) {
     // for (l, i) in materials.iter() {
@@ -100,12 +108,28 @@ fn setup(
         PbrBundle {
             mesh: meshes.add(shape::Plane::from_size(5.0).into()),
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            transform: Transform::from_xyz(0.0, -1.0, 0.0),
             ..default()
         },
-        PhysicsFlagBundle::default()
+        PhysicsBundle::default()
         )
     );
     
+    // cube
+    // commands.spawn(
+    //     (
+    //         PbrBundle {
+    //             mesh: meshes.add(shape::Cube {size: 1.0}.into()),
+    //             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+    //             ..default()
+    //         },
+    //         PhysicsBundle {
+    //             rigid_body: RigidBody::Dynamic,
+    //             ..default()
+    //         }
+    //     )
+    // );
+
     // light
     commands.spawn(
         (

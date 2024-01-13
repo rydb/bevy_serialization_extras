@@ -116,9 +116,6 @@ impl From<UrdfTransform> for Transform {
             /*urdf_rotation_flip * */Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
 
 
-        println!("origin is {:#?}", pos);
-        // let mut new_trans = Transform::from_translation(Vec3::new(compliant_trans.x as f32, compliant_trans.y as f32, compliant_trans.z as f32));
-        // new_trans.rotate_local_x(180.0);
         Self {
             translation:  Vec3::new(compliant_trans.x as f32, compliant_trans.y as f32, compliant_trans.z as f32),
             rotation: Quat::from_euler(EulerRot::XYZ, compliant_rot.x as f32, compliant_rot.y as f32, compliant_rot.z as f32),
@@ -131,59 +128,6 @@ pub struct UrdfLinkage {
     pub link: Link,
     pub joint: Joint
 }
-
-// impl From<&UrdfLinkage> for JointFlag {
-//     fn from(value: &UrdfLinkage) -> Self {
-//         let joint = value.joint;
-//         let link= value.link;
-
-//         let joint_offset = Transform::from(UrdfTransform::from(joint.origin.clone()));
-//         Self {
-//             offset: Transform {
-//                  translation: Vec3::new(joint.origin.xyz.0[0] as f32, joint.origin.xyz.0[1] as f32, joint.origin.xyz.0[2] as f32),
-//                 // rotation: Quat::default(),
-//                 ..default()
-//             },
-//             parent_name: Some(joint.parent.link.clone()),
-//             parent_id: None,
-//             limit: JointLimitWrapper {
-//                  lower:  joint.limit.lower, 
-//                  upper: joint.limit.upper, 
-//                  effort: joint.limit.effort, 
-//                  velocity: joint.limit.velocity
-//             },
-//             dynamics: {
-//                 match joint.dynamics.clone() {
-//                     Some(dynamics) => 
-//                         Dynamics {
-//                             damping: dynamics.damping,
-//                             friction: dynamics.friction,
-//                         },
-//                     None => Dynamics::default()
-                    
-//                 }
-//             },
-//             local_frame1: UrdfTransform::from(joint.origin.clone()).into(),
-//             local_frame2: Transform::default(),
-//             locked_axes: {
-//                 //clamp axis to between 0-1 for simplicity and for bitmask flipping
-//                 // let unit_axis = value.axis.xyz.0
-//                 // .map(|n| n.clamp(0.0, 1.0))
-//                 // .map(|n| n as u8);
-//                 // let mut x = 1 << unit_axis[0];
-//                 // x = x | (2 << unit_axis[1]);
-//                 // x = x | (3 << unit_axis[2]);
-//                 // JointAxesMaskWrapper::from_bits_truncate(x)
-//                 JointAxesMaskWrapper::LOCKED_FIXED_AXES
-//             },
-//             limit_axes: JointAxesMaskWrapper::empty(),
-//             motor_axes: JointAxesMaskWrapper::empty(),
-//             coupled_axes: JointAxesMaskWrapper::empty(),
-//             contacts_enabled: true,
-//             enabled: true
-//         }
-//     }
-// }
 
 impl From<&Joint> for JointFlag {
     fn from(value: &Joint) -> Self {

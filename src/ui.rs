@@ -3,22 +3,30 @@ use bevy_egui::EguiContext;
 use bevy_rapier3d::dynamics::ImpulseJoint;
 use bitvec::{view::BitView, order::Msb0, field::BitField};
 use egui::{RichText, Color32, ScrollArea, text::LayoutJob, TextFormat, Align2, InnerResponse, Ui};
+use strum::IntoEnumIterator;
+use strum_macros::{EnumIter, IntoStaticStr, Display};
 use std::collections::HashMap;
 use moonshine_save::prelude::Save;
 use std::any::TypeId;
 
-use crate::{resources::{TypeRegistryOnSave, ComponentsOnSave, ShowSerializable, ShowUnserializable, RefreshCounter}, wrappers::link::{JointFlag, JointAxesMaskWrapper}};
+use crate::{resources::{TypeRegistryOnSave, ComponentsOnSave, ShowSerializable, ShowUnserializable, RefreshCounter}, wrappers::link::{JointFlag, JointAxesMaskWrapper}, loaders::urdf_loader::Urdf};
 use egui_extras::{Column, TableBuilder};
 
-#[derive(Default)]
+
+#[derive(Default, EnumIter, Display)]
 pub enum UtilityType {
-    #[default]
     Joints,
-    SerializableList
+    SerializableList,
+    #[default]
+    UrdfInfo,
 }
 #[derive(Resource, Default)]
 pub struct UtilitySelection {
     pub selected: UtilityType
+}
+#[derive(Resource, Default)]
+pub struct CachedUrdf {
+    pub urdf: Handle<Urdf>
 }
 
 pub fn debug_widgets_window(
@@ -29,6 +37,9 @@ pub fn debug_widgets_window(
     mut refresh_counter: ResMut<RefreshCounter>,
     mut show_serializable: ResMut<ShowSerializable>,
     mut show_unserializable: ResMut<ShowUnserializable>,
+    mut asset_server: Res<AssetServer>,
+    mut cached_urdf: Res<CachedUrdf>,
+    mut urdfs: Res<Assets<Urdf>>,
 
 
     mut joint_flags: Query<&mut JointFlag>,
@@ -40,14 +51,13 @@ pub fn debug_widgets_window(
         egui::Window::new("debug widget window")
         //.title_bar(false)
         .show(context.get_mut(), |ui|{
+            // lay out the ui widget selection menu
             ui.horizontal(|ui| {
-                if ui.button("Joints").clicked() {
-                    utility_selection.selected = UtilityType::Joints;     
-                };
-                if ui.button("SerializableList").clicked() {
-                    utility_selection.selected = UtilityType::SerializableList;
+                for utility in UtilityType::iter() {
+                    if ui.button(utility.to_string()).clicked() {
+                        utility_selection.selected = utility;
+                    }
                 }
-
             });
 
             match utility_selection.selected {
@@ -155,6 +165,25 @@ pub fn debug_widgets_window(
     
                     })
                     ;
+                }
+                UtilityType::UrdfInfo => {
+                    if let Some(urdf) = urdfs.get(cached_urdf.urdf.clone()) {
+                        let urdf_as_string = format!("{:#?}", urdf.robot);
+                        
+                        if ui.button("Copy to clipboard").clicked() {
+                            ui.output_mut(|o| o.copied_text = urdf_as_string.to_string());
+                        }
+                        ScrollArea::vertical().show(
+                            ui, |ui| {
+
+                                let job = LayoutJob::single_section(
+                                    urdf_as_string,
+                                    TextFormat::default()
+                                );
+                                ui.label(job);
+                            }
+                        );
+                    }                    
                 }
             }
         })
