@@ -1,15 +1,15 @@
 
 use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
 use bevy_rapier3d::prelude::ImpulseJoint;
+use bevy_serialization_core::{queries::FileCheck, wrappers::mesh::{GeometryFile, GeometryFlag}, traits::{ChangeChecked, ManagedTypeRegistration}};
 use nalgebra::{Matrix3, Vector3};
 use urdf_rs::{Joint, Pose, Link, Visual};
 use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
-use crate::{traits::{ManagedTypeRegistration, ChangeChecked}, queries::FileCheck};
 use bevy::prelude::*;
 use derive_more::From;
 
+use super::{mass::MassFlag, colliders::ColliderFlag};
 
-use super::{mesh::{GeometryFlag, GeometryFile}, colliders::ColliderFlag, mass::MassFlag};
 
 /// the "super-structure" that this entity is related to, relevant for serializing disconnected by related entities 
 #[derive(Reflect, Component, Clone)]
@@ -27,8 +27,6 @@ pub struct LinkQuery {
     pub collision: Option<&'static ColliderFlag>,
     pub joint: Option<&'static JointFlag>,
 }
-
-
 
 #[derive(Default, Reflect, Clone)]
 pub struct Dynamics {

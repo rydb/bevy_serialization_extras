@@ -1,10 +1,9 @@
 
 use bevy::{reflect::Reflect, prelude::Component};
 use bevy_rapier3d::prelude::RigidBody;
+use bevy_serialization_core::traits::ManagedTypeRegistration;
 use strum_macros::EnumIter;
 use bevy::reflect::GetTypeRegistration;
-
-use crate::traits::ManagedTypeRegistration;
 
 #[derive(Component, Reflect, Clone, Default, EnumIter)]
 pub enum RigidBodyFlag {

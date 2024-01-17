@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::AsyncCollider;
-use crate::traits::ManagedTypeRegistration;
 use bevy::reflect::GetTypeRegistration;
+use bevy_serialization_core::traits::ManagedTypeRegistration;
 use strum_macros::EnumIter;
 // use strum::IntoEnumIterator;
 // use crate::physics::mesh::MeshPrimitive;

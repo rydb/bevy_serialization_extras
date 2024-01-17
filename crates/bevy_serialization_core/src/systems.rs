@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use core::fmt::Debug;
 use bevy::{prelude::*, ecs::query::WorldQuery, utils::tracing};
-use crate::{traits::*, wrappers::urdf::{FromStructure, IntoHashMap}, resources::{AssetSpawnRequestQueue, RequestFrom}};
+use crate::{traits::*, resources::{AssetSpawnRequestQueue, RequestFrom}};
 
 use bevy::asset::Asset;
 

@@ -1,21 +1,11 @@
 [package]
-name = "bevy_serialization_extras"
-version = "0.3.1"
+name = "bevy_serialization_core"
+version = "0.1.0"
 edition = "2021"
-repository = "https://github.com/rydb/bevy_serialization_extras"
-readme = "README.md"
-license = "MIT OR Apache-2.0"
-description = "A crate for managing serialization with moonshine_save + wrappers."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[workspace]
-members = [
-    "crates/*"
-]
-
 [dependencies]
-#querybundle_derive = {path = "crates/querybundle_derive"}
 bevy = "0.12"
 bevy_rapier3d = "0.23"
 rapier3d = "0.17.2"
@@ -38,14 +28,8 @@ bitvec = "*"
 bevy_obj = "0.12"
 log = "*"
 bevy_camera_extras = "*"
-# You can specify the types of derives that you need for less time spent
-# compiling. For the full list of features see this crate its `Cargo.toml`.
 
 [dev-dependencies]
 bevy = {version = "0.12", features = ["dynamic_linking"]}
 bevy_ui_extras = "0.3"
 bevy-inspector-egui = "0.22.0"
-
-#[features]
-#ui-utils = ["dep:egui", "dep:egui_extras", "dep:bevy_egui"]
-#physics = ["dep:bevy_rapier3d"]

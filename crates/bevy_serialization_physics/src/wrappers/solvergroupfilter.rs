@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::SolverGroups;
 use bevy_rapier3d::prelude::Group;
-
-use crate::traits::ManagedTypeRegistration;
+use bevy_serialization_core::traits::ManagedTypeRegistration;
 
 pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
     memberships: Group::ALL,

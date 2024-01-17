@@ -3,26 +3,25 @@ use std::{marker::PhantomData, any::TypeId};
 use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy::ecs::query::WorldQuery;
 use bevy::ecs::system::BoxedSystem;
-use bevy_obj::ObjPlugin;
-use bevy_rapier3d::dynamics::{RigidBody, AdditionalMassProperties};
-use bevy_rapier3d::geometry::SolverGroups;
-use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
+// use bevy_obj::ObjPlugin;
+// use bevy_rapier3d::dynamics::{RigidBody, AdditionalMassProperties};
+// use bevy_rapier3d::geometry::SolverGroups;
+// use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
 use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on_request};
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
-use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
-use crate::traits::{ChangeChecked, LazyDeserialize};
-use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag, LinkFlag};
-use crate::wrappers::mass::MassFlag;
-use crate::wrappers::rigidbodies::RigidBodyFlag;
-use crate::wrappers::solvergroupfilter::SolverGroupsFlag;
-use crate::wrappers::urdf::{FromStructure, IntoHashMap, urdf_origin_shift, bind_joints_to_entities};
-use crate::{wrappers::{colliders::ColliderFlag, material::MaterialFlag}, traits::{Unwrap, ManagedTypeRegistration}};
+// use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
+use crate::traits::{ChangeChecked, LazyDeserialize, IntoHashMap, FromStructure};
+// use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag, LinkFlag};
+// use crate::wrappers::mass::MassFlag;
+// use crate::wrappers::rigidbodies::RigidBodyFlag;
+// use crate::wrappers::solvergroupfilter::SolverGroupsFlag;
+use crate::{wrappers::material::MaterialFlag, traits::{Unwrap, ManagedTypeRegistration}};
 use crate::wrappers::mesh::{GeometryFlag, GeometryFile};
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::prelude::SaveFilter;
-use crate::ui::{update_last_saved_typedata, UtilitySelection, CachedUrdf};
+use crate::ui::update_last_saved_typedata;
 use super::systems::*;
 use super::resources::*;
 use core::fmt::Debug;
@@ -34,8 +33,6 @@ use core::fmt::Debug;
 // pub struct LoadRequest {
 
 // }
-
-pub fn no_post_processing(){}
 
 pub struct SerializeQueryFor<S, T, U> {
     query: PhantomData<fn() -> S>,
@@ -224,13 +221,11 @@ impl<U, T> Default for DeserializeAssetFrom<U, T> {
     }
 }
 
-pub struct SerializeManyAsOneFor<T, U>
-{
+
+pub struct SerializeManyAsOneFor<T, U>{
     things_query: PhantomData<fn() -> T>,
     composed_things_resource: PhantomData<fn() -> U>,
-    //post_processing_systems: Vec<BoxedSystem<In = ()>>,
 }
-
 
 impl<U, T> Default for SerializeManyAsOneFor<U, T> {
     
@@ -238,7 +233,6 @@ impl<U, T> Default for SerializeManyAsOneFor<U, T> {
         Self {
             things_query: PhantomData,
             composed_things_resource: PhantomData,
-            //post_processing_systems: Vec::new(),
         }
     }
 }
@@ -265,19 +259,8 @@ impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
             ).after(LoadSet::PostLoad)
         )
         ;
-        // add post processing systems for things that cannot be made 1:1 without world state dependencies
-        // for system in self.post_processing_systems.clone() {
-        //     app
-        //     .add_systems(
-        //         Update, system
-        //     )
-        //     ;
-        // }
-
     }
 }
-
-pub fn say_hello() {}
 
 /// plugin that adds systems/plugins for serialization. 
 /// `!!!THINGS THAT NEED TO BE SERIALIZED STILL MUST IMPLEMENT .register_type::<T>() IN ORDER TO BE USED!!!`
@@ -291,27 +274,12 @@ impl Plugin for SerializationPlugin {
         .insert_resource(ComponentsOnSave::default())
         .insert_resource(TypeRegistryOnSave::default())
         .insert_resource(RefreshCounter::default())
-        .insert_resource(UtilitySelection::default())
-        .insert_resource(CachedUrdf::default())
-        .add_plugins(UrdfLoaderPlugin)
 
-        .add_plugins(ObjPlugin)
-        .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
+
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh>::default())
-        .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
-        .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
-        .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
-        .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf> 
-        {
-            // post_processing_systems: vec![
-            //     urdf_origin_shift
-            // ],
-            ..default()
-        }
-        )
-        .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
+
         ;
 
         app
@@ -329,8 +297,7 @@ impl Plugin for SerializationPlugin {
         .register_type::<InheritedVisibility>()
         .register_type::<ScreenSpaceTransmissionQuality>()
         .register_type::<GeometryFile>()
-        .register_type::<StructureFlag>()
-        .register_type::<LinkFlag>()
+
         //.add_systems(Update, from_structure::<Linkage, ImpulseJoint>)
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<LoadRequest>()))
@@ -344,8 +311,7 @@ impl Plugin for SerializationPlugin {
         .add_systems(Update, add_view_visibility.after(LoadSet::PostLoad))
         .add_systems(Update, 
             load_from_file_on_request::<LoadRequest>())
-        .add_systems(Update, urdf_origin_shift)
-        .add_systems(PostUpdate, bind_joints_to_entities)
+
         ;  
     }
 }

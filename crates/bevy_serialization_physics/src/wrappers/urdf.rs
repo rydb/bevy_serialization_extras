@@ -4,12 +4,17 @@ use std::collections::HashMap;
 // use bevy::core::Name;
 use bevy::{prelude::*, utils::thiserror};
 use bevy_rapier3d::geometry::Group;
+use bevy_serialization_core::{traits::{LazyDeserialize, LoadError, IntoHashMap, FromStructure}, resources::AssetSpawnRequest, queries::FileCheckPicker, wrappers::material::MaterialFlag};
 use urdf_rs::{Robot, Joint, Pose, UrdfError, Link};
 
-use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf, traits::{LazyDeserialize, LoadError}, wrappers::link::LinkFlag};
+//use crate::{queries::FileCheckPicker, resources::AssetSpawnRequest, loaders::urdf_loader::Urdf, traits::{LazyDeserialize, LoadError}, wrappers::link::LinkFlag};
 
-use super::{material::MaterialFlag, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag, collisiongroupfilter::CollisionGroupsFlag};
+//use super::{material::MaterialFlag, link::{JointFlag, LinkQuery, JointAxesMaskWrapper, StructureFlag}, mass::MassFlag, colliders::ColliderFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag, solvergroupfilter::SolverGroupsFlag, collisiongroupfilter::CollisionGroupsFlag};
 use bevy::render::mesh::VertexAttributeValues::Float32x3;
+
+use crate::{loaders::urdf_loader::Urdf, wrappers::link::JointFlag};
+
+use super::{link::{LinkFlag, StructureFlag, LinkQuery, JointAxesMaskWrapper}, mass::MassFlag, colliders::ColliderFlag, solvergroupfilter::SolverGroupsFlag, rigidbodies::RigidBodyFlag, continous_collision::CcdFlag};
 
 
 
@@ -99,13 +104,9 @@ impl<'a> FromStructure for Urdf {
                 memberships: Group::GROUP_1,
                 filters: Group::GROUP_2,
             })
-            // .insert(CollisionGroupsFlag {
-            //     memberships: Group::NONE,
-            //     filters: Group::NONE,
-            // })
             .insert(GeometryShiftMarked::default())
-            .insert(RigidBodyFlag::Fixed)
-            //.insert(CcdFlag::default())
+            .insert(RigidBodyFlag::Dynamic)
+            .insert(CcdFlag::default())
             //.insert()
             ;
         }
@@ -121,32 +122,10 @@ impl<'a> FromStructure for Urdf {
             .insert(new_joint)
             .insert(RigidBodyFlag::Dynamic)
             ;
-            // for link in structured_link_map.values().filter(|link| link.name == joint.parent.link) {
-            //     let new_joint = JointFlag::from(joint);
-
-            //     commands.entity(e)
-            //     .insert(new_joint)
-            //     .insert(RigidBodyFlag::Dynamic)
-            //     ;
-            // }
-
         }
     }
 }
 
-pub trait FromStructure
-    where
-        Self: Sized + Asset
-{
-    fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>);
-}
-
-pub trait IntoHashMap<T>
-where
-    Self: Sized
-{
-    fn into_hashmap(value: T) -> HashMap<String, Self>;
-}
 // impl Deserializer for Urdf {
 // }
 
@@ -223,52 +202,7 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
 #[derive(Component, Default)]
 pub struct JointBounded;
 
-// get joints and bind them to their named connection if it exists
-pub fn bind_joints_to_entities(
-    mut joints: Query<(Entity, &mut JointFlag), (Without<JointBounded>)>,
-    link_names: Query<(Entity, &Name)>,
-    mut commands: Commands,
-) {
-    for (joint_e, mut joint) in joints.iter_mut() {
-        let joint_parent_name = joint.parent_name.clone();
-        match joint_parent_name {
-            Some(name) => {
-                for (i, (e, link_name)) in link_names.iter()
-                .filter(|(e, link_name)| name == link_name.to_string())
-                .enumerate() {
-                    if i > 0 {
-                        panic!("more then 1 entity with joint name that this joint can bind to! to prevent undefined behaviour, erroring here!")
-                    }
-                    if joint.parent_id != Some(e) {
-                        joint.parent_id = Some(e);
-                        commands.entity(joint_e).insert(JointBounded::default());
-                    }
 
-                }
-            }
-            None => {}
-        }
-    }
-}
-
-
-pub fn urdf_origin_shift(
-    mut unshifted_models: Query<(Entity, &LinkFlag, &mut JointFlag), (Without<GeometryShifted>, With<GeometryShiftMarked>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut commands: Commands
-) {
-    for (e, link_flag, mut joint_flag) in unshifted_models.iter_mut() {
-        println!("shifting model local_frame 2");
-        // match joint_flag.local_frame2 {
-        //     Some(local_frame2) => {
-                
-        //     }
-        // }
-        //joint_flag.local_frame1.translation += link_flag.geom_offset;
-        joint_flag.local_frame2 = Some(Transform::from_translation(-link_flag.geom_offset));
-        commands.entity(e).insert(GeometryShifted::default());
-    }
-}
 
 #[derive(Component, Clone, Copy, Default)]
 pub struct GeometryShiftMarked;
@@ -276,50 +210,3 @@ pub struct GeometryShiftMarked;
 /// flags entity geometry as already shifted to account for urdf origin
 #[derive(Component, Clone, Copy, Default)]
 pub struct GeometryShifted;
-
-// take a model's vertices, and shift them by urdf offset
-// 
-// urdfs shift origin of the geometry it self, so to make "geometry" origins match their urdfs, the geometry it self must be shifted
-// pub fn urdf_origin_shift(
-//     unshifted_models: Query<(Entity, &LinkFlag, &Handle<Mesh>), (Without<GeometryShifted>, With<GeometryShiftMarked>)>,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut commands: Commands
-// ) {
-//     for (e, link_flag, mesh_check) in unshifted_models.iter() {
-//         if let Some(mesh) = meshes.get_mut(mesh_check) {
-//             if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
-//                 match topology {
-//                     Float32x3(vertex_list) => {
-//                         let (x, y, z) = (link_flag.geom_offset.x, link_flag.geom_offset.y, link_flag.geom_offset.z);
-//                         println!("geom offset is {:#?}", link_flag.geom_offset);
-//                         for vertex in vertex_list {
-//                              vertex[0] -= x.clone();
-//                              vertex[1] -= z.clone();
-//                              vertex[2] -= y.clone();
-                             
-//                         }
-//                         commands.entity(e).insert(GeometryShifted::default());
-//                     }
-//                     _ => panic!("{:#?}, is not a support mesh attr type for maping mesh vertex visualizaton tug positions.", topology)
-//                 }
-//             }
-//         }
-//     }
-// }
-
-// /// Top level struct to access urdf.
-// #[derive(Debug, YaDeserialize, YaSerialize, Clone)]
-// #[yaserde(rename = "robot", namespace = "http://www.ros.org")]
-// pub struct Robot {
-//     #[yaserde(attribute)]
-//     pub name: String,
-
-//     #[yaserde(rename = "link")]
-//     pub links: Vec<Link>,
-
-//     #[yaserde(rename = "joint")]
-//     pub joints: Vec<Joint>,
-
-//     #[yaserde(rename = "material")]
-//     pub materials: Vec<Material>,
-// }

@@ -3,18 +3,16 @@
 use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow, ecs::query::WorldQuery};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}};
-use bevy_ui_extras::systems::visualize_right_sidepanel_for;
+use bevy_egui::EguiContext;
+use bevy_serialization_core::{plugins::SerializationPlugin, bundles::model::ModelBundle, resources::{SaveRequest, LoadRequest}};
 use egui::TextEdit;
 use moonshine_save::save::Save;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_serialization_extras::bundles::model::ModelBundle;
-use bevy_egui::EguiContext;
-use bevy_serialization_extras::ui::*;
 use urdf_rs::Geometry;
 use std::env;
 const SAVES_LOCATION: &str = "assets/saves";
 
+
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 fn main() {
 
@@ -28,45 +26,13 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
 
         .add_systems(Startup, setup)
-        .add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
-        .add_systems(Update, debug_widgets_window)
+        //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
+        
+        //(TODO) broke this, fix this 
+        //.add_systems(Update, debug_widgets_window)
         //.add_systems(Update, axis_mask_test)
         .run();
 }
-
-// pub fn filecheck_check(
-//     check: Query<FileCheck<MaterialFlag, MaterialFile>>
-// ) {
-//     for item in check.iter() {
-//         match item.component_file {
-//             None => println!("found component but not file"),
-//             Some(file) => println!("found file for thing")
-//         }
-//     }
-// }
-
-// pub fn query_spawn_test<T: WorldQuery>(
-//     model_query: Query<T>,
-//     mut commands: Commands,
-// )
-//     where 
-//         //ensure query can be iterated through
-//         T: WorldQuery + IntoIterator,
-//         // ensure each world query item can be iterated through for its 
-//         for<'a> <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>: IntoIterator,
-// { 
-//     for i in model_query.iter() {
-//         let e = commands.spawn_empty().id();
-//         //model_query.
-//         for item in i.into_iter() {
-//             commands.entity(e).insert(item);
-//         }
-//     }
-// }
-
-// pub fn axis_mask_test() {
-//     println!("axis for x axis is: {:#?}", JointAxesMask::X)
-// }
 
 /// set up a simple 3D scene
 fn setup(

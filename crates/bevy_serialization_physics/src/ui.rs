@@ -9,14 +9,15 @@ use std::collections::HashMap;
 use moonshine_save::prelude::Save;
 use std::any::TypeId;
 
-use crate::{resources::{TypeRegistryOnSave, ComponentsOnSave, ShowSerializable, ShowUnserializable, RefreshCounter}, wrappers::link::{JointFlag, JointAxesMaskWrapper}, loaders::urdf_loader::Urdf};
 use egui_extras::{Column, TableBuilder};
+
+use crate::{loaders::urdf_loader::Urdf, wrappers::link::{JointFlag, JointAxesMaskWrapper}};
+
 
 
 #[derive(Default, EnumIter, Display)]
 pub enum UtilityType {
     Joints,
-    SerializableList,
     #[default]
     UrdfInfo,
 }
@@ -29,14 +30,9 @@ pub struct CachedUrdf {
     pub urdf: Handle<Urdf>
 }
 
-pub fn debug_widgets_window(
+pub fn physics_widgets_window(
     mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
     mut utility_selection: ResMut<UtilitySelection>,
-    saved_components: Res<ComponentsOnSave>,
-    registered_types: Res<TypeRegistryOnSave>,
-    mut refresh_counter: ResMut<RefreshCounter>,
-    mut show_serializable: ResMut<ShowSerializable>,
-    mut show_unserializable: ResMut<ShowUnserializable>,
     mut asset_server: Res<AssetServer>,
     mut cached_urdf: Res<CachedUrdf>,
     mut urdfs: Res<Assets<Urdf>>,
@@ -120,52 +116,6 @@ pub fn debug_widgets_window(
         
                     }
                 }
-                UtilityType::SerializableList => {
-                    let table = TableBuilder::new(ui);
-                    table
-                    .striped(true)
-                    .resizable(true)
-                    .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-                    .column(Column::auto())
-                    .min_scrolled_height(0.0)
-                    .header(20.0, |mut header| {
-                        header.col(|ui| {
-                            ui.horizontal(|ui| {
-                                ui.checkbox(&mut show_serializable.check, "show savable");
-                                ui.checkbox(&mut show_unserializable.check, "show unsavable");
-                                if ui.button("refresh").clicked() {
-                                    refresh_counter.counter += 1;
-                                }
-                            });
-    
-                        });
-                    })
-                    .body(|mut body| {
-                        for (type_id, name) in saved_components.components.iter() {
-                            if registered_types.registry.contains_key(type_id) {
-                                if show_serializable.check == true {
-                                    body.row(30.0, |mut row| {
-                                        row.col(|ui| {
-                                            ui.label(RichText::new(name).color(Color32::GREEN));
-                                        })
-                                        ;
-                                    })
-                                }
-                            } else {
-                                if show_unserializable.check == true {
-                                    body.row(30.0, |mut row| {
-                                        row.col(|ui| {
-                                            ui.label(RichText::new(name).color(Color32::RED));
-                                        })
-                                        ;
-                                    })
-                                }
-                            }
-                        }
-    
-                    })
-                    ;
-                }
                 UtilityType::UrdfInfo => {
                     if let Some(urdf) = urdfs.get(cached_urdf.urdf.clone()) {
                         let urdf_as_string = format!("{:#?}", urdf.robot);
@@ -191,43 +141,3 @@ pub fn debug_widgets_window(
         ;
     }
 }
-
-pub fn update_last_saved_typedata(
-    world: &mut World,
-) {
-    let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
-    
-    //println!("updating last saved type_data");
-
-    let type_registry = world.resource::<AppTypeRegistry>();
-
-    let mut saved_component_types = HashMap::new();
-    for e in enetities_to_save.iter(&world) {
-        for component in world.entity(e).archetype().components() {
-
-            let comp_info = world.components().get_info(component).unwrap();
-            saved_component_types.insert(comp_info.type_id().unwrap(), comp_info.name().to_owned());
-        }
-    }
-
-    let registered_types = type_registry.read().iter()
-    .map(|id| {
-        let type_id = id.type_id();
-
-        return (type_id, TypeInfo::type_path(id.type_info()).to_owned())
-    })
-    .collect::<HashMap<TypeId, String>>();
-    
-    type L = TypeRegistryOnSave;
-    world.insert_resource::<L>(
-        L {
-            registry: registered_types
-        }
-    );
-    type O = ComponentsOnSave;
-    world.insert_resource::<O>(
-        O {
-            components: saved_component_types
-        }
-    );
-} 

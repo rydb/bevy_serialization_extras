@@ -1,10 +1,28 @@
-use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, ecs::{bundle::Bundle, component::Component}, utils::thiserror};
+use std::collections::HashMap;
+
+use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, ecs::{bundle::Bundle, component::Component, system::Commands}, utils::thiserror, asset::Asset};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing. 
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
 pub trait Unwrap<T>: Sized {
     fn unwrap(value: T) -> Result<Self, String>;
 }
+
+
+pub trait FromStructure
+    where
+        Self: Sized + Asset
+{
+    fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>);
+}
+
+pub trait IntoHashMap<T>
+where
+    Self: Sized
+{
+    fn into_hashmap(value: T) -> HashMap<String, Self>;
+}
+
 
 /// trait that denotes that enum/struct/etc.. can fetch all of the type registrations needed of itself.
 ///
@@ -17,6 +35,8 @@ pub trait ManagedTypeRegistration: GetTypeRegistration {
 
 use thiserror::Error;
 use urdf_rs::UrdfError;
+
+use crate::resources::AssetSpawnRequest;
 
 #[non_exhaustive]
 #[derive(Error, Debug)]

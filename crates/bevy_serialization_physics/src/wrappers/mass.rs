@@ -2,8 +2,8 @@ use bevy::{ecs::component::Component, reflect::Reflect};
 use bevy_rapier3d::prelude::AdditionalMassProperties;
 
 use bevy::reflect::GetTypeRegistration;
+use bevy_serialization_core::traits::ManagedTypeRegistration;
 
-use crate::traits::ManagedTypeRegistration;
 #[derive(Reflect, Component, Clone)]
 pub struct MassFlag {
     pub mass: f32

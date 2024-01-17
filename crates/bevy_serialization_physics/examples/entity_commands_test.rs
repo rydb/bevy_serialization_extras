@@ -3,19 +3,17 @@
 use std::{path::PathBuf, thread::spawn};
 
 use bevy::{prelude::*, window::PrimaryWindow, render::mesh::shape::Cube, ecs::{system::EntityCommands, bundle, storage::Table, component::TableStorage}, transform::commands};
-use bevy_serialization_extras::{plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest, AssetSpawnRequest, AssetSpawnRequestQueue}, bundles::physics::{PhysicsBundle, PhysicsFlagBundle}, loaders::urdf_loader::Urdf, wrappers::link::{Linkage, LinkQuery, JointFlag, JointAxesMaskWrapper, LinkQueryItem}, queries::FileCheckPicker};
+use bevy_serialization_core::{plugins::SerializationPlugin, queries::FileCheckPicker};
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::{TextEdit, text::LayoutJob, TextFormat, ScrollArea};
 use moonshine_save::save::Save;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_serialization_extras::bundles::model::ModelBundle;
 use bevy_egui::EguiContext;
 use bevy_rapier3d::{plugin::{RapierPhysicsPlugin, NoUserData}, render::RapierDebugRenderPlugin, dynamics::{ImpulseJoint, RigidBody, PrismaticJointBuilder, RapierImpulseJointHandle}};
 use bitvec::{prelude::*, view::BitView};
 
 
-use bevy_serialization_extras::ui::*;
-
+use bevy_serialization_physics::wrappers::link::{LinkQueryItem, LinkQuery};
 
 fn main() {
 
@@ -31,7 +29,7 @@ fn main() {
         .add_systems(Startup, setup)
         //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         //.add_systems(Update, manage_serialization_ui)
-        .add_systems(Update, debug_widgets_window)
+        //.add_systems(Update, debug_widgets_window)
         //.add_systems(Update, edit_jointflag_widget)
         //.add_systems(Update, print_links)
         .run();

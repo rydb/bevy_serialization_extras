@@ -2,7 +2,7 @@ use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
-use bevy_serialization_extras::plugins::SerializationPlugin;
+use bevy_serialization_core::plugins::SerializationPlugin;
 use egui::{ScrollArea, text::LayoutJob, TextFormat};
 
 //RapierImpulseJointHandle
