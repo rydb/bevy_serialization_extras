@@ -15,7 +15,8 @@ members = [
 ]
 
 [dependencies]
-#querybundle_derive = {path = "crates/querybundle_derive"}
+bevy_serialization_core = {path = "./crates/bevy_serialization_core"}
+bevy_serialization_physics = {path = "./crates/bevy_serialization_physics"}
 bevy = "0.12"
 bevy_rapier3d = "0.23"
 rapier3d = "0.17.2"
