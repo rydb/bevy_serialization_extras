@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use crate::wrappers::{link::{JointFlag, LinkFlag}, urdf::{JointBounded, GeometryShifted, GeometryShiftMarked}};
+use crate::prelude::link::{JointFlag, LinkFlag, JointBounded, GeometryShifted, GeometryShiftMarked};
+
+
 
 // get joints and bind them to their named connection if it exists
 pub fn bind_joints_to_entities(
@@ -31,7 +33,8 @@ pub fn bind_joints_to_entities(
 }
 
 
-pub fn urdf_origin_shift(
+/// shifts local frame to match link offset
+pub fn local_frame2_shift(
     mut unshifted_models: Query<(Entity, &LinkFlag, &mut JointFlag), (Without<GeometryShifted>, With<GeometryShiftMarked>)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands

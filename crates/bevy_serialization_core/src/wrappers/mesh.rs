@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use bevy::reflect::GetTypeRegistration;
 use nalgebra::{Matrix3, Vector3};
-use urdf_rs::Visual;
+//use urdf_rs::Visual;
 use crate::asset_source::AssetSource;
 use crate::queries::FileCheckPicker;
 use crate::traits::{Unwrap, ManagedTypeRegistration};
@@ -15,7 +15,7 @@ use bevy::render::mesh::VertexAttributeValues::Float32x3;
 #[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFlag{
-    primitive: MeshPrimitive,
+    pub primitive: MeshPrimitive,
 }
 
 #[derive(Default, Component, Reflect, Clone)]
@@ -74,93 +74,9 @@ impl From<Plane> for GeometryFlag {
     }
 }
 
-impl From<Vec<Visual>> for FileCheckPicker<GeometryFlag, GeometryFile> {
 
-    
-    fn from(value: Vec<Visual>) -> Self {
 
-        let urdf_rotation_flip = Matrix3::new(
-            0.0, -1.0, 0.0,
-            0.0, 0.0, 1.0,
-            1.0, 0.0, 0.0,
-        );
 
-        if let Some(visual) = value.first() {
-
-            let urdf_geometry = &visual.geometry;
-
-            let flag_geometry = match urdf_geometry {
-                urdf_rs::Geometry::Box { size } => { 
-
-                    let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
-                    FileCheckPicker::PureComponent(
-                    
-                        GeometryFlag { 
-
-                            primitive:  MeshPrimitive::Box {
-                                //size: (*size).map(|f| f as f32),
-                                size: [bevy_size[0] as f32, bevy_size[1] as f32, bevy_size[2] as f32]
-                            }
-                        }
-                    
-                    )
-                },
-                urdf_rs::Geometry::Cylinder { radius, length } => 
-                {
-                    //let bevy_size = Vector3::new(radius, length, radius);
-                    FileCheckPicker::PureComponent(
-                        GeometryFlag {
-                            primitive: MeshPrimitive::Cylinder {
-                                radius: *radius as f32,
-                                length: *length as f32,
-                            }
-                        }
-                    )
-                },
-                urdf_rs::Geometry::Capsule { radius, length } => FileCheckPicker::PureComponent(
-                    GeometryFlag {
-                        primitive: MeshPrimitive::Capsule {
-                            radius: *radius as f32,
-                            length: *length as f32,
-                        }
-                    }
-                ),
-                urdf_rs::Geometry::Sphere { radius } => FileCheckPicker::PureComponent(
-                    GeometryFlag {
-                        primitive: MeshPrimitive::Sphere {
-                            radius: *radius as f32,
-                        }
-                    }
-                ),
-                urdf_rs::Geometry::Mesh { filename, .. } => {
-                    let asset_source = AssetSource::Package(filename.clone());
-
-                    let asset_path = parse_urdf_source(asset_source);
-                    FileCheckPicker::PathComponent(
-                    //AssetSource::Package(filename.clone());
-                    GeometryFile {
-                        //source: AssetSource::Package(filename.clone()),
-                        source: asset_path
-                    }
-                )
-                }
-            };
-            return flag_geometry
-        } else {
-            panic!("Multi-model links are not implemented.");
-            //Self::default()
-        }
-    }
-}
-
-fn parse_urdf_source(source: AssetSource) -> String {
-
-    match source {
-        AssetSource::Package(pkg) => pkg.strip_prefix("package://").unwrap().to_owned(),
-        AssetSource::Placeholder(..) => panic!("Asset source not implemented for this asset source.")
-    }
-
-}
 
 impl Unwrap<&GeometryFlag> for Mesh {
     fn unwrap(value: &GeometryFlag) -> Result<Self, String>{

@@ -3,12 +3,27 @@ use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::Get
 use bevy_rapier3d::prelude::ImpulseJoint;
 use bevy_serialization_core::{queries::FileCheck, wrappers::mesh::{GeometryFile, GeometryFlag}, traits::{ChangeChecked, ManagedTypeRegistration}};
 use nalgebra::{Matrix3, Vector3};
-use urdf_rs::{Joint, Pose, Link, Visual};
+//use urdf_rs::{Joint, Pose, Link, Visual};
 use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
 use bevy::prelude::*;
 use derive_more::From;
 
 use super::{mass::MassFlag, colliders::ColliderFlag};
+
+
+
+#[derive(Component, Default)]
+pub struct JointBounded;
+
+
+
+#[derive(Component, Clone, Copy, Default)]
+pub struct GeometryShiftMarked;
+
+/// flags entity geometry as already shifted to account for urdf origin
+#[derive(Component, Clone, Copy, Default)]
+pub struct GeometryShifted;
+
 
 
 /// the "super-structure" that this entity is related to, relevant for serializing disconnected by related entities 
@@ -17,16 +32,7 @@ pub struct StructureFlag {
     pub name: String,
 }
 
-/// the collection of things that qualify as a "link", in the ROS 2 context. 
-#[derive(WorldQuery)]
-pub struct LinkQuery {
-    pub name: Option<&'static Name>,
-    pub structure: &'static StructureFlag,
-    pub inertial: Option<&'static MassFlag>,
-    pub visual: FileCheck<GeometryFlag, GeometryFile>,
-    pub collision: Option<&'static ColliderFlag>,
-    pub joint: Option<&'static JointFlag>,
-}
+
 
 #[derive(Default, Reflect, Clone)]
 pub struct Dynamics {
@@ -64,119 +70,18 @@ impl ChangeChecked for Linkage {
     type ChangeCheckedComp = JointFlag;
 }
 
-/// enum for convinience functions from converting to different cordinate systems
-pub enum CordBasis {
-    Bevy(Transform), //x right, y up, z backwards
-    Urdf(Transform), // right hand rule
-}
+// /// enum for convinience functions from converting to different cordinate systems
+// pub enum CordBasis {
+//     Bevy(Transform), //x right, y up, z backwards
+//     Urdf(Transform), // right hand rule
+// }
 
 #[derive(Component, Reflect)]
 pub struct LinkFlag{
     pub geom_offset: Vec3
 }
 
-impl From<&Link> for LinkFlag {
-    fn from(value: &Link) -> Self {
-        let visual = value.visual.first()
-        .unwrap_or(&Visual::default())
-        .to_owned();
-        Self {
-            //FIXME: implement this properly to account for urdfs with multiple visual elements 
-            geom_offset: Vec3::from_array([visual.origin.xyz[0] as f32, visual.origin.xyz[1] as f32, visual.origin.xyz[2] as f32])
-        }
-    }
-}
 
-#[derive(From)]
-pub struct UrdfTransform(Pose);
-
-impl From<UrdfTransform> for Transform {
-    fn from(value: UrdfTransform) -> Self {
-        // based on this explanation
-        //https://towardsdatascience.com/change-of-basis-3909ef4bed43
-        let urdf_cord_flip = Matrix3::new(
-            1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0,
-            0.0, 1.0, 0.0,
-        );
-        // based on this explanation
-        //https://stackoverflow.com/questions/31191752/right-handed-euler-angles-xyz-to-left-handed-euler-angles-xyz
-        let urdf_rotation_flip = Matrix3::new(
-            -1.0, 0.0, 0.0,
-            0.0, -1.0, 0.0,
-            0.0, 0.0, 1.0,
-        );
-        let pos = value.0;
-        
-        let compliant_trans = 
-            /*urdf_cord_flip * */Vector3::new(pos.xyz.0[0], pos.xyz.0[1], pos.xyz.0[2]);
-        let compliant_rot = 
-            /*urdf_rotation_flip * */Vector3::new(pos.rpy.0[0], pos.rpy.0[1], pos.rpy.0[2]);
-
-
-        Self {
-            translation:  Vec3::new(compliant_trans.x as f32, compliant_trans.y as f32, compliant_trans.z as f32),
-            rotation: Quat::from_euler(EulerRot::XYZ, compliant_rot.x as f32, compliant_rot.y as f32, compliant_rot.z as f32),
-            ..default()
-        }
-    }
-} 
-
-pub struct UrdfLinkage {
-    pub link: Link,
-    pub joint: Joint
-}
-
-impl From<&Joint> for JointFlag {
-    fn from(value: &Joint) -> Self {
-        
-        let joint_offset = Transform::from(UrdfTransform::from(value.origin.clone()));
-        Self {
-            offset: Transform {
-                 translation: Vec3::new(value.origin.xyz.0[0] as f32, value.origin.xyz.0[1] as f32, value.origin.xyz.0[2] as f32),
-                // rotation: Quat::default(),
-                ..default()
-            },
-            parent_name: Some(value.parent.link.clone()),
-            parent_id: None,
-            limit: JointLimitWrapper {
-                 lower:  value.limit.lower, 
-                 upper: value.limit.upper, 
-                 effort: value.limit.effort, 
-                 velocity: value.limit.velocity
-            },
-            dynamics: {
-                match value.dynamics.clone() {
-                    Some(dynamics) => 
-                        Dynamics {
-                            damping: dynamics.damping,
-                            friction: dynamics.friction,
-                        },
-                    None => Dynamics::default()
-                    
-                }
-            },
-            local_frame1: UrdfTransform::from(value.origin.clone()).into(),
-            local_frame2: None,
-            locked_axes: {
-                //clamp axis to between 0-1 for simplicity and for bitmask flipping
-                // let unit_axis = value.axis.xyz.0
-                // .map(|n| n.clamp(0.0, 1.0))
-                // .map(|n| n as u8);
-                // let mut x = 1 << unit_axis[0];
-                // x = x | (2 << unit_axis[1]);
-                // x = x | (3 << unit_axis[2]);
-                // JointAxesMaskWrapper::from_bits_truncate(x)
-                JointAxesMaskWrapper::LOCKED_FIXED_AXES
-            },
-            limit_axes: JointAxesMaskWrapper::empty(),
-            motor_axes: JointAxesMaskWrapper::empty(),
-            coupled_axes: JointAxesMaskWrapper::empty(),
-            contacts_enabled: true,
-            enabled: true
-        }
-    }
-}
 
 impl From<&JointFlag> for GenericJoint {
     fn from(value: &JointFlag) -> Self {

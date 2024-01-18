@@ -7,7 +7,7 @@ use bevy_egui::EguiContext;
 use bevy_serialization_core::{plugins::SerializationPlugin, bundles::model::ModelBundle, resources::{SaveRequest, LoadRequest}};
 use egui::TextEdit;
 use moonshine_save::save::Save;
-use urdf_rs::Geometry;
+//use urdf_rs::Geometry;
 use std::env;
 const SAVES_LOCATION: &str = "assets/saves";
 

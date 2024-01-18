@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, io};
 
 use bevy::{reflect::{GetTypeRegistration, TypeRegistration}, ecs::{bundle::Bundle, component::Component, system::Commands}, utils::thiserror, asset::Asset};
 
@@ -35,12 +35,12 @@ pub trait ManagedTypeRegistration: GetTypeRegistration {
 
 use thiserror::Error;
 use urdf_rs::UrdfError;
-
 use crate::resources::AssetSpawnRequest;
 
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum LoadError {
+    //(TODO) figure out how to convert urdf into a generic error. This lib should not need to import urdf_rs for a single error!!!
     #[error("Failed load urdf")]
     Io(#[from] UrdfError),
 
