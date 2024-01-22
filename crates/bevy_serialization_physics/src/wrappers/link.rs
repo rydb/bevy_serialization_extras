@@ -26,7 +26,7 @@ pub struct GeometryShifted;
 
 
 
-/// the "super-structure" that this entity is related to, relevant for serializing disconnected by related entities 
+/// the "super-structure" that this entity is a part of. This is collecting related "parts" into their monolithic/object-oriented equivilent. 
 #[derive(Reflect, Component, Clone)]
 pub struct StructureFlag {
     pub name: String,

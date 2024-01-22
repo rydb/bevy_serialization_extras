@@ -11,11 +11,14 @@ use strum_macros::EnumIter;
 use bevy::render::mesh::shape::Plane;
 use bevy::render::mesh::VertexAttributeValues::Float32x3;
 
-
+use bevy::prelude::Vec3;
 #[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFlag{
     pub primitive: MeshPrimitive,
+    // matrix to "flip" the shape by. Not every format expresses orientation the same as bevy, so their positions/transforms are multiplied by their factor
+    // (here) to match bevy's orientation.
+    pub orientation_matrix: [Vec3; 3]
 }
 
 #[derive(Default, Component, Reflect, Clone)]
@@ -61,7 +64,8 @@ impl Default for MeshPrimitive {
 impl From<Cube> for GeometryFlag {
     fn from(value: Cube) -> Self {
         Self {
-            primitive: MeshPrimitive::Box { size: [value.size, value.size, value.size] }
+            primitive: MeshPrimitive::Box { size: [value.size, value.size, value.size] },
+            ..default()
         }
     }
 }
@@ -69,7 +73,8 @@ impl From<Cube> for GeometryFlag {
 impl From<Plane> for GeometryFlag {
     fn from(value: Plane) -> Self {
         Self {
-            primitive: MeshPrimitive::Box { size: [value.size, 1.0, value.size]}
+            primitive: MeshPrimitive::Box { size: [value.size, 1.0, value.size]},
+            ..default()
         }
     }
 }
@@ -80,6 +85,13 @@ impl From<Plane> for GeometryFlag {
 
 impl Unwrap<&GeometryFlag> for Mesh {
     fn unwrap(value: &GeometryFlag) -> Result<Self, String>{
+        let i = value.orientation_matrix;
+        let rotation_matrix = Matrix3::new(
+            i[0].x, i[0].y, i[0].z,
+            i[1].x, i[1].y, i[1].z,
+            i[2].x, i[2].y, i[2].z,
+        );
+        
         match value.primitive {
             MeshPrimitive::Box { size } => {
                 // return Ok(shape::Box{
@@ -103,20 +115,20 @@ impl Unwrap<&GeometryFlag> for Mesh {
                 //     0.0, 0.0, 1.0,
                 //     0.0, 1.0, 0.0,
                 // );
-                let urdf_rotation_flip = Matrix3::new(
-                    0.0, 0.0, -1.0,
-                    0.0, 1.0, 0.0,
-                    1.0, 0.0, 0.0,
-                );
-    
-                
+                // let urdf_rotation_flip = Matrix3::new(
+                //     0.0, 0.0, -1.0,
+                //     0.0, 1.0, 0.0,
+                //     1.0, 0.0, 0.0,
+
+                // rotate mesh vertices to account for differnt file formats orienting directions differently. 
+                //(TODO) Fix normals on rotated mesh.
                 if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
                     match topology {
                         Float32x3(vertex_list) => {
                             for vertex in vertex_list {
                             let triangle = Vector3::new(vertex[0], vertex[1], vertex[2]);
 
-                            let new_triangle = urdf_rotation_flip * triangle;
+                            let new_triangle = rotation_matrix * triangle;
                                 vertex[0] = new_triangle[0];
                                 vertex[1] = new_triangle[1];
                                 vertex[2] = new_triangle[2];
@@ -132,11 +144,11 @@ impl Unwrap<&GeometryFlag> for Mesh {
             MeshPrimitive::Cylinder { radius, length } => {
                 //Ok(shape::Cylinder{radius: radius, height: length, ..default()}.into())
                 let mut mesh = Mesh::from(shape::Cylinder{radius: radius, height: length, ..default()});
-                let urdf_rotation_flip = Matrix3::new(
-                    -1.0, 0.0, 0.0,
-                    0.0, 0.0, 1.0,
-                    0.0, 1.0, 0.0,
-                );
+                // let urdf_rotation_flip = Matrix3::new(
+                //     -1.0, 0.0, 0.0,
+                //     0.0, 0.0, 1.0,
+                //     0.0, 1.0, 0.0,
+                // );
     
                 
                 if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
@@ -145,7 +157,7 @@ impl Unwrap<&GeometryFlag> for Mesh {
                             for vertex in vertex_list {
                             let triangle = Vector3::new(vertex[0], vertex[1], vertex[2]);
 
-                            let new_triangle = urdf_rotation_flip * triangle;
+                            let new_triangle = rotation_matrix * triangle;
                                 vertex[0] = new_triangle[0];
                                 vertex[1] = new_triangle[1];
                                 vertex[2] = new_triangle[2];

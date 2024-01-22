@@ -40,7 +40,7 @@ use crate::resources::AssetSpawnRequest;
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum LoadError {
-    //(TODO) figure out how to convert urdf into a generic error. This lib should not need to import urdf_rs for a single error!!!
+    //FIXME: figure out how to convert urdf into a generic error. This lib should not need to import urdf_rs for a single error!!!
     #[error("Failed load urdf")]
     Io(#[from] UrdfError),
 
@@ -63,7 +63,7 @@ pub trait Structure<T> {
 }
 
 // component on a query that is checked for changes
-//#TODO make this work with a set of components, or better, change to use a "component iter" to have this work for all components in query
+//FIXME: make this work with a set of components, or better, change to use a "component iter" to have this work for all components in query
 pub trait ChangeChecked {
     type ChangeCheckedComp: Component;
 }

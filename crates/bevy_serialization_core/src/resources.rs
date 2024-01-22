@@ -11,19 +11,12 @@ pub struct RefreshCounter {
     pub counter: usize
 }
 
-#[derive(Resource, Default, Clone)]
-pub struct AssetFolder<T: Asset> {
-    pub path: PathBuf,
-    pub path_for_asset_type: PhantomData<T>
-}
-
-// impl Default for AssetFolder<T> {
-//     fn default() -> Self {
-//         Self {
-//             ..default()
-//         }
-//     }
+// #[derive(Resource, Default, Clone)]
+// pub struct AssetFolder<T: Asset> {
+//     pub path: PathBuf,
+//     pub path_for_asset_type: PhantomData<T>
 // }
+
 
 #[derive(Clone)]
 pub enum RequestFrom<T: Asset> {
@@ -50,25 +43,21 @@ impl<T: Asset> Default for RequestFrom<T> {
     }
 }
 
+/// spawn request for assets that are "all-in-one" rather then composed
+/// of seperate components.
+/// 
+/// E.G: Robots/Urdfs are spawned through this.
 #[derive(Default, Clone)]
 pub struct AssetSpawnRequest<T: Asset> {
     pub source: RequestFrom<T>,
     pub position: Transform,
     pub failed_load_attempts: u64,
 }
+
 #[derive(Resource, Default, Clone)]
 pub struct AssetSpawnRequestQueue<T: Asset> {
     pub requests: VecDeque<AssetSpawnRequest<T>>,
 }
-
-// impl<T> Default for ResLoadRequests<T> {
-//     fn default() -> Self {
-//         Self {
-//             requests: VecDeque::new(),
-//             requests_are_for: PhantomData,
-//         }
-//     }
-// }
 
 /// Resource version of moonshine-save's [`SaveFilter`]. 
 #[derive(Resource, Default, Clone)]
