@@ -4,7 +4,7 @@ use bevy_rapier3d::prelude::ImpulseJoint;
 use bevy_serialization_core::{queries::FileCheck, wrappers::mesh::{GeometryFile, GeometryFlag}, traits::{ChangeChecked, ManagedTypeRegistration}};
 use nalgebra::{Matrix3, Vector3};
 //use urdf_rs::{Joint, Pose, Link, Visual};
-use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor}, na::Isometry3};
+use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor, MotorModel}, na::Isometry3};
 use bevy::prelude::*;
 use derive_more::From;
 
@@ -34,13 +34,13 @@ pub struct StructureFlag {
 
 
 
-#[derive(Default, Reflect, Clone)]
+#[derive(Default, Debug, Reflect, Clone)]
 pub struct Dynamics {
     pub damping: f64,
     pub friction: f64,
 }
 
-#[derive(Default, Reflect, Clone)]
+#[derive(Default, Debug, Reflect, Clone)]
 pub struct JointLimitWrapper {
     pub lower: f64,
     pub upper: f64,
@@ -91,6 +91,7 @@ impl From<&JointFlag> for GenericJoint {
             min: value.limit.lower as f32,
             impulse: value.limit.velocity as f32,
         };
+        //FIXME: this is probably wrong...
         let joint_motor = JointMotor::default();
         Self {
             local_frame1: Isometry3 {
@@ -107,6 +108,7 @@ impl From<&JointFlag> for GenericJoint {
             coupled_axes: JointAxesMask::from_bits_truncate(value.coupled_axes.bits()),
             //FIXME: this is probably wrong...
             limits: [joint_limit, joint_limit, joint_limit, joint_limit, joint_limit, joint_limit],
+            //FIXME: this is probably wrong...
             motors: [joint_motor, joint_motor, joint_motor, joint_motor, joint_motor, joint_motor],
             contacts_enabled: value.contacts_enabled,
             //FIXME:  fix jointflag to have a proper enum for this later
@@ -155,7 +157,7 @@ impl From<&ImpulseJoint> for JointFlag {
         };
         Self {
             //FIXME: this is probably wrong...
-            offset: Transform::from_xyz(0.0, 0.0, 0.0),
+            //offset: Transform::from_xyz(0.0, 0.0, 0.0),
             parent_name: None,
             parent_id: Some(value.parent),//format!("{:#?}", value.parent),
             //FIXME: this is probably wrong...
@@ -176,7 +178,17 @@ impl From<&ImpulseJoint> for JointFlag {
             }),
             locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
             limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
+
             motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
+            motors: [
+                joint.motors[0].into(),
+                joint.motors[1].into(), 
+                joint.motors[2].into(), 
+                joint.motors[3].into(),
+                joint.motors[4].into(),
+                joint.motors[5].into(),
+            ],
+
             coupled_axes: JointAxesMaskWrapper::from_bits_truncate(joint.coupled_axes.bits()),
             contacts_enabled: joint.contacts_enabled,
             enabled: joint.is_enabled(),
@@ -186,7 +198,7 @@ impl From<&ImpulseJoint> for JointFlag {
 }
 
 
-#[derive(Reflect, PartialEq, Eq, Clone, Default)]
+#[derive(Reflect, Debug, PartialEq, Eq, Clone, Default)]
 pub struct JointAxesMaskWrapper(u8);
 
 bitflags::bitflags! {
@@ -235,11 +247,10 @@ bitflags::bitflags! {
 //     ttt: ImpulseJoint
 // }
 
-#[derive(Component, Default, Reflect, Clone)]
+#[derive(Component, Debug, Default, Reflect, Clone)]
 pub struct JointFlag {
-    //pub name: JointStructure,
-    //pub joint_type:
-    pub offset: Transform,
+    // removed. local_frame1 serves the same purpose. 
+    //pub offset: Transform,
 
     //name of the parent "link" of the joint. Some joints may not have named parents, so this is optional
     pub parent_name: Option<String>,
@@ -270,14 +281,88 @@ pub struct JointFlag {
     /// The motors, along each degrees of freedoms of this joint.
     ///
     /// Note that the mostor must also be explicitly enabled by the `motors` bitmask.
-    //pub motors: [JointMotor; SPATIAL_DIM],
+    pub motors: [JointMotorWrapper; 6],
     /// Are contacts between the attached rigid-bodies enabled?
     pub contacts_enabled: bool,
     /// Whether or not the joint is enabled.
     pub enabled: bool,
 
 }
+#[derive(Reflect, Clone, Debug, Default)]
+pub struct JointMotorWrapper {
+    /// The target velocity of the motor.
+    pub target_vel: f32,
+    /// The target position of the motor.
+    pub target_pos: f32,
+    /// The stiffness coefficient of the motor’s spring-like equation.
+    pub stiffness: f32,
+    /// The damping coefficient of the motor’s spring-like equation.
+    pub damping: f32,
+    /// The maximum force this motor can deliver.
+    pub max_force: f32,
+    /// The impulse applied by this motor.
+    pub impulse: f32,
+    /// The spring-like model used for simulating this motor.
+    pub model: MotorModelWrapper,
+}
 
+impl From<JointMotor> for JointMotorWrapper {
+    fn from(value: JointMotor) -> Self {
+        Self {
+            target_vel: value.target_vel,
+            target_pos: value.target_pos,
+            stiffness: value.stiffness,
+            damping: value.damping,
+            max_force: value.max_force,
+            impulse: value.impulse,
+            model: value.model.into()
+        }
+    }
+}
+
+impl From<JointMotorWrapper> for JointMotor {
+    fn from(value: JointMotorWrapper) -> Self {
+        Self {
+            target_vel: value.target_vel,
+            target_pos: value.target_pos,
+            stiffness: value.stiffness,
+            damping: value.damping,
+            max_force: value.max_force,
+            impulse: value.impulse,
+            model: value.model.into()
+        }
+    }
+}
+
+/// The spring-like model used for constraints resolution.
+#[derive(Reflect, Clone, Debug, PartialEq, Eq, Default)]
+pub enum MotorModelWrapper {
+    /// The solved spring-like equation is:
+    /// `acceleration = stiffness * (pos - target_pos) + damping * (vel - target_vel)`
+    #[default]
+    AccelerationBased,
+    /// The solved spring-like equation is:
+    /// `force = stiffness * (pos - target_pos) + damping * (vel - target_vel)`
+    ForceBased,
+}
+
+impl From<MotorModel> for MotorModelWrapper {
+    fn from(value: MotorModel) -> Self {
+        match value {
+            MotorModel::AccelerationBased => Self::AccelerationBased,
+            MotorModel::ForceBased => Self::ForceBased
+        }
+    }
+}
+
+impl From<MotorModelWrapper> for MotorModel {
+    fn from(value: MotorModelWrapper) -> Self {
+        match value {
+            MotorModelWrapper::AccelerationBased => Self::AccelerationBased,
+            MotorModelWrapper::ForceBased => Self::ForceBased
+        }
+    }
+}
 
 impl ManagedTypeRegistration for JointFlag {
     fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {

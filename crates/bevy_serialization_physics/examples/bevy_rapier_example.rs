@@ -1,14 +1,16 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{prelude::*, utils::HashMap, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::plugins::SerializationPlugin;
+use bevy_serialization_physics::plugins::PhysicsSerializationPlugin;
 use egui::{ScrollArea, text::LayoutJob, TextFormat};
 
 //RapierImpulseJointHandle
 
 fn main() {
     App::new()
+
         .insert_resource(ClearColor(Color::rgb(
             0xF9 as f32 / 255.0,
             0xF9 as f32 / 255.0,
@@ -25,34 +27,59 @@ fn main() {
         .add_systems(Startup, create_revolute_joints)
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(SerializationPlugin)
+        //.add_plugins(PhysicsSerializationPlugin)
         .add_systems(Update, display_rapier_joint_info)
         .run();
 }
+#[derive(Component)]
+pub struct Selectable {
+    pub selected: bool,
+}
+
+impl Default for Selectable {
+    fn default() -> Self {
+        Self {
+            selected: true,
+        }
+    }
+}
+// #[derive(Resource, Default)]
+// pub struct SelectedJoints {
+//     pub selected_joints: HashMap<String, bool>
+// }
 
 pub fn display_rapier_joint_info(
     mut rapier_joint_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-    rapier_joints: Query<&ImpulseJoint>,
+    mut rapier_joints: Query<(&mut Selectable, &ImpulseJoint)>,
 ) {
     for mut context in rapier_joint_window.iter_mut() { 
         egui::Window::new("Rapier Joint Info textbox")
         .show(context.get_mut(), |ui|{
             //println!("number of joints {:#?}", rapier_joints.iter().len());
-            if let Some(joint) = rapier_joints.iter().last() {
-                ScrollArea::vertical().show(
-                    ui, |ui| {
-                        let joint_as_string = format!("{:#?}", joint);
-                        let job = LayoutJob::single_section(
-                            joint_as_string,
-                            TextFormat::default()
-                        );
-                        if ui.button("Copy to clipboard").clicked() {
-                            ui.output_mut(|o| o.copied_text = String::from(job.text.clone()));
-                        }
-                        ui.label(job.clone());
+            for (mut selectable, joint) in rapier_joints.iter_mut() {
+                let selected = selectable.selected.clone();
+                ui.checkbox(&mut selectable.selected, "");
 
-                    }
-                );
+                if selected {
+                    ScrollArea::vertical().show(
+                        ui, |ui| {
+                            let joint_as_string = format!("{:#?}", joint);
+                            let job = LayoutJob::single_section(
+                                joint_as_string,
+                                TextFormat::default()
+                            );
+                            if ui.button("Copy to clipboard").clicked() {
+                                ui.output_mut(|o| o.copied_text = String::from(job.text.clone()));
+                            }
+                            ui.label(job.clone());
+    
+                        }
+                    );
+                }
             }
+            // if let Some((selectable, joint)) = rapier_joints.iter().last() {
+
+            // }
             // for joint in rapier_joints.iter() {
 
 
@@ -120,18 +147,26 @@ fn create_revolute_joints(
         let z = Vec3::Z;
 
         let revs = [
-            RevoluteJointBuilder::new(z).local_anchor2(Vec3::new(0.0, 0.0, -shift)),
-            RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(-shift, 0.0, 0.0)),
+            RevoluteJointBuilder::new(z).local_anchor2(Vec3::new(0.0, 0.0, -shift))
+            .motor_velocity(100.0, 20.0)
+            ,
+            RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(-shift, 0.0, 0.0))
+            
+            //.inse,
             // RevoluteJointBuilder::new(z).local_anchor2(Vec3::new(0.0, 0.0, -shift)),
             // RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(shift, 0.0, 0.0)),
         ];
 
         commands
             .entity(handles[0])
-            .insert(ImpulseJoint::new(curr_parent, revs[0]));
+            .insert(ImpulseJoint::new(curr_parent, revs[0]))
+            .insert(Selectable::default())
+            ;
         commands
             .entity(handles[1])
-            .insert(ImpulseJoint::new(handles[0], revs[1]));
+            .insert(ImpulseJoint::new(handles[0], revs[1]))
+            .insert(Selectable::default())
+            ;
         // commands
         //     .entity(handles[2])
         //     .insert(ImpulseJoint::new(handles[1], revs[2]));
