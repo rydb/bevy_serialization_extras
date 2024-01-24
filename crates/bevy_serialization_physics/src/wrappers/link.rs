@@ -92,7 +92,7 @@ impl From<&JointFlag> for GenericJoint {
             impulse: value.limit.velocity as f32,
         };
         //FIXME: this is probably wrong...
-        let joint_motor = JointMotor::default();
+        let joint_motors = &value.motors;
         Self {
             local_frame1: Isometry3 {
                 translation: value.local_frame1.translation.into(),
@@ -109,7 +109,14 @@ impl From<&JointFlag> for GenericJoint {
             //FIXME: this is probably wrong...
             limits: [joint_limit, joint_limit, joint_limit, joint_limit, joint_limit, joint_limit],
             //FIXME: this is probably wrong...
-            motors: [joint_motor, joint_motor, joint_motor, joint_motor, joint_motor, joint_motor],
+            motors: [
+                (&joint_motors[0]).into(), 
+                (&joint_motors[1]).into(), 
+                (&joint_motors[2]).into(), 
+                (&joint_motors[3]).into(), 
+                (&joint_motors[4]).into(), 
+                (&joint_motors[5]).into()
+            ],
             contacts_enabled: value.contacts_enabled,
             //FIXME:  fix jointflag to have a proper enum for this later
             enabled: rapier3d::dynamics::JointEnabled::Enabled,
@@ -181,12 +188,12 @@ impl From<&ImpulseJoint> for JointFlag {
 
             motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
             motors: [
-                joint.motors[0].into(),
-                joint.motors[1].into(), 
-                joint.motors[2].into(), 
-                joint.motors[3].into(),
-                joint.motors[4].into(),
-                joint.motors[5].into(),
+                (&joint.motors[0]).into(),
+                (&joint.motors[1]).into(), 
+                (&joint.motors[2]).into(), 
+                (&joint.motors[3]).into(),
+                (&joint.motors[4]).into(),
+                (&joint.motors[5]).into(),
             ],
 
             coupled_axes: JointAxesMaskWrapper::from_bits_truncate(joint.coupled_axes.bits()),
@@ -306,8 +313,8 @@ pub struct JointMotorWrapper {
     pub model: MotorModelWrapper,
 }
 
-impl From<JointMotor> for JointMotorWrapper {
-    fn from(value: JointMotor) -> Self {
+impl From<&JointMotor> for JointMotorWrapper {
+    fn from(value: &JointMotor) -> Self {
         Self {
             target_vel: value.target_vel,
             target_pos: value.target_pos,
@@ -315,13 +322,13 @@ impl From<JointMotor> for JointMotorWrapper {
             damping: value.damping,
             max_force: value.max_force,
             impulse: value.impulse,
-            model: value.model.into()
+            model: (&value.model).into()
         }
     }
 }
 
-impl From<JointMotorWrapper> for JointMotor {
-    fn from(value: JointMotorWrapper) -> Self {
+impl From<&JointMotorWrapper> for JointMotor {
+    fn from(value: &JointMotorWrapper) -> Self {
         Self {
             target_vel: value.target_vel,
             target_pos: value.target_pos,
@@ -329,7 +336,7 @@ impl From<JointMotorWrapper> for JointMotor {
             damping: value.damping,
             max_force: value.max_force,
             impulse: value.impulse,
-            model: value.model.into()
+            model: (&value.model).into()
         }
     }
 }
@@ -346,8 +353,8 @@ pub enum MotorModelWrapper {
     ForceBased,
 }
 
-impl From<MotorModel> for MotorModelWrapper {
-    fn from(value: MotorModel) -> Self {
+impl From<&MotorModel> for MotorModelWrapper {
+    fn from(value: &MotorModel) -> Self {
         match value {
             MotorModel::AccelerationBased => Self::AccelerationBased,
             MotorModel::ForceBased => Self::ForceBased
@@ -355,8 +362,8 @@ impl From<MotorModel> for MotorModelWrapper {
     }
 }
 
-impl From<MotorModelWrapper> for MotorModel {
-    fn from(value: MotorModelWrapper) -> Self {
+impl From<&MotorModelWrapper> for MotorModel {
+    fn from(value: &MotorModelWrapper) -> Self {
         match value {
             MotorModelWrapper::AccelerationBased => Self::AccelerationBased,
             MotorModelWrapper::ForceBased => Self::ForceBased
