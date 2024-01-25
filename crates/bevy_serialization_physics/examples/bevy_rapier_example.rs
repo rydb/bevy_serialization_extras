@@ -1,10 +1,11 @@
-use bevy::{prelude::*, render::camera::CameraProjection, utils::HashMap, window::PrimaryWindow};
+use bevy::{ecs::query::ReadOnlyWorldQuery, prelude::*, render::camera::CameraProjection, utils::HashMap, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_raycast::{immediate::Raycast, CursorRay, DefaultRaycastingPlugin};
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::plugins::SerializationPlugin;
-use bevy_serialization_physics::plugins::PhysicsSerializationPlugin;
+use bevy_serialization_physics::{plugins::PhysicsSerializationPlugin, wrappers::link::JointFlag};
+use bevy_ui_extras::{stylesheets::DEBUG_FRAME_STYLE, systems::{visualize_left_sidepanel_for, visualize_right_sidepanel_for, visualize_window_for}};
 use egui::{text::LayoutJob, Pos2, Rect, ScrollArea, TextFormat};
 
 use bevy::prelude::Vec3;
@@ -13,11 +14,6 @@ use bevy::prelude::Vec3;
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(
-            0xF9 as f32 / 255.0,
-            0xF9 as f32 / 255.0,
-            0xFF as f32 / 255.0,
-        )))
         .add_plugins((
             DefaultPlugins,
             RapierPhysicsPlugin::<NoUserData>::default(),
@@ -25,17 +21,25 @@ fn main() {
         ))
 
         .add_plugins(
-            DefaultRaycastingPlugin
+            (
+            DefaultRaycastingPlugin,
+            WorldInspectorPlugin::new()
+            )
         )
         //.insert_resource()
         //.add_plugins(SerializationPlugin)
+        .register_type::<Selectable>()
+        .add_systems(Update, visualize_window_for::<Selected>)
+
         .add_systems(Update, selector_raycast)
         .add_systems(Startup, setup_graphics)
         .add_systems(Startup, create_revolute_joints)
-        .add_plugins(WorldInspectorPlugin::new())
+        //
         .add_plugins(SerializationPlugin)
         .add_plugins(PhysicsSerializationPlugin)
-        .add_systems(Update, display_rapier_joint_info)
+        .add_systems(Update, motor_controller)
+        //.add_systems(Update, display_rapier_joint_info)
+
         .run();
 }
 
@@ -63,34 +67,33 @@ fn main() {
 //     }
 // }
 
-#[derive(Component)]
-pub struct Selectable {
-    pub selected: bool,
-}
+#[derive(Component, Reflect)]
+pub struct Selectable;
 
-#[derive(Component)]
+// #[derive(Component, Reflect)]
+// pub struct Selectable {
+//     pub selected: bool,
+// }
+
+#[derive(Component, Default)]
 pub struct Selected;
 
-impl Default for Selectable {
-    fn default() -> Self {
-        Self {
-            selected: true,
-        }
-    }
-}
+// impl Default for Selectable {
+//     fn default() -> Self {
+//         Self {
+//             selected: true,
+//         }
+//     }
+// }
 // #[derive(Resource, Default)]
 // pub struct SelectedJoints {
 //     pub selected_joints: HashMap<String, bool>
 // }
 
-pub fn selector_raycast(
-    cursor_ray: Res<CursorRay>, 
-    mut raycast: Raycast, 
-    mouse_press: Res<Input<MouseButton>>,
-    mut selectables: Query<(&mut Selectable, &Transform)>,
-    editor_camera: Query<(&GlobalTransform, &Projection)>
-) {
-    //FIXME: this will crash if there are multiple cameras
+// take selected things, and display their info
+
+pub fn gizmo_tool() {
+        //FIXME: this will crash if there are multiple cameras
     // let (cam_transform, cam_proj) = editor_camera.single();
 
     // let view_matrix = Mat4::from(cam_transform.affine().inverse());
@@ -140,6 +143,34 @@ pub fn selector_raycast(
     //     disable_pan_orbit = true;
     // }
 
+}
+
+pub fn motor_controller(
+    mut selected_joints: Query<&mut JointFlag, With<Selected>>,
+    keyboard: Res<Input<KeyCode>>
+) {
+    if keyboard.pressed(KeyCode::W) {
+        for mut joint in selected_joints.iter_mut() {
+            joint.motors[3].target_vel += 1.0;
+        }
+    }       
+    if keyboard.pressed(KeyCode::S) {
+        for mut joint in selected_joints.iter_mut() {
+            joint.motors[3].target_vel += -1.0;
+        }  
+    }
+}
+
+pub fn selector_raycast(
+    cursor_ray: Res<CursorRay>, 
+    mut raycast: Raycast, 
+    mouse_press: Res<Input<MouseButton>>,
+    mut selectables: Query<(Entity, &mut Selectable, &Transform)>,
+    editor_camera: Query<(&GlobalTransform, &Projection)>,
+    selected: Query<Entity, &Selected>,
+    mut commands: Commands,
+) {
+
 
     if let Some(cursor_ray) = **cursor_ray {
         let hits = raycast.cast_ray(cursor_ray, &default());
@@ -147,13 +178,17 @@ pub fn selector_raycast(
         for (e, hit) in hits.iter() {
             if mouse_press.just_pressed(MouseButton::Left) {
                 println!("clicked {:#?}", e);
-                if let Ok((mut selectable, trans)) = selectables.get_mut(e.clone()) {
-                    if selectable.selected == true {
-                        selectable.selected = false;
-                    }
-                    else if selectable.selected == false {
-                        selectable.selected = true;
-                    }
+                if let Ok((e, mut selectable, trans)) = selectables.get_mut(e.clone()) {
+                    match selected.get(e) {
+                        Ok(..) => commands.entity(e).remove::<Selected>(),
+                        Err(..) => commands.entity(e).insert(Selected)
+                    };
+                    // if selectable.selected == true {
+                    //     selectable.selected = false;
+                    // }
+                    // else if selectable.selected == false {
+                    //     selectable.selected = true;
+                    // }
                 } 
             }
         }
@@ -162,49 +197,46 @@ pub fn selector_raycast(
 }
 
 /// widget for controlling selected joints
-pub fn motor_control() {
 
-}
+// pub fn display_rapier_joint_info(
+//     mut rapier_joint_window: Query<&mut EguiContext, With<PrimaryWindow>>,
+//     mut rapier_joints: Query<(&mut Selectable, &ImpulseJoint)>,
+// ) {
+//     for mut context in rapier_joint_window.iter_mut() { 
+//         egui::Window::new("Rapier Joint Info textbox")
+//         .show(context.get_mut(), |ui|{
 
-pub fn display_rapier_joint_info(
-    mut rapier_joint_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-    mut rapier_joints: Query<(&mut Selectable, &ImpulseJoint)>,
-) {
-    for mut context in rapier_joint_window.iter_mut() { 
-        egui::Window::new("Rapier Joint Info textbox")
-        .show(context.get_mut(), |ui|{
-
-            for (i, (mut selectable, joint)) in rapier_joints.iter_mut().enumerate() {
+//             for (i, (mut selectable, joint)) in rapier_joints.iter_mut().enumerate() {
                 
                 
-                let selected = selectable.selected.clone();
-                let window_size =                 ui.input(|i| i.viewport().outer_rect);
-                ui.checkbox(&mut selectable.selected, "");
-                if selected {
-                    ScrollArea::vertical()
-                    //.max_height(window_size.unwrap_or(Rect{min: Pos2::default(), max: Pos2::default()}).height())
-                    .max_height(500.0)
-                    .id_source(i.to_string() + "_joint")
-                    .show(
-                        ui, |ui| {
-                            let joint_as_string = format!("{:#?}", joint);
-                            let job = LayoutJob::single_section(
-                                joint_as_string,
-                                TextFormat::default()
-                            );
-                            if ui.button("Copy to clipboard").clicked() {
-                                ui.output_mut(|o| o.copied_text = String::from(job.text.clone()));
-                            }
-                            ui.label(job.clone());
-                        }
-                    )
-                    ;
-                }
-            }
-        })
-        ;
-    }
-}
+//                 let selected = selectable.selected.clone();
+//                 let window_size =                 ui.input(|i| i.viewport().outer_rect);
+//                 ui.checkbox(&mut selectable.selected, "");
+//                 if selected {
+//                     ScrollArea::vertical()
+//                     //.max_height(window_size.unwrap_or(Rect{min: Pos2::default(), max: Pos2::default()}).height())
+//                     .max_height(500.0)
+//                     .id_source(i.to_string() + "_joint")
+//                     .show(
+//                         ui, |ui| {
+//                             let joint_as_string = format!("{:#?}", joint);
+//                             let job = LayoutJob::single_section(
+//                                 joint_as_string,
+//                                 TextFormat::default()
+//                             );
+//                             if ui.button("Copy to clipboard").clicked() {
+//                                 ui.output_mut(|o| o.copied_text = String::from(job.text.clone()));
+//                             }
+//                             ui.label(job.clone());
+//                         }
+//                     )
+//                     ;
+//                 }
+//             }
+//         })
+//         ;
+//     }
+// }
 
 
 pub fn setup_graphics(mut commands: Commands) {
@@ -286,12 +318,12 @@ fn create_revolute_joints(
         commands
             .entity(handles[0])
             .insert(ImpulseJoint::new(curr_parent, revs[0]))
-            .insert(Selectable::default())
+            .insert(Selectable)
             ;
         commands
             .entity(handles[1])
             .insert(ImpulseJoint::new(handles[0], revs[1]))
-            .insert(Selectable::default())
+            .insert(Selectable)
             ;
         // commands
         //     .entity(handles[2])
