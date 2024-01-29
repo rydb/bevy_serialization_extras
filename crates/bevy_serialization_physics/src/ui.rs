@@ -78,6 +78,9 @@ pub fn physics_utilities_ui(
                 
                         ui.label(format!("{:#?}, to {:#?} info", e, joint.parent_id));
                         ui.label("-".repeat(DASHES));
+                        //ui.label()
+                        
+                        
                         ui.label("limit axis bits");
 
                         ui.horizontal(|ui: &mut Ui| {
@@ -168,8 +171,11 @@ pub fn motor_controller_ui(
     mut contexts: Query<&mut EguiContext, With<PrimaryWindow>>,
     mut motor_axis: ResMut<SelectedMotorAxis>,
 ) {
-    let positive_accel_key = KeyCode::W;
-    let negative_accel_key = KeyCode::S;
+    let negative_accel_key = KeyCode::Minus;
+    let positive_accel_key = KeyCode::Equals;
+
+    let negative_damping_key = KeyCode::BracketLeft;
+    let positive_damping_key = KeyCode::BracketRight;
 
     let motor_index = motor_axis.axis as usize;
 
@@ -183,8 +189,8 @@ pub fn motor_controller_ui(
         .show(context.get_mut(), |ui| {
             ui.label("Controls");
             ui.label("-".repeat(DASHES));
-            ui.label(format!("positive acceleration: {:#?}", positive_accel_key));
-            ui.label(format!("negative acceleration: {:#?}", negative_accel_key));
+            ui.label(format!("positive acceleration: [{:#?}] key", positive_accel_key));
+            ui.label(format!("negative acceleration: [{:#?}] key", negative_accel_key));
             ui.label("-".repeat(DASHES));
 
             for (i, (e, joint)) in selected_joints.iter().enumerate() {
@@ -210,16 +216,27 @@ pub fn motor_controller_ui(
         ;
         
     }
-    if keyboard.pressed(positive_accel_key) {
-        for (e, mut joint) in selected_joints.iter_mut() {
-            joint.motors[motor_index].target_vel += 1.0;
-        }
-    }       
     if keyboard.pressed(negative_accel_key) {
         for (e, mut joint) in selected_joints.iter_mut() {
             joint.motors[motor_index].target_vel += -1.0;
         }  
     }
+    if keyboard.pressed(positive_accel_key) {
+        for (e, mut joint) in selected_joints.iter_mut() {
+            joint.motors[motor_index].target_vel += 1.0;
+        }
+    }       
+
+    if keyboard.pressed(negative_damping_key) {
+        for (e, mut joint) in selected_joints.iter_mut() {
+            joint.motors[motor_index].damping += -1.0;
+        }  
+    }
+    if keyboard.pressed(positive_damping_key) {
+        for (e, mut joint) in selected_joints.iter_mut() {
+            joint.motors[motor_index].damping += 1.0;
+        }
+    }     
 }
 
 

@@ -40,7 +40,7 @@ pub struct Dynamics {
     pub friction: f64,
 }
 
-#[derive(Default, Debug, Reflect, Clone)]
+#[derive(Debug, Reflect, Clone)]
 pub struct JointLimitWrapper {
     pub lower: f64,
     pub upper: f64,
@@ -48,6 +48,17 @@ pub struct JointLimitWrapper {
     pub velocity: f64,
 }
 
+// default movement should be unrestrained.
+impl Default for JointLimitWrapper {
+    fn default() -> Self {
+        Self {
+            lower: f64::MIN,
+            upper: f64::MAX,
+            effort: f64::MAX,
+            velocity: f64::MAX,
+        }
+    }
+}
 
 
 /// Recieves joint movements from joint sender flag
@@ -295,7 +306,7 @@ pub struct JointFlag {
     pub enabled: bool,
 
 }
-#[derive(Reflect, Clone, Debug, Default)]
+#[derive(Reflect, Clone, Debug)]
 pub struct JointMotorWrapper {
     /// The target velocity of the motor.
     pub target_vel: f32,
@@ -311,6 +322,20 @@ pub struct JointMotorWrapper {
     pub impulse: f32,
     /// The spring-like model used for simulating this motor.
     pub model: MotorModelWrapper,
+}
+
+impl Default for JointMotorWrapper {
+    fn default() -> Self {
+        Self {
+            max_force: f32::MAX,
+            target_vel: 0.0,
+            target_pos: 0.0,
+            stiffness: 0.0,
+            damping: 0.0,
+            impulse: 0.0,
+            model: MotorModelWrapper::default()
+        }        
+    }
 }
 
 impl From<&JointMotor> for JointMotorWrapper {
