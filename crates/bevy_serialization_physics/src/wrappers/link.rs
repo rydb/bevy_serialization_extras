@@ -284,9 +284,9 @@ pub struct JointFlag {
 
     /// The joint’s frame, expressed in the first rigid-body’s local-space.
     pub local_frame1: Transform,
-    // / The joint’s frame, expressed in the second rigid-body’s local-space.
+    /// The joint’s frame, expressed in the second rigid-body’s local-space.
     pub local_frame2: Option<Transform>,
-    // / The degrees-of-freedoms locked by this joint.
+    /// The degrees-of-freedoms locked by this joint.
     pub locked_axes: JointAxesMaskWrapper,
     /// The degrees-of-freedoms limited by this joint.
     pub limit_axes: JointAxesMaskWrapper,

@@ -12,19 +12,9 @@ pub enum FrictionCombineRule {
 
 #[derive(Component, Reflect, Clone, Default)]
 pub struct FrictionFlag {
-    friction: f32,
-    friction_combine_rule: FrictionCombineRule,
+    pub friction: f32,
+    pub friction_combine_rule: FrictionCombineRule,
 }
-// impl Into<CoefficientCombineRule> for FrictionCombineRule {
-//     fn into(self) -> CoefficientCombineRule {
-//         match self {
-//             Self::Average => CoefficientCombineRule::Average,
-//             Self::Min => CoefficientCombineRule::Min,
-//             Self::Multiply => CoefficientCombineRule::Multiply,
-//             Self::Max => CoefficientCombineRule::Max,
-//         }
-//     }
-// }
 
 impl From<CoefficientCombineRule> for FrictionCombineRule {
     fn from(value: CoefficientCombineRule) -> Self {
