@@ -2,6 +2,9 @@
 name = "bevy_serialization_core"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/rydb/bevy_serialization_extras"
+license = "MIT"
+description = "A crate which contains the plugins/systems that bevy_serializations_extras relies on, + some misc wrappers"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
