@@ -1,4 +1,4 @@
-// //! A simple 3D scene with light shining over a cube sitting on a plane.
+//! Testing for tesitng of a "bundle from query" macro
 
 // use std::{path::PathBuf, thread::spawn};
 

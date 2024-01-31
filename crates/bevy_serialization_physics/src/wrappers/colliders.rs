@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::AsyncCollider;
+use bevy_rapier3d::{geometry::{Collider, ComputedColliderShape}, prelude::AsyncCollider};
 use bevy::reflect::GetTypeRegistration;
 use bevy_serialization_core::traits::ManagedTypeRegistration;
 use strum_macros::EnumIter;
@@ -9,14 +9,19 @@ use strum_macros::EnumIter;
 #[derive(Component, EnumIter, Reflect, Clone, Default)]
 #[reflect(Component)]
 pub enum ColliderFlag {
+    /// laggy: no-internal geometry(will clip through things)
+    Trimesh,
     #[default]
-    Async,
+    /// fast: accurate assuming mesh geometry is convex, inaccurate otherwise.
+    Convex,
 }
-
 impl From<&ColliderFlag> for AsyncCollider {
     fn from(value: &ColliderFlag) -> Self {
         match value {
-            ColliderFlag::Async => AsyncCollider::default()
+            ColliderFlag::Trimesh => AsyncCollider::default(),
+            ColliderFlag::Convex => AsyncCollider {
+                0: ComputedColliderShape::ConvexHull,
+            }
         }
     }
 }
@@ -26,7 +31,7 @@ impl From<&ColliderFlag> for AsyncCollider {
 impl From<&AsyncCollider> for ColliderFlag {
     fn from(value: &AsyncCollider) -> Self {
         match value {
-            _ => Self::Async
+            _ => Self::Trimesh
         } 
     }
 }

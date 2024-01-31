@@ -11,6 +11,8 @@ use moonshine_save::prelude::{SavePlugin, LoadPlugin, LoadSet, load_from_file_on
 use moonshine_save::save::SaveSet;
 use bevy::asset::Asset;
 use bevy::{prelude::*, reflect::GetTypeRegistration};
+use crate::prelude::mesh::MeshPrimitive;
+use crate::prelude::UtilitySelection;
 // use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
 use crate::traits::{ChangeChecked, LazyDeserialize, IntoHashMap, FromStructure};
 // use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag, LinkFlag};
@@ -274,8 +276,9 @@ impl Plugin for SerializationPlugin {
         .insert_resource(ComponentsOnSave::default())
         .insert_resource(TypeRegistryOnSave::default())
         .insert_resource(RefreshCounter::default())
+        .insert_resource(UtilitySelection::default())
 
-
+        // default conversions
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh>::default())
@@ -297,6 +300,10 @@ impl Plugin for SerializationPlugin {
         .register_type::<InheritedVisibility>()
         .register_type::<ScreenSpaceTransmissionQuality>()
         .register_type::<GeometryFile>()
+        .register_type::<MeshPrimitive>()
+        .register_type::<GeometryFlag>()
+        .register_type::<[[f32; 3]; 3]>()
+    .register_type::<[Vec3; 3]>()
 
         //.add_systems(Update, from_structure::<Linkage, ImpulseJoint>)
         .add_systems(PreUpdate, update_last_saved_typedata.run_if(resource_added::<SaveRequest>()))

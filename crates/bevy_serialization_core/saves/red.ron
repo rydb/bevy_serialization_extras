@@ -48,10 +48,25 @@
         "bevy_render::view::visibility::Visibility": Inherited,
         "bevy_render::view::visibility::InheritedVisibility": (true),
         "bevy_render::view::visibility::ViewVisibility": (true),
-        "bevy_serialization_extras::wrappers::mesh::GeometryFlag": Primitive(Box(
-          size: (1.0, 1.0, 1.0),
-        )),
-        "bevy_serialization_extras::wrappers::material::MaterialFlag": (
+        "bevy_serialization_core::wrappers::mesh::GeometryFlag": (
+          primitive: Box(
+            size: (1.0, 1.0, 1.0),
+          ),
+          orientation_matrix: ((
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+          ), (
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+          ), (
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+          )),
+        ),
+        "bevy_serialization_core::wrappers::material::MaterialFlag": (
           color: Rgba(
             red: 1.0,
             green: 0.0,

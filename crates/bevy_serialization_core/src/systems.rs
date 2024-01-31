@@ -132,7 +132,8 @@ pub fn try_serialize_asset_for<Thing, WrapperThing> (
         WrapperThing: Component + for<'a> From<&'a Thing> 
 {
     for (e, thing_handle) in thing_query.iter() {
-        println!("changing Wrapperthing to match changed asset for {:#?}", e);
+        //FIXME: add proper logging for this
+        //println!("changing Wrapperthing to match changed asset for {:#?}", e);
         match things.get(thing_handle) {
             Some(thing) => {
                 commands.entity(e).insert(
@@ -155,7 +156,8 @@ pub fn deserialize_asset_for<WrapperThing, Thing> (
         Thing: Asset + for<'a> From<&'a WrapperThing>,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        println!("converting wrapper thing {:#?}", e);
+        //FIXME: Add proper logging for this
+        //println!("converting wrapper thing {:#?}", e);
         let thing = Thing::from(wrapper_thing);
         let thing_handle = things.add(thing);
 

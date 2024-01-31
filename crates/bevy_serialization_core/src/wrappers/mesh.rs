@@ -11,15 +11,19 @@ use strum_macros::EnumIter;
 use bevy::render::mesh::shape::Plane;
 use bevy::render::mesh::VertexAttributeValues::Float32x3;
 
-use bevy::prelude::Vec3;
 #[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFlag{
     pub primitive: MeshPrimitive,
     // matrix to "flip" the shape by. Not every format expresses orientation the same as bevy, so their positions/transforms are multiplied by their factor
     // (here) to match bevy's orientation.
-    pub orientation_matrix: [Vec3; 3]
+    pub orientation_matrix: [bevy::prelude::Vec3; 3]
 }
+const IDENTITY_MATRIX: [Vec3; 3] = [
+    Vec3::new(1.0, 0.0, 0.0),
+    Vec3::new(0.0, 1.0, 0.0),
+    Vec3::new(0.0, 0.0, 1.0),
+];
 
 #[derive(Default, Component, Reflect, Clone)]
 #[reflect(Component)]
@@ -65,7 +69,7 @@ impl From<Cube> for GeometryFlag {
     fn from(value: Cube) -> Self {
         Self {
             primitive: MeshPrimitive::Box { size: [value.size, value.size, value.size] },
-            ..default()
+            orientation_matrix: IDENTITY_MATRIX
         }
     }
 }
@@ -74,7 +78,7 @@ impl From<Plane> for GeometryFlag {
     fn from(value: Plane) -> Self {
         Self {
             primitive: MeshPrimitive::Box { size: [value.size, 1.0, value.size]},
-            ..default()
+            orientation_matrix: IDENTITY_MATRIX
         }
     }
 }

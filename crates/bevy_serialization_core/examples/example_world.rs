@@ -4,12 +4,13 @@ use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow, ecs::query::WorldQuery};
 use bevy_egui::EguiContext;
-use bevy_serialization_core::{plugins::SerializationPlugin, bundles::model::ModelBundle, resources::{SaveRequest, LoadRequest}};
+use bevy_serialization_core::{bundles::model::ModelBundle, plugins::SerializationPlugin, resources::{SaveRequest, LoadRequest}, ui::serialization_widgets_ui};
+use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
 use moonshine_save::save::Save;
 //use urdf_rs::Geometry;
 use std::env;
-const SAVES_LOCATION: &str = "assets/saves";
+const SAVES_LOCATION: &str = "crates/bevy_serialization_core/saves";
 
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -20,17 +21,17 @@ fn main() {
 
     .insert_resource(SetSaveFile{name: "red".to_owned()})
     .add_plugins(DefaultPlugins.set(WindowPlugin {exit_condition: bevy::window::ExitCondition::OnPrimaryClosed, ..Default::default()}))
+        
+        //serialization
         .add_plugins(SerializationPlugin)
 
-        //.add_plugins(SelecterPlugin)
         .add_plugins(WorldInspectorPlugin::new())
 
         .add_systems(Startup, setup)
-        //.add_systems(Update, (visualize_right_sidepanel_for::<Save>, save_file_selection))
         
-        //FIXME: broke widget display is broken, fix this 
-        //.add_systems(Update, debug_widgets_window)
-        //.add_systems(Update, axis_mask_test)
+        .add_systems(Update, visualize_right_sidepanel_for::<Save>)
+        .add_systems(Update, save_file_selection)
+        .add_systems(Update, serialization_widgets_ui)
         .run();
 }
 
@@ -54,7 +55,7 @@ fn setup(
         ModelBundle {
             mesh: shape::Cube {size: 1.0}.into(),
             material: Color::GREEN.into(),
-            transform: Transform::from_xyz(0.0, 10.0, 0.0),
+            transform: Transform::from_xyz(0.0, 0.5, 0.0),
             ..default()
         },
         //PhysicsBundle::default(),
