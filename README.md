@@ -34,7 +34,7 @@ See: <https://github.com/rydb/bevy_serialization_urdf>
 
     E.G: Edit Rapier's `ImpulseJoint` through `JointFlag`
 
-[edit_example.png](edit_example.png)
+![edit_example.png](edit_example.png)
 
 - type registration for wrappers through `ManagedTypeRegistration` trait
 
