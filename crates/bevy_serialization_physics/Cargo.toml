@@ -41,5 +41,5 @@ bevy_mod_raycast = "0.16"
 bevy = {version = "0.12", features = ["dynamic_linking"]}
 bevy-inspector-egui = "0.22.0"
 
-bevy_camera_extras = "*"
+bevy_camera_extras = "0.1.6"
 #egui-gizmo = "*"
