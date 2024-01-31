@@ -22,9 +22,9 @@ bitflags = "2.4.1"
 nalgebra = "0.32"
 #yaserde = "0.9"
 derive_more = "0.99"
-bitvec = "*"
+bitvec = "1.0"
 bevy_obj = "0.12"
-log = "*"
+log = "0.4.2"
 bevy_egui = "0.24"
 
 bevy_ui_extras = "0.4.1"
@@ -40,4 +40,4 @@ bevy = {version = "0.12", features = ["dynamic_linking"]}
 bevy-inspector-egui = "0.22.0"
 
 bevy_camera_extras = "*"
-egui-gizmo = "*"
+#egui-gizmo = "*"
