@@ -94,7 +94,8 @@ pub fn serialize_for<Thing, WrapperThing>(
         WrapperThing: Component + for<'a> From<&'a Thing>  
 {
     for (e, f) in thing_query.iter() {
-        println!("creating wrapper thing from thing");
+        //FIXME: Make this less laggy
+        //println!("creating wrapper thing from thing");
         commands.entity(e).insert(
             WrapperThing::from(f)
         );
@@ -113,7 +114,8 @@ pub fn deserialize_as_one<T, U>(
     //println!("converting composed query into singular component");
     for (e, thing_query) in structure_query.into_iter() {
         let unwrapped_thing = U::from(&thing_query);
-        info!("[Line {}]: On, {:?}, inserting {:?}", line!(), e, unwrapped_thing);
+        //FIXME: This gets run very frequently, will need to figure out why that is
+        //info!("[Line {}]: On, {:?}, inserting {:?}", line!(), e, unwrapped_thing);
         commands.entity(e).insert(
             unwrapped_thing
         );

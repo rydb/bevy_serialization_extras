@@ -146,7 +146,7 @@ pub fn selector_raycast(
         //println!("casting ray")
         for (e, hit) in hits.iter() {
             if mouse_press.just_pressed(MouseButton::Left) {
-                println!("clicked {:#?}", e);
+                //println!("clicked {:#?}", e);
                 if let Ok((e, mut selectable, trans)) = selectables.get_mut(e.clone()) {
                     match selected.get(e) {
                         Ok(..) => commands.entity(e).remove::<Selected>(),
