@@ -96,11 +96,9 @@ pub fn serialize_for<Thing, WrapperThing>(
     for (e, f) in thing_query.iter() {
         // entity may not exist when inserting component if entity is deleted in the same frame as this. 
         // this checks to make sure it exists to prevent a crash.
-        if thing_query.contains(e) {
-            commands.entity(e).insert(
-                WrapperThing::from(f)
-            );
-        }
+        commands.entity(e).try_insert(
+            WrapperThing::from(f)
+        );
 
     }
 }
@@ -119,7 +117,7 @@ pub fn deserialize_as_one<T, U>(
         let unwrapped_thing = U::from(&thing_query);
         //FIXME: This gets run very frequently, will need to figure out why that is
         //info!("[Line {}]: On, {:?}, inserting {:?}", line!(), e, unwrapped_thing);
-        commands.entity(e).insert(
+        commands.entity(e).try_insert(
             unwrapped_thing
         );
     }
@@ -141,7 +139,7 @@ pub fn try_serialize_asset_for<Thing, WrapperThing> (
         //println!("changing Wrapperthing to match changed asset for {:#?}", e);
         match things.get(thing_handle) {
             Some(thing) => {
-                commands.entity(e).insert(
+                commands.entity(e).try_insert(
                     WrapperThing::from(thing)
                 );
             },
@@ -166,7 +164,7 @@ pub fn deserialize_asset_for<WrapperThing, Thing> (
         let thing = Thing::from(wrapper_thing);
         let thing_handle = things.add(thing);
 
-        commands.entity(e).insert(
+        commands.entity(e).try_insert(
             thing_handle
         );
     }
@@ -190,13 +188,13 @@ pub fn deserialize_wrapper_for<WrapperThing, Thing> (
         match thing_fetch_attempt {
             Ok(thing) => {
                let thing_handle = things.add(thing);
-                commands.entity(e).insert(
+                commands.entity(e).try_insert(
                     thing_handle
                 );
             }
             Err(file_path) => {
                 let thing_handle: Handle<Thing> = asset_server.load(file_path);
-                commands.entity(e).insert(
+                commands.entity(e).try_insert(
                     thing_handle
                 );
             }
@@ -215,7 +213,7 @@ pub fn deserialize_for<WrapperThing, Thing>(
         WrapperThing: Component  
 {
     for (e, f) in wrapper_thing_query.iter() {
-        commands.entity(e).insert(
+        commands.entity(e).try_insert(
             Thing::from(f)
         );
     }
@@ -229,7 +227,7 @@ pub fn add_inherieted_visibility(
     
 ) {
     for e in computed_visiblity_query.iter() {
-        commands.entity(e).insert(InheritedVisibility::default());
+        commands.entity(e).try_insert(InheritedVisibility::default());
     }
 }
 
@@ -239,7 +237,7 @@ pub fn add_view_visibility(
     
 ) {
     for e in computed_visiblity_query.iter() {
-        commands.entity(e).insert(ViewVisibility::default());
+        commands.entity(e).try_insert(ViewVisibility::default());
     }
 }
 

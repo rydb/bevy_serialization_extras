@@ -9,7 +9,7 @@ description = "A crate for adding physics wrappers for bevy_serialization_extras
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_serialization_core = {path = "../bevy_serialization_core", version = "0.1.1"}
+bevy_serialization_core = {path = "../bevy_serialization_core"}
 
 
 bevy = "0.12"
