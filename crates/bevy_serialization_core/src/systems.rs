@@ -94,11 +94,14 @@ pub fn serialize_for<Thing, WrapperThing>(
         WrapperThing: Component + for<'a> From<&'a Thing>  
 {
     for (e, f) in thing_query.iter() {
-        //FIXME: Make this less laggy
-        //println!("creating wrapper thing from thing");
-        commands.entity(e).insert(
-            WrapperThing::from(f)
-        );
+        // entity may not exist when inserting component if entity is deleted in the same frame as this. 
+        // this checks to make sure it exists to prevent a crash.
+        if thing_query.contains(e) {
+            commands.entity(e).insert(
+                WrapperThing::from(f)
+            );
+        }
+
     }
 }
 
