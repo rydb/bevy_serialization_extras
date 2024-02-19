@@ -1,14 +1,18 @@
-use std::{any::TypeId, marker::PhantomData, collections::VecDeque, path::PathBuf};
-use bevy::{prelude::Resource, transform::components::Transform, asset::{Asset, Handle}};
-use moonshine_save::{save::SaveFilter, prelude::LoadFromFileRequest};
-use std::collections::HashMap;
+use bevy::{
+    asset::{Asset, Handle},
+    prelude::Resource,
+    transform::components::Transform,
+};
 use moonshine_save::prelude::SaveIntoFileRequest;
+use moonshine_save::{prelude::LoadFromFileRequest, save::SaveFilter};
+use std::collections::HashMap;
 use std::path::Path;
+use std::{any::TypeId, collections::VecDeque, marker::PhantomData, path::PathBuf};
 
 /// keeps track of number of times refresh request has been sent. For ui utils.
 #[derive(Resource, Default)]
 pub struct RefreshCounter {
-    pub counter: usize
+    pub counter: usize,
 }
 
 // #[derive(Resource, Default, Clone)]
@@ -17,18 +21,16 @@ pub struct RefreshCounter {
 //     pub path_for_asset_type: PhantomData<T>
 // }
 
-
 #[derive(Clone)]
 pub enum RequestFrom<T: Asset> {
     ///path of asset relative to main.rs of bevy project.
     ///
     /// E.G:
-    /// 
+    ///
     ///If `bob.stl` is in `~/project/assets/models/bob.stl`. Then this should be set to `"models/bob.stl"`
     AssetServerPath(String),
     //AssetId(AssetId<T>),
-    AssetHandle(Handle<T>)
-
+    AssetHandle(Handle<T>),
 }
 
 impl<T: Asset> From<String> for RequestFrom<T> {
@@ -39,13 +41,15 @@ impl<T: Asset> From<String> for RequestFrom<T> {
 
 impl<T: Asset> Default for RequestFrom<T> {
     fn default() -> Self {
-        Self::AssetServerPath("don't use default for RequestFrom enum or you will get this!".to_owned())
+        Self::AssetServerPath(
+            "don't use default for RequestFrom enum or you will get this!".to_owned(),
+        )
     }
 }
 
 /// spawn request for assets that are "all-in-one" rather then composed
 /// of seperate components.
-/// 
+///
 /// E.G: Robots/Urdfs are spawned through this.
 #[derive(Default, Clone)]
 pub struct AssetSpawnRequest<T: Asset> {
@@ -59,10 +63,10 @@ pub struct AssetSpawnRequestQueue<T: Asset> {
     pub requests: VecDeque<AssetSpawnRequest<T>>,
 }
 
-/// Resource version of moonshine-save's [`SaveFilter`]. 
+/// Resource version of moonshine-save's [`SaveFilter`].
 #[derive(Resource, Default, Clone)]
 pub struct SerializeFilter {
-    pub filter: SaveFilter
+    pub filter: SaveFilter,
 }
 
 #[derive(Resource)]
@@ -96,25 +100,23 @@ pub struct TypeRegistryOnSave {
 /// contains the components marked to saved since last save/refresh.
 #[derive(Resource, Default)]
 pub struct ComponentsOnSave {
-    pub components: HashMap<TypeId, String>
+    pub components: HashMap<TypeId, String>,
 }
 
 #[derive(Resource)]
 pub struct ShowSerializable {
-    pub check: bool
+    pub check: bool,
 }
 
 impl Default for ShowSerializable {
     fn default() -> Self {
-        Self {
-            check: false
-        }
+        Self { check: false }
     }
 }
 
 #[derive(Resource)]
 pub struct ShowUnserializable {
-    pub check: bool
+    pub check: bool,
 }
 
 impl Default for ShowUnserializable {

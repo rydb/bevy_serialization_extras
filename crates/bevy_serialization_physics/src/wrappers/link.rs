@@ -1,21 +1,27 @@
-
-use bevy::{prelude::{Component, Transform}, ecs::query::WorldQuery, reflect::GetTypeRegistration};
+use bevy::{
+    ecs::query::WorldQuery,
+    prelude::{Component, Transform},
+    reflect::GetTypeRegistration,
+};
 use bevy_rapier3d::prelude::ImpulseJoint;
-use bevy_serialization_core::{queries::FileCheck, wrappers::mesh::{GeometryFile, GeometryFlag}, traits::{ChangeChecked, ManagedTypeRegistration}};
+use bevy_serialization_core::{
+    queries::FileCheck,
+    traits::{ChangeChecked, ManagedTypeRegistration},
+    wrappers::mesh::{GeometryFile, GeometryFlag},
+};
 use nalgebra::{Matrix3, Vector3};
 //use urdf_rs::{Joint, Pose, Link, Visual};
-use rapier3d::{dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor, MotorModel}, na::Isometry3};
 use bevy::prelude::*;
 use derive_more::From;
+use rapier3d::{
+    dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor, MotorModel},
+    na::Isometry3,
+};
 
-use super::{mass::MassFlag, colliders::ColliderFlag};
-
-
+use super::{colliders::ColliderFlag, mass::MassFlag};
 
 #[derive(Component, Default)]
 pub struct JointBounded;
-
-
 
 #[derive(Component, Clone, Copy, Default)]
 pub struct GeometryShiftMarked;
@@ -24,15 +30,11 @@ pub struct GeometryShiftMarked;
 #[derive(Component, Clone, Copy, Default)]
 pub struct GeometryShifted;
 
-
-
-/// the "super-structure" that this entity is a part of. This is collecting related "parts" into their monolithic/object-oriented equivilent. 
+/// the "super-structure" that this entity is a part of. This is collecting related "parts" into their monolithic/object-oriented equivilent.
 #[derive(Reflect, Component, Clone)]
 pub struct StructureFlag {
     pub name: String,
 }
-
-
 
 #[derive(Default, Debug, Reflect, Clone)]
 pub struct Dynamics {
@@ -60,13 +62,11 @@ impl Default for JointLimitWrapper {
     }
 }
 
-
 /// Recieves joint movements from joint sender flag
 #[derive(Component)]
 pub struct JointRecieverFlag {
-    pub id: String
+    pub id: String,
 }
-
 
 #[derive(WorldQuery)]
 pub struct Linkage {
@@ -88,11 +88,9 @@ impl ChangeChecked for Linkage {
 // }
 
 #[derive(Component, Reflect)]
-pub struct LinkFlag{
-    pub geom_offset: Vec3
+pub struct LinkFlag {
+    pub geom_offset: Vec3,
 }
-
-
 
 impl From<&JointFlag> for GenericJoint {
     fn from(value: &JointFlag) -> Self {
@@ -107,26 +105,33 @@ impl From<&JointFlag> for GenericJoint {
         Self {
             local_frame1: Isometry3 {
                 translation: value.local_frame1.translation.into(),
-                rotation: value.local_frame1.rotation.into()
+                rotation: value.local_frame1.rotation.into(),
             },
             local_frame2: Isometry3 {
                 translation: value.local_frame2.unwrap_or_default().translation.into(),
-                rotation: value.local_frame2.unwrap_or_default().rotation.into()
+                rotation: value.local_frame2.unwrap_or_default().rotation.into(),
             },
             locked_axes: JointAxesMask::from_bits_truncate(value.locked_axes.bits()),
             limit_axes: JointAxesMask::from_bits_truncate(value.limit_axes.bits()),
             motor_axes: JointAxesMask::from_bits_truncate(value.motor_axes.bits()),
             coupled_axes: JointAxesMask::from_bits_truncate(value.coupled_axes.bits()),
             //FIXME: this is probably wrong...
-            limits: [joint_limit, joint_limit, joint_limit, joint_limit, joint_limit, joint_limit],
+            limits: [
+                joint_limit,
+                joint_limit,
+                joint_limit,
+                joint_limit,
+                joint_limit,
+                joint_limit,
+            ],
             //FIXME: this is probably wrong...
             motors: [
-                (&joint_motors[0]).into(), 
-                (&joint_motors[1]).into(), 
-                (&joint_motors[2]).into(), 
-                (&joint_motors[3]).into(), 
-                (&joint_motors[4]).into(), 
-                (&joint_motors[5]).into()
+                (&joint_motors[0]).into(),
+                (&joint_motors[1]).into(),
+                (&joint_motors[2]).into(),
+                (&joint_motors[3]).into(),
+                (&joint_motors[4]).into(),
+                (&joint_motors[5]).into(),
             ],
             contacts_enabled: value.contacts_enabled,
             //FIXME:  fix jointflag to have a proper enum for this later
@@ -135,18 +140,16 @@ impl From<&JointFlag> for GenericJoint {
     }
 }
 
-
 impl From<&LinkageItem<'_>> for ImpulseJoint {
     fn from(value: &LinkageItem) -> Self {
         let joint = GenericJoint::from(value.joint);
         let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
-        Self { 
-
-            parent:  match value.joint.parent_id {
-                Some(e) =>  e,
-                None => value.entity
+        Self {
+            parent: match value.joint.parent_id {
+                Some(e) => e,
+                None => value.entity,
             },
-            data: bevy_rapier_joint, 
+            data: bevy_rapier_joint,
         }
     }
 }
@@ -155,9 +158,9 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
 //         fn from(value: &JointFlag) -> Self {
 //             let joint = GenericJoint::from(value);
 //             let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
-//             Self { 
+//             Self {
 //                 parent: value.entity,
-//                 data: bevy_rapier_joint, 
+//                 data: bevy_rapier_joint,
 //             }
 //         }
 //     }
@@ -165,7 +168,7 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
 impl From<&ImpulseJoint> for JointFlag {
     fn from(value: &ImpulseJoint) -> Self {
         //return Self::from(value.data.raw);
-        
+
         let joint = value.data.raw;
         let joint_limit = JointLimitWrapper {
             lower: joint.limits[0].min.into(),
@@ -177,7 +180,7 @@ impl From<&ImpulseJoint> for JointFlag {
             //FIXME: this is probably wrong...
             //offset: Transform::from_xyz(0.0, 0.0, 0.0),
             parent_name: None,
-            parent_id: Some(value.parent),//format!("{:#?}", value.parent),
+            parent_id: Some(value.parent), //format!("{:#?}", value.parent),
             //FIXME: this is probably wrong...
             limit: joint_limit,
             //FIXME: implement this properly
@@ -186,13 +189,13 @@ impl From<&ImpulseJoint> for JointFlag {
                 translation: joint.local_frame1.translation.into(),
                 rotation: joint.local_frame1.rotation.into(),
                 //FIXME: implement this properly
-                scale: default()
+                scale: default(),
             },
             local_frame2: Some(Transform {
                 translation: joint.local_frame2.translation.into(),
                 rotation: joint.local_frame2.rotation.into(),
                 //FIXME: implement this properly
-                scale: default()
+                scale: default(),
             }),
             locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
             limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
@@ -200,8 +203,8 @@ impl From<&ImpulseJoint> for JointFlag {
             motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
             motors: [
                 (&joint.motors[0]).into(),
-                (&joint.motors[1]).into(), 
-                (&joint.motors[2]).into(), 
+                (&joint.motors[1]).into(),
+                (&joint.motors[2]).into(),
                 (&joint.motors[3]).into(),
                 (&joint.motors[4]).into(),
                 (&joint.motors[5]).into(),
@@ -210,11 +213,9 @@ impl From<&ImpulseJoint> for JointFlag {
             coupled_axes: JointAxesMaskWrapper::from_bits_truncate(joint.coupled_axes.bits()),
             contacts_enabled: joint.contacts_enabled,
             enabled: joint.is_enabled(),
-
         }
     }
 }
-
 
 #[derive(Reflect, Debug, PartialEq, Eq, Clone, Default)]
 pub struct JointAxesMaskWrapper(u8);
@@ -255,7 +256,7 @@ bitflags::bitflags! {
         const ANG_AXES = Self::ANG_X.bits() | Self::ANG_Y.bits() | Self::ANG_Z.bits();
     }
 }
-    //pub axis: 
+//pub axis:
 
 // pub struct LazyIsometry {
 //     transform: Transform,
@@ -267,7 +268,7 @@ bitflags::bitflags! {
 
 #[derive(Component, Debug, Default, Reflect, Clone)]
 pub struct JointFlag {
-    // removed. local_frame1 serves the same purpose. 
+    // removed. local_frame1 serves the same purpose.
     //pub offset: Transform,
 
     //name of the parent "link" of the joint. Some joints may not have named parents, so this is optional
@@ -276,12 +277,10 @@ pub struct JointFlag {
     //the deserialization pipeline.
     pub parent_id: Option<Entity>,
 
-
     pub limit: JointLimitWrapper,
     pub dynamics: Dynamics,
     //pub mimic: Option<Mimic>
     //pub safety_controller: Option<SafetyController>,
-
     /// The joint’s frame, expressed in the first rigid-body’s local-space.
     pub local_frame1: Transform,
     /// The joint’s frame, expressed in the second rigid-body’s local-space.
@@ -304,7 +303,6 @@ pub struct JointFlag {
     pub contacts_enabled: bool,
     /// Whether or not the joint is enabled.
     pub enabled: bool,
-
 }
 #[derive(Reflect, Clone, Debug)]
 pub struct JointMotorWrapper {
@@ -333,8 +331,8 @@ impl Default for JointMotorWrapper {
             stiffness: 0.0,
             damping: 0.0,
             impulse: 0.0,
-            model: MotorModelWrapper::default()
-        }        
+            model: MotorModelWrapper::default(),
+        }
     }
 }
 
@@ -347,7 +345,7 @@ impl From<&JointMotor> for JointMotorWrapper {
             damping: value.damping,
             max_force: value.max_force,
             impulse: value.impulse,
-            model: (&value.model).into()
+            model: (&value.model).into(),
         }
     }
 }
@@ -361,7 +359,7 @@ impl From<&JointMotorWrapper> for JointMotor {
             damping: value.damping,
             max_force: value.max_force,
             impulse: value.impulse,
-            model: (&value.model).into()
+            model: (&value.model).into(),
         }
     }
 }
@@ -382,7 +380,7 @@ impl From<&MotorModel> for MotorModelWrapper {
     fn from(value: &MotorModel) -> Self {
         match value {
             MotorModel::AccelerationBased => Self::AccelerationBased,
-            MotorModel::ForceBased => Self::ForceBased
+            MotorModel::ForceBased => Self::ForceBased,
         }
     }
 }
@@ -391,7 +389,7 @@ impl From<&MotorModelWrapper> for MotorModel {
     fn from(value: &MotorModelWrapper) -> Self {
         match value {
             MotorModelWrapper::AccelerationBased => Self::AccelerationBased,
-            MotorModelWrapper::ForceBased => Self::ForceBased
+            MotorModelWrapper::ForceBased => Self::ForceBased,
         }
     }
 }
@@ -404,8 +402,6 @@ impl ManagedTypeRegistration for JointFlag {
         type_registry.push(Dynamics::get_type_registration());
         type_registry.push(JointFlag::get_type_registration());
 
-        return type_registry
-        
+        return type_registry;
     }
 }
-

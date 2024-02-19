@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::{Friction, CoefficientCombineRule};
+use bevy_rapier3d::prelude::{CoefficientCombineRule, Friction};
 
 #[derive(Reflect, Clone, Default)]
 pub enum FrictionCombineRule {
@@ -34,7 +34,7 @@ impl From<FrictionCombineRule> for CoefficientCombineRule {
             FrictionCombineRule::Min => Self::Min,
             FrictionCombineRule::Multiply => Self::Multiply,
             FrictionCombineRule::Max => Self::Max,
-        } 
+        }
     }
 }
 
@@ -42,7 +42,7 @@ impl From<FrictionFlag> for Friction {
     fn from(value: FrictionFlag) -> Self {
         Self {
             coefficient: value.friction,
-            combine_rule: value.friction_combine_rule.into()
+            combine_rule: value.friction_combine_rule.into(),
         }
     }
 }
@@ -51,7 +51,7 @@ impl From<Friction> for FrictionFlag {
     fn from(value: Friction) -> Self {
         Self {
             friction: value.coefficient,
-            friction_combine_rule: value.combine_rule.into()
+            friction_combine_rule: value.combine_rule.into(),
         }
     }
 }

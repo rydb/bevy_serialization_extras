@@ -1,9 +1,8 @@
-
-use bevy::{reflect::Reflect, prelude::Component};
+use bevy::reflect::GetTypeRegistration;
+use bevy::{prelude::Component, reflect::Reflect};
 use bevy_rapier3d::prelude::RigidBody;
 use bevy_serialization_core::traits::ManagedTypeRegistration;
 use strum_macros::EnumIter;
-use bevy::reflect::GetTypeRegistration;
 
 #[derive(Component, Reflect, Clone, Default, EnumIter)]
 pub enum RigidBodyFlag {
@@ -35,13 +34,12 @@ impl ManagedTypeRegistration for RigidBodyFlag {
         let mut type_registry = Vec::new();
 
         type_registry.push(Self::get_type_registration());
-        
+
         // for enum_variant in Self::iter() {
         //     match enum_variant {
         //         Self::Async(..) => type_registry.push(ColliderFlag::get_type_registration()),
         //     }
         // }
-        return type_registry
-        
+        return type_registry;
     }
 }

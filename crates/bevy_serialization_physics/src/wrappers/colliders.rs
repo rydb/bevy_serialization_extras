@@ -1,6 +1,9 @@
 use bevy::prelude::*;
-use bevy_rapier3d::{geometry::{Collider, ComputedColliderShape}, prelude::AsyncCollider};
 use bevy::reflect::GetTypeRegistration;
+use bevy_rapier3d::{
+    geometry::{Collider, ComputedColliderShape},
+    prelude::AsyncCollider,
+};
 use bevy_serialization_core::traits::ManagedTypeRegistration;
 use strum_macros::EnumIter;
 // use strum::IntoEnumIterator;
@@ -21,18 +24,16 @@ impl From<&ColliderFlag> for AsyncCollider {
             ColliderFlag::Trimesh => AsyncCollider::default(),
             ColliderFlag::Convex => AsyncCollider {
                 0: ComputedColliderShape::ConvexHull,
-            }
+            },
         }
     }
 }
 
-
-
 impl From<&AsyncCollider> for ColliderFlag {
     fn from(value: &AsyncCollider) -> Self {
         match value {
-            _ => Self::Trimesh
-        } 
+            _ => Self::Trimesh,
+        }
     }
 }
 
@@ -41,13 +42,12 @@ impl ManagedTypeRegistration for ColliderFlag {
         let mut type_registry = Vec::new();
 
         type_registry.push(Self::get_type_registration());
-        
+
         // for enum_variant in Self::iter() {
         //     match enum_variant {
         //         Self::Async(..) => type_registry.push(ColliderFlag::get_type_registration()),
         //     }
         // }
-        return type_registry
-        
+        return type_registry;
     }
 }

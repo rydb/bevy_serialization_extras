@@ -6,7 +6,6 @@ pub enum AssetSource {
     Placeholder(String),
 }
 
-
 impl Default for AssetSource {
     fn default() -> Self {
         Self::Placeholder("PLACE_HOLDER_PATH".to_owned())

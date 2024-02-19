@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use crate::prelude::link::{JointFlag, LinkFlag, JointBounded, GeometryShifted, GeometryShiftMarked};
-
-
+use crate::prelude::link::{
+    GeometryShiftMarked, GeometryShifted, JointBounded, JointFlag, LinkFlag,
+};
 
 // get joints and bind them to their named connection if it exists
 pub fn bind_joints_to_entities(
@@ -14,9 +14,11 @@ pub fn bind_joints_to_entities(
         let joint_parent_name = joint.parent_name.clone();
         match joint_parent_name {
             Some(name) => {
-                for (i, (e, link_name)) in link_names.iter()
-                .filter(|(e, link_name)| name == link_name.to_string())
-                .enumerate() {
+                for (i, (e, link_name)) in link_names
+                    .iter()
+                    .filter(|(e, link_name)| name == link_name.to_string())
+                    .enumerate()
+                {
                     if i > 0 {
                         panic!("more then 1 entity with joint name that this joint can bind to! to prevent undefined behaviour, erroring here!")
                     }
@@ -24,7 +26,6 @@ pub fn bind_joints_to_entities(
                         joint.parent_id = Some(e);
                         commands.entity(joint_e).insert(JointBounded::default());
                     }
-
                 }
             }
             None => {}
@@ -32,18 +33,20 @@ pub fn bind_joints_to_entities(
     }
 }
 
-
 /// shifts local frame to match link offset
 pub fn local_frame2_shift(
-    mut unshifted_models: Query<(Entity, &LinkFlag, &mut JointFlag), (Without<GeometryShifted>, With<GeometryShiftMarked>)>,
+    mut unshifted_models: Query<
+        (Entity, &LinkFlag, &mut JointFlag),
+        (Without<GeometryShifted>, With<GeometryShiftMarked>),
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut commands: Commands
+    mut commands: Commands,
 ) {
     for (e, link_flag, mut joint_flag) in unshifted_models.iter_mut() {
         println!("shifting model local_frame 2");
         // match joint_flag.local_frame2 {
         //     Some(local_frame2) => {
-                
+
         //     }
         // }
         //joint_flag.local_frame1.translation += link_flag.geom_offset;
@@ -84,7 +87,6 @@ pub fn local_frame2_shift(
 // //     let len = selectables.iter().len() as f32;
 // //     collected_trans.translation /= len;
 // //     collected_trans.scale /= len;
-
 
 // //     collected_trans
 // // };

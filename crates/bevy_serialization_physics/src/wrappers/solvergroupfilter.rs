@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::SolverGroups;
 use bevy_rapier3d::prelude::Group;
+use bevy_rapier3d::prelude::SolverGroups;
 use bevy_serialization_core::traits::ManagedTypeRegistration;
 
 pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
@@ -8,7 +8,7 @@ pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
     filters: GroupWrapper::ALL,
 };
 
-/// wrapper around rapier groups to prevent libraries that use this from needing to import the entirety of rapier. 
+/// wrapper around rapier groups to prevent libraries that use this from needing to import the entirety of rapier.
 #[derive(Reflect, Clone, Copy)]
 pub struct GroupWrapper(pub u32);
 

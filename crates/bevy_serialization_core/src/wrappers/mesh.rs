@@ -1,23 +1,22 @@
-
 use bevy::prelude::*;
 use bevy::reflect::GetTypeRegistration;
 use nalgebra::{Matrix3, Vector3};
 //use urdf_rs::Visual;
 use crate::asset_source::AssetSource;
 use crate::queries::FileCheckPicker;
-use crate::traits::{Unwrap, ManagedTypeRegistration};
+use crate::traits::{ManagedTypeRegistration, Unwrap};
 use crate::wrappers::mesh::shape::Cube;
-use strum_macros::EnumIter;
 use bevy::render::mesh::shape::Plane;
 use bevy::render::mesh::VertexAttributeValues::Float32x3;
+use strum_macros::EnumIter;
 
 #[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
-pub struct GeometryFlag{
+pub struct GeometryFlag {
     pub primitive: MeshPrimitive,
     // matrix to "flip" the shape by. Not every format expresses orientation the same as bevy, so their positions/transforms are multiplied by their factor
     // (here) to match bevy's orientation.
-    pub orientation_matrix: [bevy::prelude::Vec3; 3]
+    pub orientation_matrix: [bevy::prelude::Vec3; 3],
 }
 const IDENTITY_MATRIX: [Vec3; 3] = [
     Vec3::new(1.0, 0.0, 0.0),
@@ -28,7 +27,7 @@ const IDENTITY_MATRIX: [Vec3; 3] = [
 #[derive(Default, Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFile {
-    pub source: String
+    pub source: String,
 }
 
 impl ManagedTypeRegistration for GeometryFlag {
@@ -45,12 +44,10 @@ impl ManagedTypeRegistration for GeometryFlag {
         //     }
         // }
         // return type_registry
-        
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Reflect,  Copy)]
-#[derive(Component)]
+#[derive(Debug, Clone, PartialEq, Reflect, Copy, Component)]
 pub enum MeshPrimitive {
     Box { size: [f32; 3] },
     Cylinder { radius: f32, length: f32 },
@@ -60,16 +57,19 @@ pub enum MeshPrimitive {
 
 impl Default for MeshPrimitive {
     fn default() -> Self {
-        Self::Box { size: [1.0, 1.0, 1.0] }
+        Self::Box {
+            size: [1.0, 1.0, 1.0],
+        }
     }
 }
-
 
 impl From<Cube> for GeometryFlag {
     fn from(value: Cube) -> Self {
         Self {
-            primitive: MeshPrimitive::Box { size: [value.size, value.size, value.size] },
-            orientation_matrix: IDENTITY_MATRIX
+            primitive: MeshPrimitive::Box {
+                size: [value.size, value.size, value.size],
+            },
+            orientation_matrix: IDENTITY_MATRIX,
         }
     }
 }
@@ -77,25 +77,21 @@ impl From<Cube> for GeometryFlag {
 impl From<Plane> for GeometryFlag {
     fn from(value: Plane) -> Self {
         Self {
-            primitive: MeshPrimitive::Box { size: [value.size, 1.0, value.size]},
-            orientation_matrix: IDENTITY_MATRIX
+            primitive: MeshPrimitive::Box {
+                size: [value.size, 1.0, value.size],
+            },
+            orientation_matrix: IDENTITY_MATRIX,
         }
     }
 }
 
-
-
-
-
 impl Unwrap<&GeometryFlag> for Mesh {
-    fn unwrap(value: &GeometryFlag) -> Result<Self, String>{
+    fn unwrap(value: &GeometryFlag) -> Result<Self, String> {
         let i = value.orientation_matrix;
         let rotation_matrix = Matrix3::new(
-            i[0].x, i[0].y, i[0].z,
-            i[1].x, i[1].y, i[1].z,
-            i[2].x, i[2].y, i[2].z,
+            i[0].x, i[0].y, i[0].z, i[1].x, i[1].y, i[1].z, i[2].x, i[2].y, i[2].z,
         );
-        
+
         match value.primitive {
             MeshPrimitive::Box { size } => {
                 // return Ok(shape::Box{
@@ -106,7 +102,7 @@ impl Unwrap<&GeometryFlag> for Mesh {
                 //     min_z: -size[2] * 0.5,
                 //     max_z: size[2] * 0.5,
                 // }.into())
-                let mut mesh = Mesh::from(shape::Box{
+                let mut mesh = Mesh::from(shape::Box {
                     min_x: -size[0] * 0.5,
                     max_x: size[0] * 0.5,
                     min_y: -size[1] * 0.5,
@@ -124,7 +120,7 @@ impl Unwrap<&GeometryFlag> for Mesh {
                 //     0.0, 1.0, 0.0,
                 //     1.0, 0.0, 0.0,
 
-                // rotate mesh vertices to account for differnt file formats orienting directions differently. 
+                // rotate mesh vertices to account for differnt file formats orienting directions differently.
                 //(TODO) Fix normals on rotated mesh.
                 if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
                     match topology {
@@ -143,18 +139,20 @@ impl Unwrap<&GeometryFlag> for Mesh {
                     }
                 }
                 Ok(mesh)
-
             }
             MeshPrimitive::Cylinder { radius, length } => {
                 //Ok(shape::Cylinder{radius: radius, height: length, ..default()}.into())
-                let mut mesh = Mesh::from(shape::Cylinder{radius: radius, height: length, ..default()});
+                let mut mesh = Mesh::from(shape::Cylinder {
+                    radius: radius,
+                    height: length,
+                    ..default()
+                });
                 // let urdf_rotation_flip = Matrix3::new(
                 //     -1.0, 0.0, 0.0,
                 //     0.0, 0.0, 1.0,
                 //     0.0, 1.0, 0.0,
                 // );
-    
-                
+
                 if let Some(topology) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
                     match topology {
                         Float32x3(vertex_list) => {
@@ -172,22 +170,26 @@ impl Unwrap<&GeometryFlag> for Mesh {
                     }
                 }
                 Ok(mesh)
-            },
-            MeshPrimitive::Capsule { radius, length } => {
-                Ok(shape::Capsule{radius: radius, depth: length, ..default()}.into())
-            },
-            MeshPrimitive::Sphere { radius } => {
-                Ok(shape::Capsule{radius: radius, depth: 0.0, ..default()}.into())
-            },
+            }
+            MeshPrimitive::Capsule { radius, length } => Ok(shape::Capsule {
+                radius: radius,
+                depth: length,
+                ..default()
+            }
+            .into()),
+            MeshPrimitive::Sphere { radius } => Ok(shape::Capsule {
+                radius: radius,
+                depth: 0.0,
+                ..default()
+            }
+            .into()),
         }
-
     }
 }
 
 impl Unwrap<&GeometryFile> for Mesh {
-    fn unwrap(value: &GeometryFile) -> Result<Self, String>{
-        return Err(value.source.clone())
-
+    fn unwrap(value: &GeometryFile) -> Result<Self, String> {
+        return Err(value.source.clone());
     }
 }
 

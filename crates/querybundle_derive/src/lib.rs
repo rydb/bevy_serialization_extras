@@ -6,7 +6,7 @@ use syn::DeriveInput;
 pub fn struct_derive_macro(item: TokenStream) -> TokenStream {
     // parse
     let ast: DeriveInput = syn::parse(item).unwrap();
-    
+
     let ident = format_ident!("{}Item", ast.ident);
     let token_stream = quote::quote! {
         pub struct #ident {
@@ -15,7 +15,6 @@ pub fn struct_derive_macro(item: TokenStream) -> TokenStream {
             pub number: i8,
         }
     };
-    
+
     token_stream.into()
 }
-

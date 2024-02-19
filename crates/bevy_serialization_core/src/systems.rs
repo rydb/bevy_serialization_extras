@@ -1,18 +1,20 @@
-use std::collections::{HashMap, VecDeque};
+use crate::{
+    resources::{AssetSpawnRequestQueue, RequestFrom},
+    traits::*,
+};
+use bevy::{ecs::query::WorldQuery, prelude::*, utils::tracing};
 use core::fmt::Debug;
-use bevy::{prelude::*, ecs::query::WorldQuery, utils::tracing};
-use crate::{traits::*, resources::{AssetSpawnRequestQueue, RequestFrom}};
+use std::collections::{HashMap, VecDeque};
 
 use bevy::asset::Asset;
 
-pub fn serialize_structures_as_assets<ThingSet, AssetType> (
+pub fn serialize_structures_as_assets<ThingSet, AssetType>(
     thing_query: Query<ThingSet>,
     asset_server: Res<AssetServer>,
     mut assets: ResMut<Assets<AssetType>>,
-) 
-    where
-        ThingSet: WorldQuery,
-        AssetType: Asset + for<'w, 's> IntoHashMap<Query<'w, 's, ThingSet>> + Clone
+) where
+    ThingSet: WorldQuery,
+    AssetType: Asset + for<'w, 's> IntoHashMap<Query<'w, 's, ThingSet>> + Clone,
 {
     let assets_list: HashMap<String, AssetType> = IntoHashMap::into_hashmap(thing_query);
     //println!("assets list is {:#?}", assets_list.keys());
@@ -33,7 +35,7 @@ pub fn serialize_structures_as_assets<ThingSet, AssetType> (
 //         ThingResource: Resource + for<'w, 's> From<Query<'w, 's, ThingSet>>,
 // {
 //     commands.insert_resource(
-//         ThingResource::from(thing_query)       
+//         ThingResource::from(thing_query)
 //     )
 // }
 
@@ -42,9 +44,8 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
     mut asset_spawn_requests: ResMut<AssetSpawnRequestQueue<ThingAsset>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-) 
-    where
-        ThingAsset: Asset + Clone + FromStructure + LazyDeserialize,
+) where
+    ThingAsset: Asset + Clone + FromStructure + LazyDeserialize,
 {
     let mut failed_requests = VecDeque::new();
     while asset_spawn_requests.requests.len() != 0 {
@@ -53,7 +54,7 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
                 RequestFrom::AssetServerPath(path) => {
                     println!("processing request from path: {:#?}", path.clone());
                     let asset_handle = asset_server.load(path);
-                    
+
                     //passes off request to the front of the queue for the next update as the asset is likely to not have loaded yet until next update.
                     let mut unready_asset_request = request;
                     //turns asset request into assset id as now former "file" path is now a part of the Res<Assets<T>>
@@ -64,17 +65,14 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
                     println!("processing request from assetid {:#?}", handle);
                     println!("failed load attempts: {:#?}", request.failed_load_attempts);
                     if let Some(asset) = thing_assets.get(handle) {
-                        FromStructure::into_entities(&mut commands, asset.clone(), request)
-                        ;
+                        FromStructure::into_entities(&mut commands, asset.clone(), request);
                     } else {
                         let mut failed_request = request;
                         failed_request.failed_load_attempts += 1;
-                        failed_requests.push_back(failed_request)
-                        ;
+                        failed_requests.push_back(failed_request);
                     }
                 }
             }
-
         }
     }
     // re-add failed requests to asset_spawn_requests, as there could be a chance the asset just hasn't loaded yet.
@@ -88,18 +86,14 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
 pub fn serialize_for<Thing, WrapperThing>(
     thing_query: Query<(Entity, &Thing), Without<WrapperThing>>,
     mut commands: Commands,
-)
-    where
-        Thing: Component,
-        WrapperThing: Component + for<'a> From<&'a Thing>  
+) where
+    Thing: Component,
+    WrapperThing: Component + for<'a> From<&'a Thing>,
 {
     for (e, f) in thing_query.iter() {
-        // entity may not exist when inserting component if entity is deleted in the same frame as this. 
+        // entity may not exist when inserting component if entity is deleted in the same frame as this.
         // this checks to make sure it exists to prevent a crash.
-        commands.entity(e).try_insert(
-            WrapperThing::from(f)
-        );
-
+        commands.entity(e).try_insert(WrapperThing::from(f));
     }
 }
 
@@ -107,56 +101,55 @@ pub fn serialize_for<Thing, WrapperThing>(
 pub fn deserialize_as_one<T, U>(
     mut commands: Commands,
     structure_query: Query<(Entity, T), Or<(Without<U>, Changed<T::ChangeCheckedComp>)>>,
-) 
-    where
-        T: WorldQuery + ChangeChecked,
-        U: Component + Debug + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+) where
+    T: WorldQuery + ChangeChecked,
+    U: Component
+        + Debug
+        + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
 {
     //println!("converting composed query into singular component");
     for (e, thing_query) in structure_query.into_iter() {
         let unwrapped_thing = U::from(&thing_query);
         //FIXME: This gets run very frequently, will need to figure out why that is
         //info!("[Line {}]: On, {:?}, inserting {:?}", line!(), e, unwrapped_thing);
-        commands.entity(e).try_insert(
-            unwrapped_thing
-        );
+        commands.entity(e).try_insert(unwrapped_thing);
     }
 }
 
-
 /// takes an asset handle, and spawns a serializable copy of it on its entity
-pub fn try_serialize_asset_for<Thing, WrapperThing> (
+pub fn try_serialize_asset_for<Thing, WrapperThing>(
     things: ResMut<Assets<Thing>>,
     thing_query: Query<(Entity, &Handle<Thing>), Without<WrapperThing>>,
     mut commands: Commands,
-)// -> bool
-    where
-        Thing: Asset,
-        WrapperThing: Component + for<'a> From<&'a Thing> 
+)
+// -> bool
+where
+    Thing: Asset,
+    WrapperThing: Component + for<'a> From<&'a Thing>,
 {
     for (e, thing_handle) in thing_query.iter() {
         //FIXME: add proper logging for this
         //println!("changing Wrapperthing to match changed asset for {:#?}", e);
         match things.get(thing_handle) {
             Some(thing) => {
-                commands.entity(e).try_insert(
-                    WrapperThing::from(thing)
-                );
-            },
+                commands.entity(e).try_insert(WrapperThing::from(thing));
+            }
             None => {}
         }
     }
     //return true;
 }
 /// takes a wrapper componnet, and deserializes it back into its unserializable asset handle varaint
-pub fn deserialize_asset_for<WrapperThing, Thing> (
+pub fn deserialize_asset_for<WrapperThing, Thing>(
     mut things: ResMut<Assets<Thing>>,
-    wrapper_thing_query: Query<(Entity, &WrapperThing), Or<(Changed<WrapperThing>, Without<Handle<Thing>>)>>,
+    wrapper_thing_query: Query<
+        (Entity, &WrapperThing),
+        Or<(Changed<WrapperThing>, Without<Handle<Thing>>)>,
+    >,
     mut commands: Commands,
-) 
-    where
-        WrapperThing: Component,
-        Thing: Asset + for<'a> From<&'a WrapperThing>,
+) where
+    WrapperThing: Component,
+    Thing: Asset + for<'a> From<&'a WrapperThing>,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         //FIXME: Add proper logging for this
@@ -164,58 +157,53 @@ pub fn deserialize_asset_for<WrapperThing, Thing> (
         let thing = Thing::from(wrapper_thing);
         let thing_handle = things.add(thing);
 
-        commands.entity(e).try_insert(
-            thing_handle
-        );
+        commands.entity(e).try_insert(thing_handle);
     }
 }
 
 /// takes a wrapper component, and attempts to deserialize it into its asset handle through [`Unwrap`]
 /// this is components that rely on file paths.
-pub fn deserialize_wrapper_for<WrapperThing, Thing> (
+pub fn deserialize_wrapper_for<WrapperThing, Thing>(
     mut things: ResMut<Assets<Thing>>,
-    wrapper_thing_query: Query<(Entity, &WrapperThing), Or<(Without<Handle<Thing>>, Changed<WrapperThing>)>>,
+    wrapper_thing_query: Query<
+        (Entity, &WrapperThing),
+        Or<(Without<Handle<Thing>>, Changed<WrapperThing>)>,
+    >,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
-) 
-    where
-        WrapperThing: Component,
-        Thing: Asset + for<'a> Unwrap<&'a WrapperThing>,
+) where
+    WrapperThing: Component,
+    Thing: Asset + for<'a> Unwrap<&'a WrapperThing>,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         let thing_fetch_attempt = Thing::unwrap(wrapper_thing);
-    
+
         match thing_fetch_attempt {
             Ok(thing) => {
-               let thing_handle = things.add(thing);
-                commands.entity(e).try_insert(
-                    thing_handle
-                );
+                let thing_handle = things.add(thing);
+                commands.entity(e).try_insert(thing_handle);
             }
             Err(file_path) => {
                 let thing_handle: Handle<Thing> = asset_server.load(file_path);
-                commands.entity(e).try_insert(
-                    thing_handle
-                );
+                commands.entity(e).try_insert(thing_handle);
             }
         }
     }
 }
 
-
 /// deserializes a wrapper component into its unserializable component variant.
 pub fn deserialize_for<WrapperThing, Thing>(
-    wrapper_thing_query: Query<(Entity, &WrapperThing), Or<(Without<Thing>, Changed<WrapperThing>)>>,
+    wrapper_thing_query: Query<
+        (Entity, &WrapperThing),
+        Or<(Without<Thing>, Changed<WrapperThing>)>,
+    >,
     mut commands: Commands,
-) 
-    where
-        Thing: Component + for<'a> From<&'a WrapperThing>,
-        WrapperThing: Component  
+) where
+    Thing: Component + for<'a> From<&'a WrapperThing>,
+    WrapperThing: Component,
 {
     for (e, f) in wrapper_thing_query.iter() {
-        commands.entity(e).try_insert(
-            Thing::from(f)
-        );
+        commands.entity(e).try_insert(Thing::from(f));
     }
 }
 
@@ -224,20 +212,19 @@ pub fn deserialize_for<WrapperThing, Thing>(
 pub fn add_inherieted_visibility(
     computed_visiblity_query: Query<Entity, Without<InheritedVisibility>>,
     mut commands: Commands,
-    
 ) {
     for e in computed_visiblity_query.iter() {
-        commands.entity(e).try_insert(InheritedVisibility::default());
+        commands
+            .entity(e)
+            .try_insert(InheritedVisibility::default());
     }
 }
 
 pub fn add_view_visibility(
     computed_visiblity_query: Query<Entity, Without<ViewVisibility>>,
     mut commands: Commands,
-    
 ) {
     for e in computed_visiblity_query.iter() {
         commands.entity(e).try_insert(ViewVisibility::default());
     }
 }
-

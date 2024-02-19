@@ -9,7 +9,6 @@ pub struct CollisionGroupsFlag {
     pub filters: Group,
 }
 
-
 impl Into<CollisionGroups> for CollisionGroupsFlag {
     fn into(self) -> CollisionGroups {
         CollisionGroups {

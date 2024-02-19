@@ -2,15 +2,15 @@ pub mod plugins;
 mod systems;
 pub mod wrappers;
 //pub mod loaders;
-pub mod ui;
 pub mod bundles;
+pub mod ui;
 
 pub mod prelude {
-    pub use crate:: {
+    pub use crate::{
+        //loaders::*,
+        bundles::*,
+        plugins::*,
         ui::*,
-        plugins::*, 
-        //loaders::*, 
-        bundles::*, 
         wrappers::*,
     };
 }
