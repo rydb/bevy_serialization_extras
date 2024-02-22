@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use bevy::{ecs::query::WorldQuery, prelude::*, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_serialization_core::{
     bundles::model::ModelBundle,
@@ -46,14 +46,14 @@ fn setup(
 ) {
     // plane
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        mesh: meshes.add(Plane3d::default().mesh().size(5.0, 5.0)),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
         ..default()
     });
     // cube
     commands.spawn((
         ModelBundle {
-            mesh: shape::Cube { size: 1.0 }.into(),
+            mesh: Cuboid::new(1.0, 1.0, 1.0).into(),
             material: Color::GREEN.into(),
             transform: Transform::from_xyz(0.0, 0.5, 0.0),
             ..default()
@@ -81,7 +81,7 @@ fn setup(
             transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },
-        Save,
+        //Save,
     ));
 }
 

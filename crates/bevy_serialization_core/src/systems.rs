@@ -2,18 +2,23 @@ use crate::{
     resources::{AssetSpawnRequestQueue, RequestFrom},
     traits::*,
 };
-use bevy::{ecs::query::WorldQuery, prelude::*, utils::tracing};
+// use bevy::{
+//     ecs::query::{QueryData, WorldQuery},
+//     prelude::*,
+// };
 use core::fmt::Debug;
 use std::collections::{HashMap, VecDeque};
 
-use bevy::asset::Asset;
+use bevy_ecs::{prelude::*, query::{QueryData, WorldQuery}};
+use bevy_asset::prelude::*;
+use bevy_render::prelude::*;
 
 pub fn serialize_structures_as_assets<ThingSet, AssetType>(
     thing_query: Query<ThingSet>,
     asset_server: Res<AssetServer>,
-    mut assets: ResMut<Assets<AssetType>>,
+    //mut assets: ResMut<Assets<AssetType>>,
 ) where
-    ThingSet: WorldQuery,
+    ThingSet: QueryData,
     AssetType: Asset + for<'w, 's> IntoHashMap<Query<'w, 's, ThingSet>> + Clone,
 {
     let assets_list: HashMap<String, AssetType> = IntoHashMap::into_hashmap(thing_query);
@@ -102,10 +107,10 @@ pub fn deserialize_as_one<T, U>(
     mut commands: Commands,
     structure_query: Query<(Entity, T), Or<(Without<U>, Changed<T::ChangeCheckedComp>)>>,
 ) where
-    T: WorldQuery + ChangeChecked,
+    T: QueryData + ChangeChecked,
     U: Component
         + Debug
-        + for<'a, 'b> From<&'b <<T as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        + for<'a, 'b> From<&'b <<T as QueryData>::ReadOnly as WorldQuery>::Item<'a>>,
 {
     //println!("converting composed query into singular component");
     for (e, thing_query) in structure_query.into_iter() {

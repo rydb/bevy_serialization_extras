@@ -1,4 +1,10 @@
-use bevy::prelude::*;
+//use bevy::prelude::*;
+
+use bevy_ecs::prelude::*;
+use bevy_reflect::prelude::*;
+use bevy_render::prelude::*;
+use bevy_pbr::prelude::*;
+use bevy_utils::prelude::*;
 
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]

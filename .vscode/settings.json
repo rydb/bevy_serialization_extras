@@ -1,11 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
-        "./crates/bevy_serialization_physics/Cargo.toml"
+        "./crates/bevy_serialization_physics/Cargo.toml",
+        "./crates/bevy_serialization_core/Cargo.toml",
     ]
-} // {
-//     "rust-analyzer.linkedProjects": [
-//         "./crates/bevy_serialization_physics/Cargo.toml",
-//         "./crates/bevy_serialization_physics/Cargo.toml",
-//         "./crates/bevy_serialization_physics/Cargo.toml"
-//     ]
-// }
+}

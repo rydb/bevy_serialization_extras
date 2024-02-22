@@ -1,12 +1,10 @@
-use bevy::prelude::*;
+use bevy::app::prelude::*;
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{
     dynamics::{AdditionalMassProperties, ImpulseJoint, RigidBody},
     geometry::{AsyncCollider, SolverGroups},
 };
-use bevy_serialization_core::plugins::{
-    SerializeComponentFor, SerializeManyAsOneFor, SerializeQueryFor,
-};
+use bevy_serialization_core::plugins::{SerializeComponentFor, SerializeQueryFor};
 
 use crate::{
     systems::{bind_joints_to_entities, local_frame2_shift},

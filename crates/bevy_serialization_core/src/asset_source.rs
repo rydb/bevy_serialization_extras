@@ -1,4 +1,4 @@
-use bevy::reflect::Reflect;
+use bevy_reflect::Reflect;
 
 #[derive(Debug, Clone, PartialEq, Reflect)]
 pub enum AssetSource {

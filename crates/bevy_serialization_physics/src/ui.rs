@@ -1,12 +1,11 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 
 use bevy_egui::EguiContext;
-use bevy_mod_raycast::{immediate::Raycast, CursorRay};
 use bevy_rapier3d::dynamics::ImpulseJoint;
 use bevy_ui_extras::stylesheets::DEBUG_FRAME_STYLE;
 use bitvec::prelude::Msb0;
 use bitvec::{field::BitField, view::BitView};
-use egui::{text::LayoutJob, Pos2, Rect, ScrollArea, TextFormat, Ui};
+use egui::{text::LayoutJob, ScrollArea, TextFormat, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
@@ -120,47 +119,14 @@ pub fn physics_utilities_ui(
     }
 }
 
-//FIXME: This should be in its own crate, but for speed sake, this is here for now.
-pub fn selector_raycast(
-    cursor_ray: Res<CursorRay>,
-    mut raycast: Raycast,
-    mouse_press: Res<Input<MouseButton>>,
-    mut selectables: Query<(Entity, &mut Selectable, &Transform)>,
-    editor_camera: Query<(&GlobalTransform, &Projection)>,
-    selected: Query<Entity, &Selected>,
-    mut commands: Commands,
-) {
-    if let Some(cursor_ray) = **cursor_ray {
-        let hits = raycast.cast_ray(cursor_ray, &default());
-        //println!("casting ray")
-        for (e, hit) in hits.iter() {
-            if mouse_press.just_pressed(MouseButton::Left) {
-                //println!("clicked {:#?}", e);
-                if let Ok((e, mut selectable, trans)) = selectables.get_mut(e.clone()) {
-                    match selected.get(e) {
-                        Ok(..) => commands.entity(e).remove::<Selected>(),
-                        Err(..) => commands.entity(e).insert(Selected),
-                    };
-                    // if selectable.selected == true {
-                    //     selectable.selected = false;
-                    // }
-                    // else if selectable.selected == false {
-                    //     selectable.selected = true;
-                    // }
-                }
-            }
-        }
-    }
-}
-
 pub fn motor_controller_ui(
     mut selected_joints: Query<(Entity, &mut JointFlag), With<Selected>>,
-    keyboard: Res<Input<KeyCode>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
     mut contexts: Query<&mut EguiContext, With<PrimaryWindow>>,
     mut motor_axis: ResMut<SelectedMotorAxis>,
 ) {
     let negative_accel_key = KeyCode::Minus;
-    let positive_accel_key = KeyCode::Equals;
+    let positive_accel_key = KeyCode::Equal;
 
     let negative_damping_key = KeyCode::BracketLeft;
     let positive_damping_key = KeyCode::BracketRight;
@@ -187,7 +153,7 @@ pub fn motor_controller_ui(
                 ));
                 ui.label("-".repeat(DASHES));
 
-                for (i, (e, joint)) in selected_joints.iter().enumerate() {
+                for (e, joint) in selected_joints.iter() {
                     //ui.label("-".repeat(DASHES));
                     ui.label(format!("{:#?}, to {:#?} info", e, joint.parent_id));
 
@@ -208,23 +174,23 @@ pub fn motor_controller_ui(
             });
     }
     if keyboard.pressed(negative_accel_key) {
-        for (e, mut joint) in selected_joints.iter_mut() {
+        for (_, mut joint) in selected_joints.iter_mut() {
             joint.motors[motor_index].target_vel += -1.0;
         }
     }
     if keyboard.pressed(positive_accel_key) {
-        for (e, mut joint) in selected_joints.iter_mut() {
+        for (_, mut joint) in selected_joints.iter_mut() {
             joint.motors[motor_index].target_vel += 1.0;
         }
     }
 
     if keyboard.pressed(negative_damping_key) {
-        for (e, mut joint) in selected_joints.iter_mut() {
+        for (_, mut joint) in selected_joints.iter_mut() {
             joint.motors[motor_index].damping += -1.0;
         }
     }
     if keyboard.pressed(positive_damping_key) {
-        for (e, mut joint) in selected_joints.iter_mut() {
+        for (_, mut joint) in selected_joints.iter_mut() {
             joint.motors[motor_index].damping += 1.0;
         }
     }
@@ -238,7 +204,7 @@ pub fn rapier_joint_info_ui(
         egui::Window::new("Rapier Joint Info textbox")
             .frame(DEBUG_FRAME_STYLE)
             .show(context.get_mut(), |ui| {
-                for (joint) in rapier_joints.iter_mut() {
+                for joint in rapier_joints.iter_mut() {
                     ScrollArea::vertical()
                         //.max_height(window_size.unwrap_or(Rect{min: Pos2::default(), max: Pos2::default()}).height())
                         .max_height(500.0)

@@ -2,8 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
 use crate::wrappers::{
-    colliders::ColliderFlag, collisiongroupfilter::CollisionGroupsFlag,
-    continous_collision::CcdFlag, friction::FrictionFlag, mass::MassFlag,
+    colliders::ColliderFlag, continous_collision::CcdFlag, friction::FrictionFlag, mass::MassFlag,
     rigidbodies::RigidBodyFlag, solvergroupfilter::SolverGroupsFlag,
 };
 

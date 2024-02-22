@@ -1,24 +1,16 @@
 use bevy::{
-    ecs::query::WorldQuery,
+    ecs::query::QueryData,
     prelude::{Component, Transform},
     reflect::GetTypeRegistration,
 };
 use bevy_rapier3d::prelude::ImpulseJoint;
-use bevy_serialization_core::{
-    queries::FileCheck,
-    traits::{ChangeChecked, ManagedTypeRegistration},
-    wrappers::mesh::{GeometryFile, GeometryFlag},
-};
-use nalgebra::{Matrix3, Vector3};
+use bevy_serialization_core::traits::{ChangeChecked, ManagedTypeRegistration};
 //use urdf_rs::{Joint, Pose, Link, Visual};
 use bevy::prelude::*;
-use derive_more::From;
 use rapier3d::{
     dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor, MotorModel},
     na::Isometry3,
 };
-
-use super::{colliders::ColliderFlag, mass::MassFlag};
 
 #[derive(Component, Default)]
 pub struct JointBounded;
@@ -68,7 +60,7 @@ pub struct JointRecieverFlag {
     pub id: String,
 }
 
-#[derive(WorldQuery)]
+#[derive(QueryData)]
 pub struct Linkage {
     entity: Entity,
     // It is required that all reference lifetimes are explicitly annotated, just like in any
@@ -136,6 +128,8 @@ impl From<&JointFlag> for GenericJoint {
             contacts_enabled: value.contacts_enabled,
             //FIXME:  fix jointflag to have a proper enum for this later
             enabled: rapier3d::dynamics::JointEnabled::Enabled,
+            //FIXME: figure out what this is for?
+            user_data: 0,
         }
     }
 }

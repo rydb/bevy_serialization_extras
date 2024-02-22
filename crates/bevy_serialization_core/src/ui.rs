@@ -1,24 +1,21 @@
-use bevy::{
-    ecs::schedule::{SystemConfig, SystemConfigs},
-    prelude::*,
-    reflect::TypeInfo,
-    window::PrimaryWindow,
-};
 use bevy_egui::EguiContext;
-use bevy_rapier3d::dynamics::ImpulseJoint;
-use bitvec::{field::BitField, order::Msb0, view::BitView};
-use egui::{text::LayoutJob, Align2, Color32, InnerResponse, RichText, ScrollArea, TextFormat, Ui};
+use bevy_reflect::TypeInfo;
+use egui::{Color32, RichText};
 use moonshine_save::prelude::Save;
 use std::any::TypeId;
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
-use strum_macros::{Display, EnumIter, IntoStaticStr};
+use strum_macros::{Display, EnumIter};
 
 use egui_extras::{Column, TableBuilder};
 
 use crate::resources::{
     ComponentsOnSave, RefreshCounter, ShowSerializable, ShowUnserializable, TypeRegistryOnSave,
 };
+
+use bevy_app::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_window::PrimaryWindow;
 
 #[derive(Default, EnumIter, Display)]
 pub enum UtilityType {
@@ -38,7 +35,7 @@ pub fn serialization_widgets_ui(
     mut refresh_counter: ResMut<RefreshCounter>,
     mut show_serializable: ResMut<ShowSerializable>,
     mut show_unserializable: ResMut<ShowUnserializable>,
-    mut asset_server: Res<AssetServer>,
+    //mut asset_server: Res<AssetServer>,
 ) {
     for mut context in primary_window.iter_mut() {
         egui::Window::new("debug widget window")

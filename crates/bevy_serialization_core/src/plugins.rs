@@ -1,6 +1,6 @@
-use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
-use bevy::ecs::query::WorldQuery;
-use bevy::ecs::system::BoxedSystem;
+//use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
+//use bevy::ecs::query::{QueryData, WorldQuery};
+//use bevy::render::camera::CameraRenderGraph;
 use std::{any::TypeId, marker::PhantomData};
 // use bevy_obj::ObjPlugin;
 // use bevy_rapier3d::dynamics::{RigidBody, AdditionalMassProperties};
@@ -8,8 +8,12 @@ use std::{any::TypeId, marker::PhantomData};
 // use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
 use crate::prelude::mesh::MeshPrimitive;
 use crate::prelude::UtilitySelection;
-use bevy::asset::Asset;
-use bevy::{prelude::*, reflect::GetTypeRegistration};
+use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
+use bevy_ecs::query::{QueryData, WorldQuery};
+use bevy_render::camera::CameraRenderGraph;
+//use crate::prelude::UtilitySelection;
+//use bevy::asset::Asset;
+//use bevy::{prelude::*, reflect::GetTypeRegistration};
 use moonshine_save::prelude::{load_from_file_on_request, LoadPlugin, LoadSet, SavePlugin};
 use moonshine_save::save::SaveSet;
 // use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
@@ -30,13 +34,14 @@ use core::fmt::Debug;
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::prelude::SaveFilter;
 
-// pub struct SaveRequest {
 
-// }
-
-// pub struct LoadRequest {
-
-// }
+use bevy_app::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_asset::prelude::*;
+use bevy_reflect::GetTypeRegistration;
+use bevy_pbr::prelude::*;
+use bevy_render::prelude::*;
+use bevy_math::prelude::*;
 
 pub struct SerializeQueryFor<S, T, U> {
     query: PhantomData<fn() -> S>,
@@ -47,11 +52,11 @@ pub struct SerializeQueryFor<S, T, U> {
 
 impl<S, T, U> Plugin for SerializeQueryFor<S, T, U>
 where
-    S: 'static + WorldQuery + ChangeChecked,
+    S: 'static + QueryData + ChangeChecked,
     T: 'static
         + Component
         + Debug
-        + for<'a, 'b> From<&'b <<S as WorldQuery>::ReadOnly as WorldQuery>::Item<'a>>,
+        + for<'a, 'b> From<&'b <<S as QueryData>::ReadOnly as WorldQuery>::Item<'a>>,
     U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration,
 {
     fn build(&self, app: &mut App) {
@@ -231,7 +236,7 @@ impl<U, T> Default for SerializeManyAsOneFor<U, T> {
 
 impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
 where
-    T: 'static + WorldQuery,
+    T: 'static + QueryData,
     U: 'static
         + Asset
         + Default
@@ -286,18 +291,19 @@ impl Plugin for SerializationPlugin {
             .register_type::<GeometryFlag>()
             .register_type::<[[f32; 3]; 3]>()
             .register_type::<[Vec3; 3]>()
+            .register_type::<CameraRenderGraph>()
             //.add_systems(Update, from_structure::<Linkage, ImpulseJoint>)
             .add_systems(
                 PreUpdate,
-                update_last_saved_typedata.run_if(resource_added::<SaveRequest>()),
+                update_last_saved_typedata.run_if(resource_added::<SaveRequest>),
             )
             .add_systems(
                 PreUpdate,
-                update_last_saved_typedata.run_if(resource_added::<LoadRequest>()),
+                update_last_saved_typedata.run_if(resource_added::<LoadRequest>),
             )
             .add_systems(
                 PreUpdate,
-                update_last_saved_typedata.run_if(resource_changed::<RefreshCounter>()),
+                update_last_saved_typedata.run_if(resource_changed::<RefreshCounter>),
             )
             .add_systems(
                 Update,

@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 use bevy::reflect::GetTypeRegistration;
-use bevy_rapier3d::{
-    geometry::{Collider, ComputedColliderShape},
-    prelude::AsyncCollider,
-};
+use bevy_rapier3d::{geometry::ComputedColliderShape, prelude::AsyncCollider};
 use bevy_serialization_core::traits::ManagedTypeRegistration;
 use strum_macros::EnumIter;
 // use strum::IntoEnumIterator;

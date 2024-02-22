@@ -1,8 +1,10 @@
-use bevy::{ecs::query::WorldQuery, prelude::*};
+use bevy_ecs::{prelude::*, query::QueryData};
+
+
 
 /// query that changes for a component or the "file" flag component of a thing. if the "file" flag exists, this should return the file flag,
 /// otherwise, this should give you the "pure", non-file referring version of that component.
-#[derive(Debug, WorldQuery, Clone)]
+#[derive(Debug, QueryData, Clone)]
 pub struct FileCheck<T, U>
 where
     T: Component + Clone,
