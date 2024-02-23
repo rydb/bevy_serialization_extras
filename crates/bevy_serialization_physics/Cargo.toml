@@ -22,7 +22,6 @@ strum = "0.26"
 strum_macros = "0.26"
 bitflags = "2.4.1"
 nalgebra = "0.32"
-#yaserde = "0.9"
 derive_more = "0.99"
 bitvec = "1.0"
 bevy_obj = "0.13"
@@ -39,5 +38,5 @@ egui_extras = "0.26"
 [dev-dependencies]
 bevy = {version = "0.13", features = ["dynamic_linking"]}
 bevy-inspector-egui = "0.23"
-bevy_mod_raycast = {git = "https://github.com/RobWalt/bevy_mod_raycast", branch = "bevy-0.13-fix"}
+bevy_mod_raycast = "0.17"
 bevy_camera_extras = "0.2"

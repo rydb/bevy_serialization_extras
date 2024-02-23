@@ -13,7 +13,6 @@ use crate::resources::{
     ComponentsOnSave, RefreshCounter, ShowSerializable, ShowUnserializable, TypeRegistryOnSave,
 };
 
-use bevy_app::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_window::PrimaryWindow;
 

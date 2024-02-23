@@ -65,6 +65,13 @@ where
     fn deserialize(absolute_path: String) -> Result<Self, LoadError>;
 }
 
+pub trait LazySerialize
+where
+    Self: Sized,
+{
+    fn serialize(absolute_path: String) -> Result<Self, LoadError>;
+}
+
 ///trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
 pub trait Structure<T> {
     /// returns the name of the structure this struct refers to.

@@ -243,7 +243,8 @@ where
         + Clone
         + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
         + FromStructure
-        + LazyDeserialize,
+        + LazyDeserialize
+        //+ LazySerialize,
 {
     fn build(&self, app: &mut App) {
         app.world
