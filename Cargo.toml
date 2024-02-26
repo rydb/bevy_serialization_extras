@@ -15,5 +15,5 @@ members = [
 ]
 
 [dependencies]
-bevy_serialization_core = {path = "./crates/bevy_serialization_core", version = "0.3"}
-bevy_serialization_physics = {path = "./crates/bevy_serialization_physics", version = "0.3"}
+bevy_serialization_core = {path = "./crates/bevy_serialization_core", version = "0.2"}
+bevy_serialization_physics = {path = "./crates/bevy_serialization_physics", version = "0.2"}
