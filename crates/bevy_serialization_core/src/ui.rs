@@ -106,7 +106,7 @@ pub fn serialization_widgets_ui(
 pub fn update_last_saved_typedata(world: &mut World) {
     let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
 
-    //println!("updating last saved type_data");
+    log::trace!("updating last saved type_data");
 
     let type_registry = world.resource::<AppTypeRegistry>();
 

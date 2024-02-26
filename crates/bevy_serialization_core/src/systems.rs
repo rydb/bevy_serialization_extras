@@ -58,7 +58,7 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
         if let Some(request) = asset_spawn_requests.requests.pop_front() {
             match request.source.clone() {
                 RequestFrom::AssetServerPath(path) => {
-                    println!("processing request from path: {:#?}", path.clone());
+                    log::trace!("processing request from path: {:#?}", path.clone());
                     let asset_handle = asset_server.load(path);
 
                     //passes off request to the front of the queue for the next update as the asset is likely to not have loaded yet until next update.
@@ -68,8 +68,8 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
                     failed_requests.push_front(unready_asset_request);
                 }
                 RequestFrom::AssetHandle(handle) => {
-                    println!("processing request from assetid {:#?}", handle);
-                    println!("failed load attempts: {:#?}", request.failed_load_attempts);
+                    log::trace!("processing request from assetid {:#?}", handle);
+                    log::trace!("failed load attempts: {:#?}", request.failed_load_attempts);
                     if let Some(asset) = thing_assets.get(handle) {
                         FromStructure::into_entities(&mut commands, asset.clone(), request);
                     } else {
@@ -113,11 +113,10 @@ pub fn deserialize_as_one<T, U>(
         + Debug
         + for<'a, 'b> From<&'b <<T as QueryData>::ReadOnly as WorldQuery>::Item<'a>>,
 {
-    //println!("converting composed query into singular component");
     for (e, thing_query) in structure_query.into_iter() {
         let unwrapped_thing = U::from(&thing_query);
         //FIXME: This gets run very frequently, will need to figure out why that is
-        //info!("[Line {}]: On, {:?}, inserting {:?}", line!(), e, unwrapped_thing);
+        log::trace!("On, {:?}, inserting {:?}", e, unwrapped_thing);
         commands.entity(e).try_insert(unwrapped_thing);
     }
 }
@@ -134,8 +133,7 @@ where
     WrapperThing: Component + for<'a> From<&'a Thing>,
 {
     for (e, thing_handle) in thing_query.iter() {
-        //FIXME: add proper logging for this
-        //println!("changing Wrapperthing to match changed asset for {:#?}", e);
+        log::trace!("changing Wrapperthing to match changed asset for {:#?}", e);
         match things.get(thing_handle) {
             Some(thing) => {
                 commands.entity(e).try_insert(WrapperThing::from(thing));
@@ -158,8 +156,7 @@ pub fn deserialize_asset_for<WrapperThing, Thing>(
     Thing: Asset + for<'a> From<&'a WrapperThing>,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        //FIXME: Add proper logging for this
-        //println!("converting wrapper thing {:#?}", e);
+        log::trace!("converting wrapper thing {:#?}", e);
         let thing = Thing::from(wrapper_thing);
         let thing_handle = things.add(thing);
 
