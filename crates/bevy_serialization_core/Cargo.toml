@@ -1,6 +1,6 @@
 [package]
 name = "bevy_serialization_core"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 repository = "https://github.com/rydb/bevy_serialization_extras"
 license = "MIT"
@@ -24,7 +24,7 @@ bevy_window = "0.13"
 
 glam = "0.25"
 ron = "0.8"
-moonshine-save = "0.3.5"
+moonshine-save = "0.3.*"
 bevy_egui = "0.25"
 egui = "0.26"
 egui_extras = "0.26"

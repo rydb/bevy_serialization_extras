@@ -11,11 +11,16 @@ use crate::prelude::UtilitySelection;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_ecs::query::{QueryData, WorldQuery};
 use bevy_render::camera::CameraRenderGraph;
+use moonshine_save::load::load_from_file_on_request;
+use moonshine_save::load::LoadPlugin;
+use moonshine_save::load::LoadSystem;
+use moonshine_save::save::SavePlugin;
+use moonshine_save::save::SaveSystem;
 //use crate::prelude::UtilitySelection;
 //use bevy::asset::Asset;
 //use bevy::{prelude::*, reflect::GetTypeRegistration};
-use moonshine_save::prelude::{load_from_file_on_request, LoadPlugin, LoadSet, SavePlugin};
-use moonshine_save::save::SaveSet;
+//use moonshine_save::prelude::{load_from_file_on_request, LoadPlugin, LoadSet, SavePlugin};
+//use moonshine_save::save::SaveSet;
 // use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
 use crate::traits::{ChangeChecked, FromStructure, IntoHashMap, LazyDeserialize};
 // use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag, LinkFlag};
@@ -73,10 +78,10 @@ where
         for registration in U::get_all_type_registrations().into_iter() {
             type_registry.write().add_registration(registration)
         }
-        app.add_systems(PreUpdate, (serialize_for::<T, U>,).before(SaveSet::Save))
+        app.add_systems(PreUpdate, (serialize_for::<T, U>,).before(SaveSystem::Save))
             .add_systems(
                 Update,
-                (deserialize_as_one::<S, T>).after(LoadSet::PostLoad),
+                (deserialize_as_one::<S, T>).after(LoadSystem::PostLoad),
             );
         // for func in self.post_processing.clone() {
         //     app.add_systems(PostUpdate, func)
@@ -206,7 +211,7 @@ where
         }
         app.add_systems(
             Update,
-            (deserialize_wrapper_for::<U, T>).after(LoadSet::PostLoad),
+            (deserialize_wrapper_for::<U, T>).after(LoadSystem::PostLoad),
         );
     }
 }
@@ -253,11 +258,11 @@ where
             });
         app.add_systems(
             PreUpdate,
-            (serialize_structures_as_assets::<T, U>,).before(SaveSet::Save),
+            (serialize_structures_as_assets::<T, U>,).before(SaveSystem::Save),
         )
         .add_systems(
             Update,
-            (deserialize_assets_as_structures::<U>).after(LoadSet::PostLoad),
+            (deserialize_assets_as_structures::<U>).after(LoadSystem::PostLoad),
         );
     }
 }
@@ -310,8 +315,8 @@ impl Plugin for SerializationPlugin {
                 Update,
                 save_default_with(save_filter).into_file_on_request::<SaveRequest>(),
             )
-            .add_systems(Update, add_inherieted_visibility.after(LoadSet::PostLoad))
-            .add_systems(Update, add_view_visibility.after(LoadSet::PostLoad))
+            .add_systems(Update, add_inherieted_visibility.after(LoadSystem::PostLoad))
+            .add_systems(Update, add_view_visibility.after(LoadSystem::PostLoad))
             .add_systems(Update, load_from_file_on_request::<LoadRequest>());
     }
 }
