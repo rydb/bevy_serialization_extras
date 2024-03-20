@@ -1,5 +1,7 @@
-use bevy::prelude::*;
+//use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_utils::default;
 
 use crate::wrappers::{
     colliders::ColliderFlag, continous_collision::CcdFlag, friction::FrictionFlag, mass::MassFlag,

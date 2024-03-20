@@ -1,4 +1,3 @@
-use bevy::app::prelude::*;
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{
     dynamics::{AdditionalMassProperties, ImpulseJoint, RigidBody},
@@ -16,6 +15,8 @@ use crate::{
         solvergroupfilter::SolverGroupsFlag,
     },
 };
+
+use bevy_app::prelude::*;
 
 /// this is the plugin that containss all of the wrappers that physics should need to serialize(minus the backend)
 pub struct PhysicsSerializationPlugin;

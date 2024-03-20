@@ -1,6 +1,8 @@
-use bevy::prelude::*;
 use bevy_rapier3d::prelude::CollisionGroups;
 use bevy_rapier3d::prelude::Group;
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::prelude::*;
 
 #[derive(Component, Reflect, Clone, Default)]
 #[reflect(Component)]

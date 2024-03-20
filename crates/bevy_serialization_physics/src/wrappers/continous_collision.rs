@@ -1,5 +1,7 @@
-use bevy::prelude::*;
 use bevy_rapier3d::dynamics::Ccd;
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::prelude::*;
 
 #[derive(Reflect, Component, Clone)]
 pub struct CcdFlag {

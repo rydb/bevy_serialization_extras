@@ -1,8 +1,7 @@
-use bevy::{prelude::*, window::PrimaryWindow};
-
 use bevy_egui::EguiContext;
 use bevy_rapier3d::dynamics::ImpulseJoint;
 use bevy_ui_extras::stylesheets::DEBUG_FRAME_STYLE;
+use bevy_window::PrimaryWindow;
 use bitvec::prelude::Msb0;
 use bitvec::{field::BitField, view::BitView};
 use egui::{text::LayoutJob, ScrollArea, TextFormat, Ui};
@@ -10,6 +9,11 @@ use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
 use crate::prelude::link::{JointAxesMaskWrapper, JointFlag};
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_input::prelude::*;
+
 
 const DASHES: usize = 5;
 

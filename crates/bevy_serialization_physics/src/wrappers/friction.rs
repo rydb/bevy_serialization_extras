@@ -1,5 +1,7 @@
-use bevy::prelude::*;
 use bevy_rapier3d::prelude::{CoefficientCombineRule, Friction};
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::prelude::*;
 
 #[derive(Reflect, Clone, Default)]
 pub enum FrictionCombineRule {

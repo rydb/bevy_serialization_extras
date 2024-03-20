@@ -1,16 +1,23 @@
-use bevy::{
-    ecs::query::QueryData,
-    prelude::{Component, Transform},
-    reflect::GetTypeRegistration,
-};
+// use bevy::{
+//     ecs::query::QueryData,
+//     prelude::{Component, Transform},
+//     reflect::GetTypeRegistration,
+// };
 use bevy_rapier3d::prelude::ImpulseJoint;
 use bevy_serialization_core::traits::{ChangeChecked, ManagedTypeRegistration};
+use bevy_utils::prelude::default;
 //use urdf_rs::{Joint, Pose, Link, Visual};
-use bevy::prelude::*;
 use rapier3d::{
     dynamics::{GenericJoint, JointAxesMask, JointLimits, JointMotor, MotorModel},
     na::Isometry3,
 };
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::{prelude::*, query::QueryData};
+use bevy_reflect::TypeRegistration;
+use bevy_math::Vec3;
+use bevy_transform::prelude::*;
+use bevy_reflect::GetTypeRegistration;
 
 #[derive(Component, Default)]
 pub struct JointBounded;
@@ -389,7 +396,7 @@ impl From<&MotorModelWrapper> for MotorModel {
 }
 
 impl ManagedTypeRegistration for JointFlag {
-    fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {
+    fn get_all_type_registrations() -> Vec<TypeRegistration> {
         let mut type_registry = Vec::new();
 
         type_registry.push(JointLimitWrapper::get_type_registration());

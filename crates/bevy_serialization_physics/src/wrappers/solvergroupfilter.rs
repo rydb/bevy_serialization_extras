@@ -1,7 +1,10 @@
-use bevy::prelude::*;
 use bevy_rapier3d::prelude::Group;
 use bevy_rapier3d::prelude::SolverGroups;
 use bevy_serialization_core::traits::ManagedTypeRegistration;
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_reflect::TypeRegistration;
 
 pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
     memberships: GroupWrapper::ALL,
@@ -130,7 +133,7 @@ impl From<&SolverGroups> for SolverGroupsFlag {
 }
 
 impl ManagedTypeRegistration for SolverGroupsFlag {
-    fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {
+    fn get_all_type_registrations() -> Vec<TypeRegistration> {
         Vec::new()
     }
 }

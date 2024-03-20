@@ -1,8 +1,11 @@
-use bevy::{ecs::component::Component, reflect::Reflect};
 use bevy_rapier3d::prelude::AdditionalMassProperties;
 
-use bevy::reflect::GetTypeRegistration;
 use bevy_serialization_core::traits::ManagedTypeRegistration;
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_reflect::TypeRegistration;
+use bevy_reflect::GetTypeRegistration;
 
 #[derive(Reflect, Component, Clone)]
 pub struct MassFlag {
@@ -33,7 +36,7 @@ impl From<&AdditionalMassProperties> for MassFlag {
 }
 
 impl ManagedTypeRegistration for MassFlag {
-    fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {
+    fn get_all_type_registrations() -> Vec<TypeRegistration> {
         let mut type_registry = Vec::new();
 
         type_registry.push(Self::get_type_registration());

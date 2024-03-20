@@ -1,10 +1,12 @@
-use bevy::prelude::*;
-use bevy::reflect::GetTypeRegistration;
 use bevy_rapier3d::{geometry::ComputedColliderShape, prelude::AsyncCollider};
 use bevy_serialization_core::traits::ManagedTypeRegistration;
 use strum_macros::EnumIter;
-// use strum::IntoEnumIterator;
-// use crate::physics::mesh::MeshPrimitive;
+
+use bevy_reflect::prelude::*;
+use bevy_ecs::prelude::*;
+use bevy_reflect::TypeRegistration;
+use bevy_reflect::GetTypeRegistration;
+
 
 #[derive(Component, EnumIter, Reflect, Clone, Default)]
 #[reflect(Component)]
@@ -35,7 +37,7 @@ impl From<&AsyncCollider> for ColliderFlag {
 }
 
 impl ManagedTypeRegistration for ColliderFlag {
-    fn get_all_type_registrations() -> Vec<bevy::reflect::TypeRegistration> {
+    fn get_all_type_registrations() -> Vec<TypeRegistration> {
         let mut type_registry = Vec::new();
 
         type_registry.push(Self::get_type_registration());
