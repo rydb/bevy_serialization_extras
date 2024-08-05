@@ -1,7 +1,7 @@
 //use bevy::prelude::*;
 use nalgebra::{Matrix3, Vector3};
 //use urdf_rs::Visual;
-use crate::traits::{ManagedTypeRegistration, Unwrap};
+use crate::traits::*;
 
 use bevy_render::mesh::VertexAttributeValues::Float32x3;
 use bevy_ecs::prelude::*;
@@ -30,22 +30,22 @@ pub struct GeometryFile {
     pub source: String,
 }
 
-impl ManagedTypeRegistration for GeometryFlag {
-    fn get_all_type_registrations() -> Vec<TypeRegistration> {
-        let mut type_registry = Vec::new();
+// impl ManagedTypeRegistration for GeometryFlag {
+//     fn get_all_type_registrations() -> Vec<TypeRegistration> {
+//         let mut type_registry = Vec::new();
 
-        type_registry.push(Self::get_type_registration());
+//         type_registry.push(Self::get_type_registration());
 
-        type_registry
-        // for enum_variant in Self::iter() {
-        //     match enum_variant {
-        //         Self::Primitive(..) => type_registry.push(MeshPrimitive::get_type_registration()),
-        //         //Self::Mesh {..} => {}
-        //     }
-        // }
-        // return type_registry
-    }
-}
+//         type_registry
+//         // for enum_variant in Self::iter() {
+//         //     match enum_variant {
+//         //         Self::Primitive(..) => type_registry.push(MeshPrimitive::get_type_registration()),
+//         //         //Self::Mesh {..} => {}
+//         //     }
+//         // }
+//         // return type_registry
+//     }
+// }
 
 #[derive(Debug, Clone, PartialEq, Reflect, Copy, Component)]
 pub enum MeshPrimitive {
@@ -171,10 +171,10 @@ impl Unwrap<&GeometryFile> for Mesh {
     }
 }
 
-impl ManagedTypeRegistration for GeometryFile {
-    fn get_all_type_registrations() -> Vec<TypeRegistration> {
-        let type_registry = Vec::new();
+// impl ManagedTypeRegistration for GeometryFile {
+//     fn get_all_type_registrations() -> Vec<TypeRegistration> {
+//         let type_registry = Vec::new();
 
-        type_registry
-    }
-}
+//         type_registry
+//     }
+// }

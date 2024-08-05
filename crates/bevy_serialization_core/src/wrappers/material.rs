@@ -1,8 +1,8 @@
 //use bevy::prelude::*;
-
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_render::prelude::*;
+use bevy_color::prelude::*;
 use bevy_pbr::prelude::*;
 use bevy_utils::prelude::*;
 
@@ -36,7 +36,7 @@ impl From<&StandardMaterial> for MaterialFlag {
     fn from(value: &StandardMaterial) -> Self {
         Self {
             color: value.base_color,
-            ..default()
+            //..default()
         }
     }
 }
@@ -45,7 +45,7 @@ impl From<Color> for MaterialFlag {
     fn from(value: Color) -> Self {
         Self {
             color: value,
-            ..default()
+            //..default()
         }
     }
 }

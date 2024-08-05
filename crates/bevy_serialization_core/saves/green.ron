@@ -1,7 +1,7 @@
 (
   resources: {},
   entities: {
-    4294967298: (
+    42949672962: (
       components: {
         "bevy_transform::components::transform::Transform": (
           translation: (
@@ -67,12 +67,12 @@
           )),
         ),
         "bevy_serialization_core::wrappers::material::MaterialFlag": (
-          color: Rgba(
+          color: Srgba((
             red: 0.0,
             green: 1.0,
             blue: 0.0,
             alpha: 1.0,
-          ),
+          )),
         ),
         "bevy_render::primitives::Aabb": (
           center: (
@@ -88,7 +88,7 @@
         ),
       },
     ),
-    4294967299: (
+    42949672963: (
       components: {
         "bevy_transform::components::transform::Transform": (
           translation: (
@@ -135,18 +135,18 @@
         "bevy_render::view::visibility::Visibility": Inherited,
         "bevy_render::view::visibility::InheritedVisibility": (true),
         "bevy_render::view::visibility::ViewVisibility": (true),
-        "bevy_pbr::light::PointLight": (
-          color: Rgba(
+        "bevy_pbr::light::point_light::PointLight": (
+          color: LinearRgba((
             red: 1.0,
             green: 1.0,
             blue: 1.0,
             alpha: 1.0,
-          ),
+          )),
           intensity: 1500.0,
           range: 20.0,
           radius: 0.0,
           shadows_enabled: true,
-          shadow_depth_bias: 0.02,
+          shadow_depth_bias: 0.08,
           shadow_normal_bias: 0.6,
         ),
         "bevy_pbr::bundle::CubemapVisibleEntities": (),

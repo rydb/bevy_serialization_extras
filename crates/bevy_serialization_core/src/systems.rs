@@ -70,7 +70,7 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
                 RequestFrom::AssetHandle(handle) => {
                     log::trace!("processing request from assetid {:#?}", handle);
                     log::trace!("failed load attempts: {:#?}", request.failed_load_attempts);
-                    if let Some(asset) = thing_assets.get(handle) {
+                    if let Some(asset) = thing_assets.get(&handle) {
                         FromStructure::into_entities(&mut commands, asset.clone(), request);
                     } else {
                         let mut failed_request = request;

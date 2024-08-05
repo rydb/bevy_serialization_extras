@@ -47,14 +47,14 @@ fn setup(
     // plane
     commands.spawn(PbrBundle {
         mesh: meshes.add(Plane3d::default().mesh().size(5.0, 5.0)),
-        material: materials.add(Color::rgb(0.4, 0.5, 0.3)),
+        material: materials.add(Color::srgb(0.4, 0.5, 0.3)),
         ..default()
     });
     // cube
     commands.spawn((
         ModelBundle {
             mesh: Cuboid::new(1.0, 1.0, 1.0).into(),
-            material: Color::GREEN.into(),
+            material: Color::Srgba(Srgba::GREEN).into(),
             transform: Transform::from_xyz(0.0, 0.5, 0.0),
             ..default()
         },

@@ -32,7 +32,7 @@ use super::systems::*;
 use crate::ui::update_last_saved_typedata;
 use crate::wrappers::mesh::{GeometryFile, GeometryFlag};
 use crate::{
-    traits::{ManagedTypeRegistration, Unwrap},
+    traits::*,
     wrappers::material::MaterialFlag,
 };
 use core::fmt::Debug;
@@ -55,6 +55,21 @@ pub struct SerializeQueryFor<S, T, U> {
     //post_processing: Vec<fn() -> ()>,
 }
 
+/// adds the given type to the skipped types list when serializing
+pub fn skip_serializing<SkippedType: 'static>(
+    app: &mut App
+) {
+    type L = SerializeFilter;
+    let mut skip_list = app.world_mut().get_resource_or_insert_with::<L>(|| L::default());
+
+    let skip_list_copy = skip_list.clone();
+    skip_list.filter.components = skip_list_copy
+        .filter
+        .components
+        .deny_by_id(TypeId::of::<SkippedType>());
+
+}
+
 impl<S, T, U> Plugin for SerializeQueryFor<S, T, U>
 where
     S: 'static + QueryData + ChangeChecked,
@@ -62,31 +77,25 @@ where
         + Component
         + Debug
         + for<'a, 'b> From<&'b <<S as QueryData>::ReadOnly as WorldQuery>::Item<'a>>,
-    U: 'static + Component + for<'a> From<&'a T> + ManagedTypeRegistration,
+    U: 'static + Component + for<'a> From<&'a T> + GetTypeRegistration,
 {
     fn build(&self, app: &mut App) {
-        type L = SerializeFilter;
-        let mut skip_list = app.world.get_resource_or_insert_with::<L>(|| L::default());
+        skip_serializing::<T>(app);
 
-        let skip_list_copy = skip_list.clone();
-        skip_list.filter.components = skip_list_copy
-            .filter
-            .components
-            .deny_by_id(TypeId::of::<T>());
-
-        let type_registry = app.world.resource::<AppTypeRegistry>();
-        for registration in U::get_all_type_registrations().into_iter() {
-            type_registry.write().add_registration(registration)
-        }
-        app.add_systems(PreUpdate, (serialize_for::<T, U>,).before(SaveSystem::Save))
-            .add_systems(
-                Update,
-                (deserialize_as_one::<S, T>).after(LoadSystem::PostLoad),
-            );
-        // for func in self.post_processing.clone() {
-        //     app.add_systems(PostUpdate, func)
-        //     ;
-        // }
+        app
+        .register_type::<U>()
+        .add_systems(
+            PreUpdate, 
+            (
+                serialize_for::<T, U>,
+                deserialize_as_one::<S, T>,
+            ).chain()
+        );
+        // app.add_systems(PreUpdate, (serialize_for::<T, U>,).before(SaveSystem::Save))
+        //     .add_systems(
+        //         Update,
+        //         (deserialize_as_one::<S, T>).after(LoadSystem::PostLoad),
+        //     );
     }
 }
 
@@ -101,12 +110,14 @@ impl<S, T, U> Default for SerializeQueryFor<S, T, U> {
     }
 }
 
+pub trait Bob: Default {}
+
 /// plugin for serialization for WrapperComponent -> Component, Component -> WrapperComponent
 #[derive(Default)]
 pub struct SerializeComponentFor<T, U>
 where
     T: 'static + Component + for<'a> From<&'a U>,
-    U: 'static + Component + ManagedTypeRegistration + for<'a> From<&'a T>,
+    U: 'static + Component + for<'a> From<&'a T>,// + ManagedTypeRegistration ,
 {
     thing: PhantomData<fn() -> T>,
     wrapper_thing: PhantomData<fn() -> U>,
@@ -116,32 +127,30 @@ impl<T, U> Plugin for SerializeComponentFor<T, U>
 // until trait alaises are stabalized, trait bounds have to be manually duplicated...
 where
     T: 'static + Component + for<'a> From<&'a U>,
-    U: 'static + Component + ManagedTypeRegistration + for<'a> From<&'a T>,
+    U: 'static + Component + for<'a> From<&'a T> + GetTypeRegistration,
 {
     fn build(&self, app: &mut App) {
-        type L = SerializeFilter;
-        let mut skip_list = app.world.get_resource_or_insert_with::<L>(|| L::default());
+        skip_serializing::<T>(app);
 
-        let skip_list_copy = skip_list.clone();
-        skip_list.filter.components = skip_list_copy
-            .filter
-            .components
-            .deny_by_id(TypeId::of::<T>());
-
-        let type_registry = app.world.resource::<AppTypeRegistry>();
-        for registration in U::get_all_type_registrations().into_iter() {
-            type_registry.write().add_registration(registration)
-        }
-        app.add_systems(
-            PreUpdate,
-            (serialize_for::<T, U>,), //.run_if(resource_added::<SaveRequest>())
-                                      //.before(SaveSet::Save)
-        )
-        .add_systems(
-            Update,
-            //(
-            deserialize_for::<U, T>, //)//.after(LoadSet::PostLoad)
+        app
+        .register_type::<U>()
+        .add_systems(PreUpdate, 
+            (
+                serialize_for::<T, U>,
+                deserialize_for::<U, T>,
+            ).chain()
         );
+        // app.add_systems(
+        //     PreUpdate,
+        //     (serialize_for::<T, U>,), //.run_if(resource_added::<SaveRequest>())
+        //                               //.before(SaveSet::Save)
+        // )
+        // .add_systems(
+        //     Update,
+        //     //(
+        //     deserialize_for::<U, T>, //)//.after(LoadSet::PostLoad)
+        // );
+        
     }
 }
 
@@ -158,25 +167,26 @@ where
     U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T>,
 {
     fn build(&self, app: &mut App) {
-        type L = SerializeFilter;
-        let mut skip_list = app.world.get_resource_or_insert_with::<L>(|| L::default());
+        skip_serializing::<Handle<T>>(app);
 
-        let skip_list_copy = skip_list.clone();
-        skip_list.filter.components = skip_list_copy
-            .filter
-            .components
-            .deny_by_id(TypeId::of::<Handle<T>>());
+        app
+        .register_type::<U>()
+        // .add_systems(
+        //     PreUpdate,
+        //     (try_serialize_asset_for::<T, U>,), //.after(resource_added::<SaveRequest>())
+        // )
+        // .add_systems(
+        //     Update,
+        //     //(
+        //     deserialize_asset_for::<U, T>, //).after(LoadSet::PostLoad)
+        // );
+        .add_systems(PreUpdate, 
+            (
+                try_serialize_asset_for::<T, U>,
+                deserialize_asset_for::<U, T>,
+            ).chain()
 
-        app.register_type::<U>()
-            .add_systems(
-                PreUpdate,
-                (try_serialize_asset_for::<T, U>,), //.after(resource_added::<SaveRequest>())
-            )
-            .add_systems(
-                Update,
-                //(
-                deserialize_asset_for::<U, T>, //).after(LoadSet::PostLoad)
-            );
+        );
     }
 }
 
@@ -191,25 +201,15 @@ pub struct DeserializeAssetFrom<U, T> {
 
 impl<U, T> Plugin for DeserializeAssetFrom<U, T>
 where
-    U: 'static + Component + ManagedTypeRegistration,
+    U: 'static + Component + GetTypeRegistration,
     T: 'static + Asset + for<'a> Unwrap<&'a U>,
 {
     fn build(&self, app: &mut App) {
-        type L = SerializeFilter;
-        let mut skip_list = app.world.get_resource_or_insert_with::<L>(|| L::default());
-
-        let skip_list_copy = skip_list.clone();
-        skip_list.filter.components = skip_list_copy
-            .filter
-            .components
-            .deny_by_id(TypeId::of::<Handle<T>>());
-        //skip_list.filter.components.deny_by_id(TypeId::of::<Handle<T>>());
-
-        let type_registry = app.world.resource::<AppTypeRegistry>();
-        for registration in U::get_all_type_registrations().into_iter() {
-            type_registry.write().add_registration(registration)
-        }
-        app.add_systems(
+        skip_serializing::<Handle<T>>(app);
+        
+        app
+        .register_type::<U>()
+        .add_systems(
             Update,
             (deserialize_wrapper_for::<U, T>).after(LoadSystem::PostLoad),
         );
@@ -252,7 +252,7 @@ where
         //+ LazySerialize,
 {
     fn build(&self, app: &mut App) {
-        app.world
+        app.world_mut()
             .get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(|| {
                 AssetSpawnRequestQueue::<U>::default()
             });

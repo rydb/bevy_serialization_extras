@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
 use bevy_reflect::{GetTypeRegistration, TypeRegistration};
-use bevy_utils::thiserror;
+//use bevy_utils::thiserror;
 
 
 /// trait that explains how to take struct and unwrap it into a bevy thing.
@@ -34,14 +34,14 @@ where
     fn into_hashmap(value: T) -> HashMap<String, Self>;
 }
 
-/// trait that denotes that enum/struct/etc.. can fetch all of the type registrations needed of itself.
-///
-/// this is placeholder to fill the gap of recursive type registration,
-/// See: https://github.com/bevyengine/bevy/issues/4154
-pub trait ManagedTypeRegistration: GetTypeRegistration {
-    /// takes all fields of this enum/struc/etc.., and returns a vec with their type registrations.
-    fn get_all_type_registrations() -> Vec<TypeRegistration>;
-}
+// /// trait that denotes that enum/struct/etc.. can fetch all of the type registrations needed of itself.
+// ///
+// /// this is placeholder to fill the gap of recursive type registration,
+// /// See: https://github.com/bevyengine/bevy/issues/4154
+// pub trait ManagedTypeRegistration: GetTypeRegistration {
+//     /// takes all fields of this enum/struc/etc.., and returns a vec with their type registrations.
+//     fn get_all_type_registrations() -> Vec<TypeRegistration>;
+// }
 
 use crate::resources::AssetSpawnRequest;
 use thiserror::Error;
