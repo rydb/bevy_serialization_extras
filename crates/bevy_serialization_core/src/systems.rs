@@ -124,21 +124,25 @@ pub fn deserialize_as_one<T, U>(
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Thing, WrapperThing>(
     things: ResMut<Assets<Thing>>,
-    thing_query: Query<(Entity, &Handle<Thing>), Without<WrapperThing>>,
+    things_query: Query<(Entity, &Handle<Thing>), Or<(Changed<Handle<Thing>>, Without<WrapperThing>)>>,
+    wrapper_things_query: Query<&WrapperThing>,
     mut commands: Commands,
 )
 // -> bool
 where
     Thing: Asset,
-    WrapperThing: Component + for<'a> From<&'a Thing>,
+    WrapperThing: Component + for<'a> From<&'a Thing> + PartialEq,
 {
-    for (e, thing_handle) in thing_query.iter() {
-        log::trace!("changing Wrapperthing to match changed asset for {:#?}", e);
-        match things.get(thing_handle) {
-            Some(thing) => {
-                commands.entity(e).try_insert(WrapperThing::from(thing));
-            }
-            None => {}
+    for (e, thing_handle) in things_query.iter() {
+        
+        let Some(thing) = things.get(thing_handle) else {return};
+        let new_wrapper_thing = WrapperThing::from(thing);
+        let old_wrapper_thing = wrapper_things_query.get(e).unwrap_or(&new_wrapper_thing);
+
+        // don't re-insert the same component
+        if &new_wrapper_thing != old_wrapper_thing {
+            log::trace!("changing Wrapperthing to match changed asset for {:#?}", e);
+            commands.entity(e).try_insert(new_wrapper_thing);
         }
     }
     //return true;
@@ -150,17 +154,37 @@ pub fn deserialize_asset_for<WrapperThing, Thing>(
         (Entity, &WrapperThing),
         Or<(Changed<WrapperThing>, Without<Handle<Thing>>)>,
     >,
+    things_query: Query<&Handle<Thing>>,
     mut commands: Commands,
 ) where
-    WrapperThing: Component,
+    WrapperThing: Component + for<'a> From<&'a Thing> + PartialEq,
     Thing: Asset + for<'a> From<&'a WrapperThing>,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         log::trace!("converting wrapper thing {:#?}", e);
-        let thing = Thing::from(wrapper_thing);
-        let thing_handle = things.add(thing);
 
-        commands.entity(e).try_insert(thing_handle);
+
+        let new_thing = Thing::from(wrapper_thing);
+
+        // dont re-insert duplicates. This is to prevent change deadlock from insert causing a [`Changed`] chain
+        let should_try_insert = {
+            if let Ok(old_thing_handle) = things_query.get(e) {
+                if let Some(old_thing) = things.get(old_thing_handle) {
+                    let old_thing_as_wrapper = WrapperThing::from(old_thing);            
+                    if wrapper_thing != &old_thing_as_wrapper {
+                        true
+                    } else {
+                        false
+                    }
+                } else {true}
+            } else {true}
+        };
+        if should_try_insert {
+            let thing_handle = things.add(new_thing);
+            commands.entity(e).try_insert(thing_handle);
+
+        }
+
     }
 }
 

@@ -164,7 +164,7 @@ pub struct SerializeAssetFor<T, U> {
 impl<T, U> Plugin for SerializeAssetFor<T, U>
 where
     T: 'static + Asset + for<'a> From<&'a U>,
-    U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T>,
+    U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T> + PartialEq,
 {
     fn build(&self, app: &mut App) {
         skip_serializing::<Handle<T>>(app);

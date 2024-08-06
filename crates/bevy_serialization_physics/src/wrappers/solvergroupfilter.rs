@@ -1,6 +1,5 @@
 use bevy_rapier3d::prelude::Group;
 use bevy_rapier3d::prelude::SolverGroups;
-use bevy_serialization_core::traits::ManagedTypeRegistration;
 
 use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
@@ -129,11 +128,5 @@ impl From<&SolverGroups> for SolverGroupsFlag {
             memberships: value.memberships.into(),
             filters: value.memberships.into(),
         }
-    }
-}
-
-impl ManagedTypeRegistration for SolverGroupsFlag {
-    fn get_all_type_registrations() -> Vec<TypeRegistration> {
-        Vec::new()
     }
 }

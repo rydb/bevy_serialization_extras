@@ -1,16 +1,19 @@
 //use bevy::prelude::*;
-use bevy_ecs::prelude::*;
+use bevy_ecs::{component::{ComponentHooks, StorageType}, prelude::*};
 use bevy_reflect::prelude::*;
 use bevy_render::prelude::*;
 use bevy_color::prelude::*;
 use bevy_pbr::prelude::*;
 use bevy_utils::prelude::*;
 
-#[derive(Component, Reflect, Clone, Default)]
+#[derive(Component, Reflect, Clone, Default, PartialEq)]
 #[reflect(Component)]
 pub struct MaterialFlag {
     pub color: Color,
 }
+
+
+
 
 pub enum MaterialSource {
     Wrapper(MaterialFlag),

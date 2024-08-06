@@ -34,14 +34,6 @@ where
     fn into_hashmap(value: T) -> HashMap<String, Self>;
 }
 
-// /// trait that denotes that enum/struct/etc.. can fetch all of the type registrations needed of itself.
-// ///
-// /// this is placeholder to fill the gap of recursive type registration,
-// /// See: https://github.com/bevyengine/bevy/issues/4154
-// pub trait ManagedTypeRegistration: GetTypeRegistration {
-//     /// takes all fields of this enum/struc/etc.., and returns a vec with their type registrations.
-//     fn get_all_type_registrations() -> Vec<TypeRegistration>;
-// }
 
 use crate::resources::AssetSpawnRequest;
 use thiserror::Error;

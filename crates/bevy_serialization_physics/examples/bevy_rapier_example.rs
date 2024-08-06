@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_mod_raycast::{immediate::Raycast, CursorRay, DefaultRaycastingPlugin};
+use bevy_mod_raycast::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::plugins::SerializationPlugin;
 use bevy_serialization_physics::{
@@ -18,31 +18,32 @@ use bevy_ui_extras::systems::visualize_window_for;
 
 fn main() {
     App::new()
-        // raycasting
-        .add_plugins(DefaultRaycastingPlugin)
-        .add_plugins((
-            DefaultPlugins,
-            RapierPhysicsPlugin::<NoUserData>::default(),
-            RapierDebugRenderPlugin::default(),
-        ))
-        .add_plugins(WorldInspectorPlugin::new())
-        .add_plugins(SerializationPlugin)
-        .add_plugins(PhysicsSerializationPlugin)
-        //.insert_resource()
-        //.add_plugins(SerializationPlugin)
-        .register_type::<Selectable>()
-        .init_resource::<SelectedMotorAxis>()
-        .init_resource::<PhysicsUtilitySelection>()
-        .add_systems(Update, visualize_window_for::<Selected>)
-        .add_systems(Update, selector_raycast)
-        .add_systems(Startup, setup_graphics)
-        .add_systems(Startup, create_revolute_joints)
-        .add_systems(Update, motor_controller_ui)
-        .add_systems(Update, physics_utilities_ui)
-        .add_systems(Update, rapier_joint_info_ui)
-        //.add_systems(PostUpdate, )
-        //.add_systems(Update, display_rapier_joint_info)
-        .run();
+    //raycasting
+    .add_plugins(DefaultPlugins.set(bevy_mod_raycast::low_latency_window_plugin()))
+    .add_plugins(CursorRayPlugin)
+    //.add_plugins(RaycastPluginState)
+    .add_plugins((
+        RapierPhysicsPlugin::<NoUserData>::default(),
+        RapierDebugRenderPlugin::default(),
+    ))
+    .add_plugins(WorldInspectorPlugin::new())
+    .add_plugins(SerializationPlugin)
+    .add_plugins(PhysicsSerializationPlugin)
+    //.insert_resource()
+    //.add_plugins(SerializationPlugin)
+    .register_type::<Selectable>()
+    .init_resource::<SelectedMotorAxis>()
+    .init_resource::<PhysicsUtilitySelection>()
+    .add_systems(Update, visualize_window_for::<Selected>)
+    .add_systems(Update, selector_raycast)
+    .add_systems(Startup, setup_graphics)
+    .add_systems(Startup, create_revolute_joints)
+    .add_systems(Update, motor_controller_ui)
+    .add_systems(Update, physics_utilities_ui)
+    .add_systems(Update, rapier_joint_info_ui)
+    //.add_systems(PostUpdate, )
+    //.add_systems(Update, display_rapier_joint_info)
+    .run();
 }
 
 pub fn setup_graphics(mut commands: Commands) {
@@ -57,7 +58,11 @@ const CUBE_COUNT: usize = 2;
 const ORIGIN: Vec3 = Vec3::new(0.0, 0.0, 0.0);
 const NUM: usize = 1;
 
-fn create_revolute_joints(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+fn create_revolute_joints(
+    mut commands: Commands, 
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     //let rad = 0.4;
     let shift = 2.0;
 
@@ -69,6 +74,7 @@ fn create_revolute_joints(mut commands: Commands, mut meshes: ResMut<Assets<Mesh
             PbrBundle {
                 mesh: meshes.add(Cuboid::new(0.5, 0.5, 0.5)),
                 transform: Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
+                material: materials.add(Color::Srgba(Srgba::BLUE)),
                 //transform: Transform::from_xyz(15.0, 3.0, 30.0),
                 ..default()
             }, 
@@ -94,6 +100,7 @@ fn create_revolute_joints(mut commands: Commands, mut meshes: ResMut<Assets<Mesh
                     PbrBundle {
                         mesh: meshes.add(Cuboid::new(0.5, 0.5, 0.5)),
                         transform: Transform::from_translation(positions[k]),
+                        material: materials.add(Color::Srgba(Srgba::BLUE)),
                         ..default()
                     }, //Collider::cuboid(rad, rad, rad),
                 ))

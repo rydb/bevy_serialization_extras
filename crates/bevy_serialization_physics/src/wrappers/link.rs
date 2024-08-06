@@ -4,7 +4,7 @@
 //     reflect::GetTypeRegistration,
 // };
 use bevy_rapier3d::prelude::ImpulseJoint;
-use bevy_serialization_core::traits::{ChangeChecked, ManagedTypeRegistration};
+use bevy_serialization_core::traits::ChangeChecked;
 use bevy_utils::prelude::default;
 //use urdf_rs::{Joint, Pose, Link, Visual};
 use rapier3d::{
@@ -150,7 +150,7 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
                 Some(e) => e,
                 None => value.entity,
             },
-            data: bevy_rapier_joint,
+            data: bevy_rapier3d::prelude::TypedJoint::GenericJoint(bevy_rapier_joint),
         }
     }
 }
@@ -170,13 +170,35 @@ impl From<&ImpulseJoint> for JointFlag {
     fn from(value: &ImpulseJoint) -> Self {
         //return Self::from(value.data.raw);
 
-        let joint = value.data.raw;
-        let joint_limit = JointLimitWrapper {
-            lower: joint.limits[0].min.into(),
-            upper: joint.limits[0].max.into(),
-            effort: Default::default(),
-            velocity: joint.limits[0].impulse.into(),
+        //let joint = value.data.raw;
+        let joint = match value.data {
+            bevy_rapier3d::prelude::TypedJoint::FixedJoint(joint) => joint.data.raw,
+            bevy_rapier3d::prelude::TypedJoint::GenericJoint(joint) => joint.raw,
+            bevy_rapier3d::prelude::TypedJoint::PrismaticJoint(joint) => joint.data.raw,
+            bevy_rapier3d::prelude::TypedJoint::RevoluteJoint(joint) => joint.data.raw,
+            bevy_rapier3d::prelude::TypedJoint::RopeJoint(joint) => joint.data.raw,
+            bevy_rapier3d::prelude::TypedJoint::SphericalJoint(joint) => joint.data.raw,
+            bevy_rapier3d::prelude::TypedJoint::SpringJoint(joint) => joint.data.raw,
         };
+
+        // let joint_limit = JointLimitWrapper {
+        //     lower: joint.limits[0].min.into(),
+        //     upper: joint.limits[0].max.into(),
+        //     effort: Default::default(),
+        //     velocity: joint.limits[0].impulse.into(),
+        // };
+        let joint_limit_rapier = joint.limits(rapier3d::prelude::JointAxis::AngX).unwrap_or(&JointLimits {
+            min: 99999.0,
+            max: 99999.0,
+            impulse: 999999.0,
+        });
+        let joint_limit = JointLimitWrapper {
+            lower: joint_limit_rapier.min as f64,
+            upper: joint_limit_rapier.max as f64,
+            effort: Default::default(),
+            velocity: joint_limit_rapier.impulse as f64,
+        };
+
         Self {
             //FIXME: this is probably wrong...
             //offset: Transform::from_xyz(0.0, 0.0, 0.0),
@@ -395,14 +417,3 @@ impl From<&MotorModelWrapper> for MotorModel {
     }
 }
 
-impl ManagedTypeRegistration for JointFlag {
-    fn get_all_type_registrations() -> Vec<TypeRegistration> {
-        let mut type_registry = Vec::new();
-
-        type_registry.push(JointLimitWrapper::get_type_registration());
-        type_registry.push(Dynamics::get_type_registration());
-        type_registry.push(JointFlag::get_type_registration());
-
-        return type_registry;
-    }
-}

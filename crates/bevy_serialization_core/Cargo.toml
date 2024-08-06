@@ -47,4 +47,4 @@ log = "0.4.2"
 bevy = {version = "0.14", features = ["dynamic_linking"]}
 bevy_ui_extras = "0.7"
 bevy-inspector-egui = "0.25.0"
-bevy_camera_extras = "0.4"
+bevy_camera_extras = "0.10"
