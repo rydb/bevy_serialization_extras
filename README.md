@@ -1,6 +1,6 @@
 # bevy_serialization_extras
 
-A library for bevy which contains wrappers/systems for managing serialization in bevy with [`moonshine-save`](https://github.com/Zeenobit/moonshine_save) for a more "hands off" serialization workflow
+A library that allows the editing of non-reflect components via wrapper components, and serialization of these components via [`moonshine-save`](https://github.com/Zeenobit/moonshine_save):
 
 [demo_gif.webm](https://github.com/rydb/bevy_serialization_extras/assets/43288084/3bda45f1-c75a-437b-a02d-27e58bd3276e)
 
