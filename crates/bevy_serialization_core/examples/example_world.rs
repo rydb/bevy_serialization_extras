@@ -5,10 +5,7 @@ use std::path::PathBuf;
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_serialization_core::{
-    bundles::model::ModelBundle,
-    plugins::SerializationPlugin,
-    resources::{LoadRequest, SaveRequest},
-    ui::serialization_widgets_ui,
+    bundles::model::ModelBundle, plugins::SerializationPlugin, prelude::SerializationBasePlugin, resources::{LoadRequest, SaveRequest}, ui::serialization_widgets_ui
 };
 use bevy_ui_extras::systems::visualize_right_sidepanel_for;
 use egui::TextEdit;
@@ -28,8 +25,8 @@ fn main() {
             exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
             ..Default::default()
         }))
-        //serialization
         .add_plugins(SerializationPlugin)
+        .add_plugins(SerializationBasePlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(Update, visualize_right_sidepanel_for::<Save>)
@@ -51,17 +48,26 @@ fn setup(
         ..default()
     });
     // cube
-    commands.spawn((
-        ModelBundle {
-            mesh: Cuboid::new(1.0, 1.0, 1.0).into(),
-            material: Color::Srgba(Srgba::GREEN).into(),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
-            ..default()
-        },
-        //PhysicsBundle::default(),
-        Save,
-        //MakeSelectableBundle::default(),
-    ));
+    // commands.spawn((
+    //     ModelBundle {
+    //         mesh: Cuboid::new(1.0, 1.0, 1.0).into(),
+    //         material: Color::Srgba(Srgba::GREEN).into(),
+    //         transform: Transform::from_xyz(0.0, 0.5, 0.0),
+    //         ..default()
+    //     },
+    //     Save,
+    // ));
+    commands.spawn(
+        (
+            MaterialMeshBundle::<StandardMaterial> {
+                mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into(),
+                material: materials.add(Color::Srgba(Srgba::GREEN)),
+                transform: Transform::from_xyz(0.0, 0.5, 0.0),
+                ..default()
+            },
+            Save
+        )
+    );
     // light
     commands.spawn((
         PointLightBundle {

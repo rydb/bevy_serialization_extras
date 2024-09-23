@@ -18,10 +18,10 @@ use crate::{
 
 use bevy_app::prelude::*;
 
-/// this is the plugin that containss all of the wrappers that physics should need to serialize(minus the backend)
-pub struct PhysicsSerializationPlugin;
+/// This plugin is an addon for [`SerializationPlugin`] for physics.
+pub struct SerializationPhysicsPlugin;
 
-impl Plugin for PhysicsSerializationPlugin {
+impl Plugin for SerializationPhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ObjPlugin)
             .register_type::<StructureFlag>()

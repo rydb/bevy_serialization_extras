@@ -147,7 +147,7 @@ where
     }
     //return true;
 }
-/// takes a wrapper componnet, and deserializes it back into its unserializable asset handle varaint
+/// takes a wrapper component, and deserializes it back into its unserializable asset handle varaint
 pub fn deserialize_asset_for<WrapperThing, Thing>(
     mut things: ResMut<Assets<Thing>>,
     wrapper_thing_query: Query<

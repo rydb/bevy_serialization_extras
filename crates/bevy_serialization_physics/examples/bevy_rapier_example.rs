@@ -2,13 +2,12 @@ use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_raycast::prelude::*;
 use bevy_rapier3d::prelude::*;
-use bevy_serialization_core::plugins::SerializationPlugin;
+use bevy_serialization_core::{plugins::SerializationPlugin, prelude::SerializationBasePlugin};
 use bevy_serialization_physics::{
-    plugins::PhysicsSerializationPlugin,
-    ui::{
+    prelude::SerializationPhysicsPlugin, ui::{
         motor_controller_ui, physics_utilities_ui, rapier_joint_info_ui, PhysicsUtilitySelection,
         Selectable, Selected, SelectedMotorAxis,
-    },
+    }
 };
 
 use bevy::prelude::Vec3;
@@ -28,7 +27,8 @@ fn main() {
     ))
     .add_plugins(WorldInspectorPlugin::new())
     .add_plugins(SerializationPlugin)
-    .add_plugins(PhysicsSerializationPlugin)
+    .add_plugins(SerializationPhysicsPlugin)
+    .add_plugins(SerializationBasePlugin)
     //.insert_resource()
     //.add_plugins(SerializationPlugin)
     .register_type::<Selectable>()

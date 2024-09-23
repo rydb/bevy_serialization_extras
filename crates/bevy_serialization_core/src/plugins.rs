@@ -266,6 +266,18 @@ where
         );
     }
 }
+/// base addons for [`SerializationPlugins`]. Adds wrappers for some bevy structs that don't serialize/fully reflect otherwise.
+pub struct SerializationBasePlugin;
+
+impl Plugin for SerializationBasePlugin {
+    fn build(&self, app: &mut App) {
+        app
+        // default conversions
+        .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
+        .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
+        .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh>::default());
+    }
+}
 
 /// plugin that adds systems/plugins for serialization.
 /// `!!!THINGS THAT NEED TO BE SERIALIZED STILL MUST IMPLEMENT .register_type::<T>() IN ORDER TO BE USED!!!`
@@ -278,12 +290,7 @@ impl Plugin for SerializationPlugin {
             .insert_resource(ComponentsOnSave::default())
             .insert_resource(TypeRegistryOnSave::default())
             .insert_resource(RefreshCounter::default())
-            .insert_resource(UtilitySelection::default())
-            // default conversions
-            .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
-            .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
-            .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh>::default());
-
+            .insert_resource(UtilitySelection::default());
         app.add_plugins((SavePlugin, LoadPlugin))
             // .register_type::<Option<Entity>>()
             .register_type::<[f32; 3]>()

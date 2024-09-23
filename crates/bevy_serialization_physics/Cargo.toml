@@ -1,6 +1,6 @@
 [package]
 name = "bevy_serialization_physics"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 repository = "https://github.com/rydb/bevy_serialization_extras"
 license = "MIT"
@@ -9,7 +9,7 @@ description = "A crate for adding physics wrappers for bevy_serialization_extras
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_serialization_core = {path = "../bevy_serialization_core", version = "0.3.0"}
+bevy_serialization_core = {path = "../bevy_serialization_core", version = "0.4.0"}
 
 bevy_ecs = "0.14"
 bevy_render = "0.14"
