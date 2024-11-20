@@ -47,7 +47,7 @@ pub fn local_frame2_shift(
     mut commands: Commands,
 ) {
     for (e, link_flag, mut joint_flag) in unshifted_models.iter_mut() {
-        log::trace!("shifting model local_frame 2");
+        log::info!("shifting model local_frame 2");
         // match joint_flag.local_frame2 {
         //     Some(local_frame2) => {
 

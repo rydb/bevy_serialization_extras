@@ -1,18 +1,6 @@
 use std::collections::HashMap;
-
-// use bevy::{
-//     asset::Asset,
-//     ecs::{bundle::Bundle, component::Component, system::Commands},
-//     reflect::{GetTypeRegistration, TypeRegistration},
-//     utils::thiserror,
-// };
-
-
 use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
-use bevy_reflect::{GetTypeRegistration, TypeRegistration};
-//use bevy_utils::thiserror;
-
 
 /// trait that explains how to take struct and unwrap it into a bevy thing.
 /// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.

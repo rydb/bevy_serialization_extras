@@ -14,10 +14,8 @@ use rapier3d::{
 
 use bevy_reflect::prelude::*;
 use bevy_ecs::{prelude::*, query::QueryData};
-use bevy_reflect::TypeRegistration;
 use bevy_math::Vec3;
 use bevy_transform::prelude::*;
-use bevy_reflect::GetTypeRegistration;
 
 #[derive(Component, Default)]
 pub struct JointBounded;

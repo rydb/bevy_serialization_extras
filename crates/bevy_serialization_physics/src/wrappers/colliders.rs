@@ -3,9 +3,6 @@ use strum_macros::EnumIter;
 
 use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
-use bevy_reflect::TypeRegistration;
-use bevy_reflect::GetTypeRegistration;
-
 
 #[derive(Component, EnumIter, Reflect, Clone, Default)]
 #[reflect(Component)]

@@ -5,7 +5,7 @@ use crate::traits::*;
 
 use bevy_render::mesh::VertexAttributeValues::Float32x3;
 use bevy_ecs::prelude::*;
-use bevy_reflect::{prelude::*, TypeRegistration, GetTypeRegistration};
+use bevy_reflect::prelude::*;
 use bevy_render::prelude::*;
 use bevy_utils::prelude::*;
 use bevy_math::prelude::*;

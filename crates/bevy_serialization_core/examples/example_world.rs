@@ -5,11 +5,13 @@ use std::path::PathBuf;
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_serialization_core::{
-    bundles::model::ModelBundle, plugins::SerializationPlugin, prelude::SerializationBasePlugin, resources::{LoadRequest, SaveRequest}, ui::serialization_widgets_ui
+    plugins::SerializationPlugin, prelude::{ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave}, resources::{LoadRequest, SaveRequest}
 };
-use bevy_ui_extras::systems::visualize_right_sidepanel_for;
-use egui::TextEdit;
+use egui::{Color32, RichText, TextEdit};
+use egui_extras::{Column, TableBuilder};
 use moonshine_save::save::Save;
+use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter};
 //use urdf_rs::Geometry;
 use std::env;
 const SAVES_LOCATION: &str = "crates/bevy_serialization_core/saves";
@@ -25,11 +27,12 @@ fn main() {
             exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
             ..Default::default()
         }))
+        .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationBasePlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
-        .add_systems(Update, visualize_right_sidepanel_for::<Save>)
+        // .add_systems(Update, visualize_components_for::<Save>)
         .add_systems(Update, save_file_selection)
         .add_systems(Update, serialization_widgets_ui)
         .run();
@@ -149,5 +152,92 @@ pub fn save_file_selection(
                 }
             };
         });
+    }
+}
+
+#[derive(Default, EnumIter, Display)]
+pub enum UtilityType {
+    #[default]
+    SerializableList,
+}
+#[derive(Resource, Default)]
+pub struct UtilitySelection {
+    pub selected: UtilityType,
+}
+
+pub fn serialization_widgets_ui(
+    mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
+    mut utility_selection: ResMut<UtilitySelection>,
+    saved_components: Res<ComponentsOnSave>,
+    registered_types: Res<TypeRegistryOnSave>,
+    mut refresh_counter: ResMut<RefreshCounter>,
+    mut show_serializable: ResMut<ShowSerializable>,
+    mut show_unserializable: ResMut<ShowUnserializable>,
+    //mut asset_server: Res<AssetServer>,
+) {
+    for mut context in primary_window.iter_mut() {
+        egui::Window::new("debug widget window")
+            //.title_bar(false)
+            .show(context.get_mut(), |ui| {
+                // lay out the ui widget selection menu
+                ui.horizontal(|ui| {
+                    for utility in UtilityType::iter() {
+                        if ui.button(utility.to_string()).clicked() {
+                            utility_selection.selected = utility;
+                        }
+                    }
+                });
+
+                match utility_selection.selected {
+                    UtilityType::SerializableList => {
+                        let table = TableBuilder::new(ui);
+                        table
+                            .striped(true)
+                            .resizable(true)
+                            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                            .column(Column::auto())
+                            .min_scrolled_height(0.0)
+                            .header(20.0, |mut header| {
+                                header.col(|ui| {
+                                    ui.horizontal(|ui| {
+                                        ui.checkbox(&mut show_serializable.check, "show savable");
+                                        ui.checkbox(
+                                            &mut show_unserializable.check,
+                                            "show unsavable",
+                                        );
+                                        if ui.button("refresh").clicked() {
+                                            refresh_counter.counter += 1;
+                                        }
+                                    });
+                                });
+                            })
+                            .body(|mut body| {
+                                for (type_id, name) in saved_components.components.iter() {
+                                    if registered_types.registry.contains_key(type_id) {
+                                        if show_serializable.check == true {
+                                            body.row(30.0, |mut row| {
+                                                row.col(|ui| {
+                                                    ui.label(
+                                                        RichText::new(name).color(Color32::GREEN),
+                                                    );
+                                                });
+                                            })
+                                        }
+                                    } else {
+                                        if show_unserializable.check == true {
+                                            body.row(30.0, |mut row| {
+                                                row.col(|ui| {
+                                                    ui.label(
+                                                        RichText::new(name).color(Color32::RED),
+                                                    );
+                                                });
+                                            })
+                                        }
+                                    }
+                                }
+                            });
+                    }
+                }
+            });
     }
 }

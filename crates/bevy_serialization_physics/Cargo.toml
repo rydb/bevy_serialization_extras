@@ -21,28 +21,19 @@ bevy_math = {workspace = true}
 bevy_core_pipeline = {workspace = true}
 bevy_asset = {workspace = true}
 bevy_transform = {workspace = true}
-bevy_window = {workspace = true}
 bevy_core = {workspace = true}
 bevy_input = {workspace = true}
-#bevy = "0.13"
 bevy_rapier3d = {workspace = true}
 rapier3d = {workspace = true}
 glam = {workspace = true}
-ron = {workspace = true}
 moonshine-save = {workspace = true}
 strum = {workspace = true}
 strum_macros = {workspace = true}
 bitflags = {workspace = true}
-nalgebra = {workspace = true}
 derive_more = {workspace = true}
-bitvec = {workspace = true}
 bevy_obj = {workspace = true}
 log = {workspace = true}
-bevy_egui = {workspace = true}
 
-bevy_ui_extras = {workspace = true}
-egui = {workspace = true}
-egui_extras = {workspace = true}
 
 
 
@@ -51,4 +42,10 @@ egui_extras = {workspace = true}
 bevy = {workspace = true, features = ["dynamic_linking"]}
 bevy-inspector-egui = {workspace = true}
 bevy_mod_raycast = {workspace = true}
-bevy_camera_extras = {workspace = true}
+bitvec = {workspace = true}
+bevy_ui_extras = {workspace = true}
+bevy_window = {workspace = true}
+bevy_egui = {workspace = true}
+egui = {workspace = true}
+egui_extras = {workspace = true}
+# bevy_camera_extras = {workspace = true}

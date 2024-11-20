@@ -7,7 +7,6 @@ use std::{any::TypeId, marker::PhantomData};
 // use bevy_rapier3d::geometry::SolverGroups;
 // use bevy_rapier3d::prelude::{AsyncCollider, ImpulseJoint};
 use crate::prelude::mesh::MeshPrimitive;
-use crate::prelude::UtilitySelection;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_ecs::query::{QueryData, WorldQuery};
 use bevy_render::camera::CameraRenderGraph;
@@ -16,20 +15,9 @@ use moonshine_save::load::LoadPlugin;
 use moonshine_save::load::LoadSystem;
 use moonshine_save::save::SavePlugin;
 use moonshine_save::save::SaveSystem;
-//use crate::prelude::UtilitySelection;
-//use bevy::asset::Asset;
-//use bevy::{prelude::*, reflect::GetTypeRegistration};
-//use moonshine_save::prelude::{load_from_file_on_request, LoadPlugin, LoadSet, SavePlugin};
-//use moonshine_save::save::SaveSet;
-// use crate::loaders::urdf_loader::{UrdfLoaderPlugin, Urdf};
 use crate::traits::{ChangeChecked, FromStructure, IntoHashMap, LazyDeserialize};
-// use crate::wrappers::link::{Linkage, JointFlag, LinkQuery, StructureFlag, LinkFlag};
-// use crate::wrappers::mass::MassFlag;
-// use crate::wrappers::rigidbodies::RigidBodyFlag;
-// use crate::wrappers::solvergroupfilter::SolverGroupsFlag;
 use super::resources::*;
 use super::systems::*;
-use crate::ui::update_last_saved_typedata;
 use crate::wrappers::mesh::{GeometryFile, GeometryFlag};
 use crate::{
     traits::*,
@@ -290,7 +278,7 @@ impl Plugin for SerializationPlugin {
             .insert_resource(ComponentsOnSave::default())
             .insert_resource(TypeRegistryOnSave::default())
             .insert_resource(RefreshCounter::default())
-            .insert_resource(UtilitySelection::default());
+            ;
         app.add_plugins((SavePlugin, LoadPlugin))
             // .register_type::<Option<Entity>>()
             .register_type::<[f32; 3]>()

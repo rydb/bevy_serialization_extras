@@ -3,7 +3,6 @@ use bevy_rapier3d::prelude::SolverGroups;
 
 use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
-use bevy_reflect::TypeRegistration;
 
 pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
     memberships: GroupWrapper::ALL,

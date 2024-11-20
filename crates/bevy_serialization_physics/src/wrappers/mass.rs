@@ -2,8 +2,6 @@ use bevy_rapier3d::prelude::AdditionalMassProperties;
 
 use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
-use bevy_reflect::TypeRegistration;
-use bevy_reflect::GetTypeRegistration;
 
 #[derive(Reflect, Component, Clone)]
 pub struct MassFlag {
