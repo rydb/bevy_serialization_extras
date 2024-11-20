@@ -30,24 +30,8 @@ pub struct GeometryFile {
     pub source: String,
 }
 
-// impl ManagedTypeRegistration for GeometryFlag {
-//     fn get_all_type_registrations() -> Vec<TypeRegistration> {
-//         let mut type_registry = Vec::new();
-
-//         type_registry.push(Self::get_type_registration());
-
-//         type_registry
-//         // for enum_variant in Self::iter() {
-//         //     match enum_variant {
-//         //         Self::Primitive(..) => type_registry.push(MeshPrimitive::get_type_registration()),
-//         //         //Self::Mesh {..} => {}
-//         //     }
-//         // }
-//         // return type_registry
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq, Reflect, Copy, Component)]
+#[reflect(Component)]
 pub enum MeshPrimitive {
     Cuboid { size: [f32; 3] },
     Cylinder { radius: f32, length: f32 },

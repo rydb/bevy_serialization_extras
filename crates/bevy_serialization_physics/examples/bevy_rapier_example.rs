@@ -1,13 +1,12 @@
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_raycast::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::{plugins::SerializationPlugin, prelude::SerializationBasePlugin};
 use bevy_serialization_physics::prelude::{link::{JointAxesMaskWrapper, JointFlag}, SerializationPhysicsPlugin};
 
 use bevy::prelude::Vec3;
-use bevy_ui_extras::systems::visualize_components_for;
+use bevy_ui_extras::{systems::visualize_components_for, UiExtrasDebug};
 use bevy_window::PrimaryWindow;
 use bitvec::{field::BitField, order::Msb0, view::BitView};
 use egui::{text::LayoutJob, ScrollArea, TextFormat, Ui};
@@ -26,7 +25,8 @@ fn main() {
         RapierPhysicsPlugin::<NoUserData>::default(),
         RapierDebugRenderPlugin::default(),
     ))
-    .add_plugins(WorldInspectorPlugin::new())
+    .add_plugins(UiExtrasDebug::default())
+    // .add_plugins(WorldInspectorPlugin::new())
     .add_plugins(SerializationPlugin)
     .add_plugins(SerializationPhysicsPlugin)
     .add_plugins(SerializationBasePlugin)

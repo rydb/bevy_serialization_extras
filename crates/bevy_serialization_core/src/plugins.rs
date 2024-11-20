@@ -260,6 +260,7 @@ pub struct SerializationBasePlugin;
 impl Plugin for SerializationBasePlugin {
     fn build(&self, app: &mut App) {
         app
+
         // default conversions
         .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
@@ -273,26 +274,34 @@ pub struct SerializationPlugin;
 
 impl Plugin for SerializationPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(ShowSerializable::default())
-            .insert_resource(ShowUnserializable::default())
-            .insert_resource(ComponentsOnSave::default())
-            .insert_resource(TypeRegistryOnSave::default())
-            .insert_resource(RefreshCounter::default())
-            ;
+        app
+        .register_type::<[f32; 3]>()
+        .register_type::<AlphaMode>()
+        .register_type::<ParallaxMappingMethod>()
+        .register_type::<Camera3dDepthTextureUsage>()
+        .register_type::<InheritedVisibility>()
+        .register_type::<ScreenSpaceTransmissionQuality>()
+        .register_type::<GeometryFile>()
+        .register_type::<MeshPrimitive>()
+        .register_type::<GeometryFlag>()
+        .register_type::<[[f32; 3]; 3]>()
+        .register_type::<[Vec3; 3]>()
+        .register_type::<CameraRenderGraph>()
+        .register_type::<TypeRegistryOnSave>()
+        .register_type::<LoadRequest>()
+        .register_type::<SaveRequest>()
+        .register_type::<ComponentsOnSave>()
+        .register_type::<ShowSerializable>()
+        .register_type::<ShowUnserializable>()
+        .insert_resource(ShowSerializable::default())
+        .insert_resource(ShowUnserializable::default())
+        .insert_resource(ComponentsOnSave::default())
+        .insert_resource(TypeRegistryOnSave::default())
+        .insert_resource(RefreshCounter::default())
+        ;
         app.add_plugins((SavePlugin, LoadPlugin))
             // .register_type::<Option<Entity>>()
-            .register_type::<[f32; 3]>()
-            .register_type::<AlphaMode>()
-            .register_type::<ParallaxMappingMethod>()
-            .register_type::<Camera3dDepthTextureUsage>()
-            .register_type::<InheritedVisibility>()
-            .register_type::<ScreenSpaceTransmissionQuality>()
-            .register_type::<GeometryFile>()
-            .register_type::<MeshPrimitive>()
-            .register_type::<GeometryFlag>()
-            .register_type::<[[f32; 3]; 3]>()
-            .register_type::<[Vec3; 3]>()
-            .register_type::<CameraRenderGraph>()
+
             //.add_systems(Update, from_structure::<Linkage, ImpulseJoint>)
             .add_systems(
                 PreUpdate,

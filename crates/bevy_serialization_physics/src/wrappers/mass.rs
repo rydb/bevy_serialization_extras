@@ -4,6 +4,7 @@ use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
 
 #[derive(Reflect, Component, Clone)]
+#[reflect(Component)]
 pub struct MassFlag {
     pub mass: f32,
 }

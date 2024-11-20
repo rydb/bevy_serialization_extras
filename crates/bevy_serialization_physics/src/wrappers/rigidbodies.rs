@@ -5,6 +5,7 @@ use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
 
 #[derive(Component, Reflect, Clone, Default, EnumIter)]
+#[reflect(Component)]
 pub enum RigidBodyFlag {
     #[default]
     Fixed,
