@@ -10,41 +10,41 @@ description = "A crate which contains the plugins/systems that bevy_serializatio
 
 [dependencies]
 #bevy = "0.13"
-bevy_ecs = "0.14"
-bevy_render = "0.14"
-bevy_app = "0.14"
-bevy_reflect = "0.14"
-bevy_pbr = "0.14"
-bevy_utils = "0.14"
-bevy_math = "0.14"
-bevy_core_pipeline = "0.14"
-bevy_asset = "0.14"
-bevy_transform = "0.14"
-bevy_window = "0.14"
-bevy_color = "0.14"
+bevy_ecs = {workspace = true}
+bevy_render = {workspace = true}
+bevy_app = {workspace = true}
+bevy_reflect = {workspace = true}
+bevy_pbr = {workspace = true}
+bevy_utils = {workspace = true}
+bevy_math = {workspace = true}
+bevy_core_pipeline = {workspace = true}
+bevy_asset = {workspace = true}
+bevy_transform = {workspace = true}
+bevy_window = {workspace = true}
+bevy_color = {workspace = true}
 
-glam = "0.28"
-ron = "0.8"
-moonshine-save = "0.3.8"
-bevy_egui = "0.28"
-egui = "0.28"
-egui_extras = "0.28"
-urdf-rs = "0.8.0"
-multimap = "0.10"
-strum = "0.26"
-thiserror = "1.0"
-strum_macros = "0.26"
-bitflags = "2.4.1"
-nalgebra = "0.33"
+glam = {workspace = true}
+ron = {workspace = true}
+moonshine-save = {workspace = true}
+bevy_egui = {workspace = true}
+egui = {workspace = true}
+egui_extras = {workspace = true}
+urdf-rs = {workspace = true}
+multimap = {workspace = true}
+strum = {workspace = true}
+thiserror = {workspace = true}
+strum_macros = {workspace = true}
+bitflags = {workspace = true}
+nalgebra = {workspace = true}
 #serde = "1.0.*"
-yaserde = "0.10"
-derive_more = "0.99"
-bitvec = "1.0"
+yaserde = {workspace = true}
+derive_more = {workspace = true}
+bitvec = {workspace = true}
 #bevy_obj = "0.13"
-log = "0.4.2"
+log = {workspace = true}
 
 [dev-dependencies]
-bevy = {version = "0.14", features = ["dynamic_linking"]}
-bevy_ui_extras = "0.7"
-bevy-inspector-egui = "0.25.0"
-bevy_camera_extras = "0.10"
+bevy = {workspace = true, features = ["dynamic_linking"]}
+bevy_ui_extras = {workspace = true}
+bevy-inspector-egui = {workspace = true}
+bevy_camera_extras = {workspace = true}

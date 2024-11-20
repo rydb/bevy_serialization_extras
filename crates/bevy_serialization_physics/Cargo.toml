@@ -9,46 +9,46 @@ description = "A crate for adding physics wrappers for bevy_serialization_extras
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_serialization_core = {path = "../bevy_serialization_core", version = "0.4.0"}
+bevy_serialization_core = {workspace = true}
 
-bevy_ecs = "0.14"
-bevy_render = "0.14"
-bevy_app = "0.14"
-bevy_reflect = "0.14"
-bevy_pbr = "0.14"
-bevy_utils = "0.14"
-bevy_math = "0.14"
-bevy_core_pipeline = "0.14"
-bevy_asset = "0.14"
-bevy_transform = "0.14"
-bevy_window = "0.14"
-bevy_core = "0.14"
-bevy_input = "0.14"
+bevy_ecs = {workspace = true}
+bevy_render = {workspace = true}
+bevy_app = {workspace = true}
+bevy_reflect = {workspace = true}
+bevy_pbr = {workspace = true}
+bevy_utils = {workspace = true}
+bevy_math = {workspace = true}
+bevy_core_pipeline = {workspace = true}
+bevy_asset = {workspace = true}
+bevy_transform = {workspace = true}
+bevy_window = {workspace = true}
+bevy_core = {workspace = true}
+bevy_input = {workspace = true}
 #bevy = "0.13"
-bevy_rapier3d = "0.27.0"
-rapier3d = "0.21.0"
-glam = "0.28"
-ron = "0.8"
-moonshine-save = "0.3.*"
-strum = "0.26"
-strum_macros = "0.26"
-bitflags = "2.4.1"
-nalgebra = "0.33"
-derive_more = "0.99"
-bitvec = "1.0"
-bevy_obj = "0.14"
-log = "0.4.2"
-bevy_egui = "0.28"
+bevy_rapier3d = {workspace = true}
+rapier3d = {workspace = true}
+glam = {workspace = true}
+ron = {workspace = true}
+moonshine-save = {workspace = true}
+strum = {workspace = true}
+strum_macros = {workspace = true}
+bitflags = {workspace = true}
+nalgebra = {workspace = true}
+derive_more = {workspace = true}
+bitvec = {workspace = true}
+bevy_obj = {workspace = true}
+log = {workspace = true}
+bevy_egui = {workspace = true}
 
-bevy_ui_extras = "0.7.0"
-egui = "0.28"
-egui_extras = "0.28"
+bevy_ui_extras = {workspace = true}
+egui = {workspace = true}
+egui_extras = {workspace = true}
 
 
 
 
 [dev-dependencies]
-bevy = {version = "0.14", features = ["dynamic_linking"]}
-bevy-inspector-egui = "0.25"
-bevy_mod_raycast = "0.18"
-bevy_camera_extras = "0.10"
+bevy = {workspace = true, features = ["dynamic_linking"]}
+bevy-inspector-egui = {workspace = true}
+bevy_mod_raycast = {workspace = true}
+bevy_camera_extras = {workspace = true}
