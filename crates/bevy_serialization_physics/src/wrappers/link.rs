@@ -17,14 +17,14 @@ use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_math::Vec3;
 use bevy_transform::prelude::*;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
 pub struct JointBounded;
 
-#[derive(Component, Clone, Copy, Default)]
+#[derive(Component, Clone, Copy, Default, Reflect)]
 pub struct GeometryShiftMarked;
 
 /// flags entity geometry as already shifted to account for urdf origin
-#[derive(Component, Clone, Copy, Default)]
+#[derive(Component, Clone, Copy, Default, Reflect)]
 pub struct GeometryShifted;
 
 /// the "super-structure" that this entity is a part of. This is collecting related "parts" into their monolithic/object-oriented equivilent.
@@ -60,7 +60,8 @@ impl Default for JointLimitWrapper {
 }
 
 /// Recieves joint movements from joint sender flag
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct JointRecieverFlag {
     pub id: String,
 }
@@ -85,6 +86,7 @@ impl ChangeChecked for Linkage {
 // }
 
 #[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct LinkFlag {
     pub geom_offset: Vec3,
 }
@@ -288,6 +290,7 @@ bitflags::bitflags! {
 // }
 
 #[derive(Component, Debug, Default, Reflect, Clone)]
+#[reflect(Component)]
 pub struct JointFlag {
     // removed. local_frame1 serves the same purpose.
     //pub offset: Transform,

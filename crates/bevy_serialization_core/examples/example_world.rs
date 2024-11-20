@@ -7,6 +7,7 @@ use bevy_egui::EguiContext;
 use bevy_serialization_core::{
     plugins::SerializationPlugin, prelude::{ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave}, resources::{LoadRequest, SaveRequest}
 };
+use bevy_ui_extras::UiExtrasDebug;
 use egui::{Color32, RichText, TextEdit};
 use egui_extras::{Column, TableBuilder};
 use moonshine_save::save::Save;
@@ -30,7 +31,7 @@ fn main() {
         .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationBasePlugin)
-        .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(UiExtrasDebug::default())
         .add_systems(Startup, setup)
         // .add_systems(Update, visualize_components_for::<Save>)
         .add_systems(Update, save_file_selection)

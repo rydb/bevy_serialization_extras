@@ -1,3 +1,4 @@
+use bevy_reflect::Reflect;
 use bevy_transform::components::Transform;
 use moonshine_save::FilePath;
 use moonshine_save::save::SaveFilter;
@@ -71,7 +72,8 @@ pub struct SerializeFilter {
     pub filter: SaveFilter,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct SaveRequest {
     pub path: String,
 }
@@ -82,7 +84,8 @@ impl FilePath for SaveRequest {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct LoadRequest {
     pub path: String,
 }
@@ -94,18 +97,21 @@ impl FilePath for LoadRequest {
 }
 
 /// contains the state of the type registry since the last [`SaveRequest`]/refresh.
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
 pub struct TypeRegistryOnSave {
     pub registry: HashMap<TypeId, String>,
 }
 
 /// contains the components marked to saved since last save/refresh.
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
 pub struct ComponentsOnSave {
     pub components: HashMap<TypeId, String>,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct ShowSerializable {
     pub check: bool,
 }
@@ -116,7 +122,8 @@ impl Default for ShowSerializable {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct ShowUnserializable {
     pub check: bool,
 }

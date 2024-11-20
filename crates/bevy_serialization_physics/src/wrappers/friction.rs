@@ -13,6 +13,7 @@ pub enum FrictionCombineRule {
 }
 
 #[derive(Component, Reflect, Clone, Default)]
+#[reflect(Component)]
 pub struct FrictionFlag {
     pub friction: f32,
     pub friction_combine_rule: FrictionCombineRule,
