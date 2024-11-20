@@ -17,8 +17,6 @@ use strum_macros::{Display, EnumIter};
 use std::env;
 const SAVES_LOCATION: &str = "crates/bevy_serialization_core/saves";
 
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
-
 fn main() {
     App::new()
         .insert_resource(SetSaveFile {
