@@ -13,6 +13,7 @@ use bevy_render::camera::CameraRenderGraph;
 use moonshine_save::load::load_from_file_on_request;
 use moonshine_save::load::LoadPlugin;
 use moonshine_save::load::LoadSystem;
+use moonshine_save::save::SaveInput;
 use moonshine_save::save::SavePlugin;
 use moonshine_save::save::SaveSystem;
 use crate::traits::{ChangeChecked, FromStructure, IntoHashMap, LazyDeserialize};
@@ -25,7 +26,7 @@ use crate::{
 };
 use core::fmt::Debug;
 use moonshine_save::prelude::save_default_with;
-use moonshine_save::prelude::SaveFilter;
+// use moonshine_save::prelude::SaveFilter;
 
 
 use bevy_app::prelude::*;
@@ -325,7 +326,7 @@ impl Plugin for SerializationPlugin {
     }
 }
 // save filter for this library.
-fn save_filter(f: Res<SerializeFilter>) -> SaveFilter {
+fn save_filter(f: Res<SerializeFilter>) -> SaveInput {
     let f_modified = f.filter.clone();
     //f_modified.components.deny::<ComputedVisibility>();
     f_modified

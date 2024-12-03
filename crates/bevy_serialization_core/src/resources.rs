@@ -1,7 +1,8 @@
 use bevy_reflect::Reflect;
 use bevy_transform::components::Transform;
-use moonshine_save::FilePath;
-use moonshine_save::save::SaveFilter;
+// use moonshine_save::FilePath;
+use moonshine_save::save::SaveInput;
+use moonshine_save::GetFilePath;
 use std::collections::HashMap;
 use std::path::Path;
 use std::{any::TypeId, collections::VecDeque};
@@ -69,7 +70,7 @@ pub struct AssetSpawnRequestQueue<T: Asset> {
 /// Resource version of moonshine-save's [`SaveFilter`].
 #[derive(Resource, Default, Clone)]
 pub struct SerializeFilter {
-    pub filter: SaveFilter,
+    pub filter: SaveInput,
 }
 
 #[derive(Resource, Reflect)]
@@ -78,7 +79,7 @@ pub struct SaveRequest {
     pub path: String,
 }
 
-impl FilePath for SaveRequest {
+impl GetFilePath for SaveRequest {
     fn path(&self) -> &Path {
         self.path.as_ref()
     }
@@ -90,7 +91,7 @@ pub struct LoadRequest {
     pub path: String,
 }
 
-impl FilePath for LoadRequest {
+impl GetFilePath for LoadRequest {
     fn path(&self) -> &Path {
         self.path.as_ref()
     }
