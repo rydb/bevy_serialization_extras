@@ -6,7 +6,7 @@ use crate::{
 //     prelude::*,
 // };
 use core::fmt::Debug;
-use std::{any::TypeId, collections::{HashMap, VecDeque}};
+use std::{any::TypeId, collections::{HashMap, VecDeque}, ops::Deref};
 
 use bevy_ecs::{prelude::*, query::{QueryData, WorldQuery}};
 use bevy_asset::prelude::*;
@@ -123,20 +123,22 @@ pub fn deserialize_as_one<T, U>(
 }
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
-pub fn try_serialize_asset_for<Thing, WrapperThing>(
-    things: ResMut<Assets<Thing>>,
-    things_query: Query<(Entity, &Handle<Thing>), Or<(Changed<Handle<Thing>>, Without<WrapperThing>)>>,
+pub fn try_serialize_asset_for<Thing, WrapperThing, ThingAsset>(
+    things: ResMut<Assets<ThingAsset>>,
+    things_query: Query<(Entity, &Thing), Or<(Changed<Thing>, Without<WrapperThing>)>>,
     wrapper_things_query: Query<&WrapperThing>,
     mut commands: Commands,
 )
 // -> bool
 where
-    Thing: Asset,
-    WrapperThing: Component + for<'a> From<&'a Thing> + PartialEq,
+    Thing: Component + Deref<Target = Handle<ThingAsset>>,
+    ThingAsset: Asset,
+
+    WrapperThing: Component + for<'a> From<&'a ThingAsset> + PartialEq,
 {
     for (e, thing_handle) in things_query.iter() {
         
-        let Some(thing) = things.get(thing_handle) else {return};
+        let Some(thing) = things.get(&**thing_handle) else {return};
         let new_wrapper_thing = WrapperThing::from(thing);
         let old_wrapper_thing = wrapper_things_query.get(e).unwrap_or(&new_wrapper_thing);
 
@@ -149,28 +151,44 @@ where
     //return true;
 }
 /// takes a wrapper component, and deserializes it back into its unserializable asset handle varaint
-pub fn deserialize_asset_for<WrapperThing, Thing>(
-    mut things: ResMut<Assets<Thing>>,
+pub fn deserialize_asset_for<WrapperThing, Thing, ThingAsset>(
+    mut things: ResMut<Assets<ThingAsset>>,
     wrapper_thing_query: Query<
         (Entity, &WrapperThing),
-        Or<(Changed<WrapperThing>, Without<Handle<Thing>>)>,
+        Or<(Changed<WrapperThing>, Without<Thing>)>,
     >,
-    things_query: Query<&Handle<Thing>>,
+    things_query: Query<&Thing>,
     mut commands: Commands,
 ) where
-    WrapperThing: Component + for<'a> From<&'a Thing> + PartialEq,
-    Thing: Asset + for<'a> From<&'a WrapperThing>,
+    WrapperThing: Component + for<'a> From<&'a ThingAsset> + PartialEq,
+    // Thing: Asset + for<'a> From<&'a WrapperThing>,
+    Thing: Component + Deref<Target = Handle<ThingAsset>> + From<Handle<ThingAsset>>,
+    ThingAsset: Asset + for<'a> From<&'a WrapperThing> 
 {
+    println!("THIS IS BROKEN FIX THIS");
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         log::trace!("converting wrapper thing {:#?}", e);
 
 
-        let new_thing = Thing::from(wrapper_thing);
 
         // dont re-insert duplicates. This is to prevent change deadlock from insert causing a [`Changed`] chain
+        
+        // let mut should_try_insert = true;
+
+        // let Ok(old_thing) = things_query.get(e) else {return;};
+        // let Some(old_asset) = things.get(&**old_thing) else {return;};
+
+        // let old_thing_as_wrapper = WrapperThing::from(&old_asset);            
+
+        // if wrapper_thing != &old_thing_as_wrapper {
+        //     should_try_insert = true
+        // } else {
+        //     should_try_insert = false
+        // }
+
         let should_try_insert = {
-            if let Ok(old_thing_handle) = things_query.get(e) {
-                if let Some(old_thing) = things.get(old_thing_handle) {
+            if let Ok(old_thing) = things_query.get(e) {
+                if let Some(old_thing) = things.get(&**old_thing) {
                     let old_thing_as_wrapper = WrapperThing::from(old_thing);            
                     if wrapper_thing != &old_thing_as_wrapper {
                         true
@@ -180,9 +198,12 @@ pub fn deserialize_asset_for<WrapperThing, Thing>(
                 } else {true}
             } else {true}
         };
+
         if should_try_insert {
+            let new_thing = ThingAsset::from(wrapper_thing);
+
             let thing_handle = things.add(new_thing);
-            commands.entity(e).try_insert(thing_handle);
+            commands.entity(e).try_insert(Thing::from(thing_handle));
 
         }
 
@@ -191,29 +212,31 @@ pub fn deserialize_asset_for<WrapperThing, Thing>(
 
 /// takes a wrapper component, and attempts to deserialize it into its asset handle through [`Unwrap`]
 /// this is components that rely on file paths.
-pub fn deserialize_wrapper_for<WrapperThing, Thing>(
-    mut things: ResMut<Assets<Thing>>,
+pub fn deserialize_wrapper_for<WrapperThing, Thing, ThingAsset>(
     wrapper_thing_query: Query<
         (Entity, &WrapperThing),
-        Or<(Without<Handle<Thing>>, Changed<WrapperThing>)>,
+        Or<(Without<Thing>, Changed<WrapperThing>)>,
     >,
     asset_server: Res<AssetServer>,
+    mut things: ResMut<Assets<ThingAsset>>,
+
     mut commands: Commands,
 ) where
     WrapperThing: Component,
-    Thing: Asset + for<'a> Unwrap<&'a WrapperThing>,
+    Thing: Component + Deref<Target = Handle<ThingAsset>> + From<Handle<ThingAsset>>,
+    ThingAsset: Asset + for<'a> Unwrap<&'a WrapperThing> 
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        let thing_fetch_attempt = Thing::unwrap(wrapper_thing);
-
-        match thing_fetch_attempt {
-            Ok(thing) => {
-                let thing_handle = things.add(thing);
-                commands.entity(e).try_insert(thing_handle);
+        let asset_fetch_attempt = ThingAsset::unwrap(wrapper_thing);
+        
+        match asset_fetch_attempt {
+            Ok(asset) => {
+                let handle = things.add(asset);
+                commands.entity(e).try_insert(Thing::from(handle));
             }
             Err(file_path) => {
-                let thing_handle: Handle<Thing> = asset_server.load(file_path);
-                commands.entity(e).try_insert(thing_handle);
+                let handle: Handle<ThingAsset> = asset_server.load(file_path);
+                commands.entity(e).try_insert(Thing::from(handle));
             }
         }
     }

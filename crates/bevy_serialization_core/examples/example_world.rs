@@ -44,53 +44,42 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Plane3d::default().mesh().size(5.0, 5.0)),
-        material: materials.add(Color::srgb(0.4, 0.5, 0.3)),
-        ..default()
-    });
-    // cube
-    // commands.spawn((
-    //     ModelBundle {
-    //         mesh: Cuboid::new(1.0, 1.0, 1.0).into(),
-    //         material: Color::Srgba(Srgba::GREEN).into(),
-    //         transform: Transform::from_xyz(0.0, 0.5, 0.0),
-    //         ..default()
-    //     },
-    //     Save,
-    // ));
     commands.spawn(
         (
-            MaterialMeshBundle::<StandardMaterial> {
-                mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into(),
-                material: materials.add(Color::Srgba(Srgba::GREEN)),
-                transform: Transform::from_xyz(0.0, 0.5, 0.0),
-                ..default()
-            },
-            Save
+            Mesh3d(meshes.add(Plane3d::default().mesh().size(5.0, 5.0))),
+            MeshMaterial3d(materials.add(Color::srgb(0.4, 0.5, 0.3))),
+        )
+    );
+    // cube
+    commands.spawn(
+        (
+            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()),
+            MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
+            Transform::from_xyz(0.0, 0.5, 0.0),
+            Save,
+            Name::new("Cube"),
         )
     );
     // light
-    commands.spawn((
-        PointLightBundle {
-            point_light: PointLight {
+    commands.spawn(
+        (
+            PointLight {
                 intensity: 1500.0,
                 shadows_enabled: true,
                 ..default()
             },
-            transform: Transform::from_xyz(4.0, 8.0, 4.0),
-            ..default()
-        },
-        Save,
-    ));
+            Transform::from_xyz(4.0 ,8.0, 4.0),
+            Save,
+        )
+    );
     // camera
-    commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        },
-        //Save,
-    ));
+    commands.spawn(
+        (
+            Camera3d::default(),
+            Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            Save,
+        )
+    );
 }
 
 #[derive(Resource, Default)]

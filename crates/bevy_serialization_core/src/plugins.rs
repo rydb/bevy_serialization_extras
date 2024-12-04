@@ -1,3 +1,4 @@
+use std::ops::Deref;
 //use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 //use bevy::ecs::query::{QueryData, WorldQuery};
 //use bevy::render::camera::CameraRenderGraph;
@@ -145,18 +146,21 @@ where
 
 /// plugin for serialization for WrapperComponent -> Asset, Asset -> WrapperComponent
 #[derive(Default)]
-pub struct SerializeAssetFor<T, U> {
+pub struct SerializeAssetFor<T, U, V> {
     thing: PhantomData<fn() -> T>,
     wrapper_thing: PhantomData<fn() -> U>,
+    thing_asset: PhantomData<fn() -> V>,
+
 }
 
-impl<T, U> Plugin for SerializeAssetFor<T, U>
+impl<T, U, V> Plugin for SerializeAssetFor<T, U, V>
 where
-    T: 'static + Asset + for<'a> From<&'a U>,
-    U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T> + PartialEq,
+    T: 'static + Component + Deref<Target = Handle<V>> + From<Handle<V>>,
+    U: 'static + Component + GetTypeRegistration + for<'a> From<&'a V> + PartialEq,
+    V: 'static + Asset + for<'a> From<&'a U>
 {
     fn build(&self, app: &mut App) {
-        skip_serializing::<Handle<T>>(app);
+        skip_serializing::<T>(app);
 
         app
         .register_type::<U>()
@@ -171,8 +175,8 @@ where
         // );
         .add_systems(PreUpdate, 
             (
-                try_serialize_asset_for::<T, U>,
-                deserialize_asset_for::<U, T>,
+                try_serialize_asset_for::<T, U, V>,
+                deserialize_asset_for::<U, T, V>,
             ).chain()
 
         );
@@ -183,33 +187,36 @@ where
 /// This is for assets that don't have 1:1 conversions from asset to warpper.
 ///
 /// !!!Changes made to these assets at runtime will not be saved!!!
-pub struct DeserializeAssetFrom<U, T> {
+pub struct DeserializeAssetFrom<U, T, V> {
     wrapper_thing: PhantomData<fn() -> U>,
     thing: PhantomData<fn() -> T>,
+    thing_asset: PhantomData<fn() -> V>,
 }
 
-impl<U, T> Plugin for DeserializeAssetFrom<U, T>
+impl<U, T, V> Plugin for DeserializeAssetFrom<U, T, V>
 where
     U: 'static + Component + GetTypeRegistration,
-    T: 'static + Asset + for<'a> Unwrap<&'a U>,
+    T: 'static + Component + Deref<Target = Handle<V>> + From<Handle<V>>,
+    V: 'static + Asset + for<'a> Unwrap<&'a U>,
 {
     fn build(&self, app: &mut App) {
-        skip_serializing::<Handle<T>>(app);
+        skip_serializing::<T>(app);
         
         app
         .register_type::<U>()
         .add_systems(
             Update,
-            (deserialize_wrapper_for::<U, T>).after(LoadSystem::PostLoad),
+            (deserialize_wrapper_for::<U, T, V>).after(LoadSystem::PostLoad),
         );
     }
 }
 
-impl<U, T> Default for DeserializeAssetFrom<U, T> {
+impl<U, T, V> Default for DeserializeAssetFrom<U, T, V> {
     fn default() -> Self {
         Self {
             wrapper_thing: PhantomData,
             thing: PhantomData,
+            thing_asset: PhantomData,
         }
     }
 }
@@ -263,9 +270,9 @@ impl Plugin for SerializationBasePlugin {
         app
 
         // default conversions
-        .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
-        .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
-        .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh>::default());
+        .add_plugins(SerializeAssetFor::<MeshMaterial3d<StandardMaterial>, MaterialFlag, _>::default())
+        .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh3d, Mesh>::default())
+        .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh3d, Mesh>::default());
     }
 }
 
