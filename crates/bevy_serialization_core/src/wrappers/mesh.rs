@@ -24,6 +24,7 @@ const IDENTITY_MATRIX: [Vec3; 3] = [
     Vec3::new(0.0, 0.0, 1.0),
 ];
 
+
 #[derive(Default, Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct GeometryFile {

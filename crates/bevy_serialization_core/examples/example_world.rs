@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
+use bevy_obj::ObjPlugin;
 use bevy_serialization_core::{
     plugins::SerializationPlugin, prelude::{ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave}, resources::{LoadRequest, SaveRequest}
 };
@@ -26,6 +27,7 @@ fn main() {
             exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
             ..Default::default()
         }))
+        .add_plugins(ObjPlugin)
         .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationBasePlugin)
@@ -33,8 +35,18 @@ fn main() {
         .add_systems(Startup, setup)
         // .add_systems(Update, visualize_components_for::<Save>)
         .add_systems(Update, save_file_selection)
+        .add_systems(Update, list_path)
         .add_systems(Update, serialization_widgets_ui)
         .run();
+}
+
+pub fn list_path(
+    meshes: Query<&Mesh3d>,
+) {
+    for mesh in meshes.iter() {
+        //println!("path is {:#?}", mesh.0.path());
+    }
+
 }
 
 /// set up a simple 3D scene
@@ -42,6 +54,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     // plane
     commands.spawn(
@@ -50,10 +63,12 @@ fn setup(
             MeshMaterial3d(materials.add(Color::srgb(0.4, 0.5, 0.3))),
         )
     );
+    let mesh_handle = asset_server.load::<Mesh>("../../../assets/cube.obj");
     // cube
     commands.spawn(
         (
-            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()),
+            //Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()),
+            Mesh3d(mesh_handle),
             MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
             Transform::from_xyz(0.0, 0.5, 0.0),
             Save,

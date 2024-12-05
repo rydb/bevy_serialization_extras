@@ -240,6 +240,7 @@ pub fn deserialize_wrapper_for<Wrapper, Target, TargetAsset>(
     Target: Component + Deref<Target = Handle<TargetAsset>> + From<Handle<TargetAsset>>,
     TargetAsset: Asset + for<'a> Unwrap<&'a Wrapper> 
 {
+    //println!("deserialize targets: {:#?}", wrapper_thing_query.iter().count());
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         let asset_fetch_attempt = TargetAsset::unwrap(wrapper_thing);
         

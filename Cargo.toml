@@ -56,7 +56,6 @@ nalgebra = "0.33"
 yaserde = "0.10"
 derive_more = "0.99"
 bitvec = "1.0"
-#bevy_obj = "0.13"
 log = "0.4.2"
 bevy_serialization_core = {path = "./crates/bevy_serialization_core", version = "0.5.0"}
 bevy_serialization_physics = {path = "./crates/bevy_serialization_physics", version = "0.5.0"}

@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, Range};
 //use bevy::core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 //use bevy::ecs::query::{QueryData, WorldQuery};
 //use bevy::render::camera::CameraRenderGraph;
@@ -11,6 +11,7 @@ use crate::prelude::mesh::MeshPrimitive;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_ecs::query::{QueryData, WorldQuery};
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph};
+use bevy_render::view::ColorGrading;
 use moonshine_save::file_from_resource;
 use moonshine_save::load::{load, load_from_file_on_request};
 use moonshine_save::load::LoadPlugin;
@@ -34,7 +35,7 @@ use moonshine_save::prelude::save_default_with;
 use bevy_app::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
-use bevy_reflect::GetTypeRegistration;
+use bevy_reflect::{GetTypeRegistration, ReflectDeserialize, ReflectSerialize};
 use bevy_pbr::prelude::*;
 use bevy_render::prelude::*;
 use bevy_math::prelude::*;
@@ -272,8 +273,8 @@ impl Plugin for SerializationBasePlugin {
 
         // default conversions
         .add_plugins(SerializeAssetFor::<MeshMaterial3d<StandardMaterial>, MaterialFlag, _>::default())
-        .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh3d, Mesh>::default())
-        .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh3d, Mesh>::default())
+        // .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh3d, Mesh>::default())
+        // .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh3d, Mesh>::default())
         ;
     }
 }
@@ -304,6 +305,11 @@ impl Plugin for SerializationPlugin {
         .register_type::<ComponentsOnSave>()
         .register_type::<ShowSerializable>()
         .register_type::<ShowUnserializable>()
+        .register_type::<Range<f32>>()
+        .register_type_data::<Range<f32>, ReflectSerialize>()
+        .register_type_data::<Range<f32>, ReflectDeserialize>()
+
+        //.register_type_data::<ColorGrading, ReflectSerialize>() 
         .insert_resource(ShowSerializable::default())
         .insert_resource(ShowUnserializable::default())
         .insert_resource(ComponentsOnSave::default())
