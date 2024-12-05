@@ -1,4 +1,6 @@
+use bevy_derive::{Deref, DerefMut};
 use bevy_reflect::Reflect;
+use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph, Exposure};
 use bevy_transform::components::Transform;
 // use moonshine_save::FilePath;
 use moonshine_save::save::SaveInput;
@@ -68,9 +70,34 @@ pub struct AssetSpawnRequestQueue<T: Asset> {
 }
 
 /// Resource version of moonshine-save's [`SaveFilter`].
-#[derive(Resource, Default, Clone)]
-pub struct SerializeFilter {
-    pub filter: SaveInput,
+#[derive(Resource, Clone, DerefMut, Deref)]
+pub struct SerializeFilter(pub SaveInput);
+impl Default for SerializeFilter {
+    fn default() -> Self {
+        // Due to: https://github.com/Zeenobit/moonshine_save/issues/16
+        // components that do not implement reflect break save/load.
+        // this is just an a default list of unimplemented components to skip serializing over to stop this breakage.
+        // make a pr to fix this if this issue is resolved.
+        Self(
+            {
+                // Due to bevy_scene taking `self` and not `&mut self`, to stop partial move errors, It requires... this.. for initialization.
+                let filter = SaveInput::default();
+                let mut new_filter = SaveInput::default();
+                
+                new_filter.components = filter
+                .components
+                .clone()
+                .deny::<CameraMainTextureUsages>()
+                .deny::<CameraRenderGraph>()
+                .deny::<Exposure>()
+                //.deny::<InheritedVisibility>()
+                
+                ;
+                new_filter
+            }
+
+        )
+    }
 }
 
 #[derive(Resource, Reflect)]

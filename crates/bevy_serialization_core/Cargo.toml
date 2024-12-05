@@ -20,6 +20,7 @@ bevy_core_pipeline = {workspace = true}
 bevy_asset = {workspace = true}
 bevy_transform = {workspace = true}
 bevy_color = {workspace = true}
+bevy_derive = {workspace = true}
 
 glam = {workspace = true}
 ron = {workspace = true}

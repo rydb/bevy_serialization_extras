@@ -3,7 +3,7 @@ use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
 
 /// trait that explains how to take struct and unwrap it into a bevy thing.
-/// Like [`From`], but returns either the Thing to be unwrapped or a filepath to thing.
+/// Like [`From`], but returns either the Target to be unwrapped or a filepath to thing.
 pub trait Unwrap<T>: Sized {
     fn unwrap(value: T) -> Result<Self, String>;
 }

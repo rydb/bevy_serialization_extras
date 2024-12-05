@@ -12,6 +12,7 @@ use bevy_ecs::{prelude::*, query::{QueryData, WorldQuery}};
 use bevy_asset::prelude::*;
 use bevy_reflect::TypeInfo;
 use bevy_render::prelude::*;
+use log::warn;
 use moonshine_save::save::Save;
 
 //FIXME: implement this properly. Once an asset builder that could use this exists.
@@ -46,13 +47,13 @@ pub fn serialize_structures_as_assets<ThingSet, AssetType>(
 //     )
 // }
 
-pub fn deserialize_assets_as_structures<ThingAsset>(
-    thing_assets: Res<Assets<ThingAsset>>,
-    mut asset_spawn_requests: ResMut<AssetSpawnRequestQueue<ThingAsset>>,
+pub fn deserialize_assets_as_structures<TargetAsset>(
+    thing_assets: Res<Assets<TargetAsset>>,
+    mut asset_spawn_requests: ResMut<AssetSpawnRequestQueue<TargetAsset>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) where
-    ThingAsset: Asset + Clone + FromStructure + LazyDeserialize,
+    TargetAsset: Asset + Clone + FromStructure + LazyDeserialize,
 {
     let mut failed_requests = VecDeque::new();
     while asset_spawn_requests.requests.len() != 0 {
@@ -90,17 +91,17 @@ pub fn deserialize_assets_as_structures<ThingAsset>(
 }
 
 /// takes a component, and spawns a serializable copy of it on its entity
-pub fn serialize_for<Thing, WrapperThing>(
-    thing_query: Query<(Entity, &Thing), Without<WrapperThing>>,
+pub fn serialize_for<Target, Wrapper>(
+    thing_query: Query<(Entity, &Target), Without<Wrapper>>,
     mut commands: Commands,
 ) where
-    Thing: Component,
-    WrapperThing: Component + for<'a> From<&'a Thing>,
+    Target: Component,
+    Wrapper: Component + for<'a> From<&'a Target>,
 {
     for (e, f) in thing_query.iter() {
         // entity may not exist when inserting component if entity is deleted in the same frame as this.
         // this checks to make sure it exists to prevent a crash.
-        commands.entity(e).try_insert(WrapperThing::from(f));
+        commands.entity(e).try_insert(Wrapper::from(f));
     }
 }
 
@@ -123,49 +124,62 @@ pub fn deserialize_as_one<T, U>(
 }
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
-pub fn try_serialize_asset_for<Thing, WrapperThing, ThingAsset>(
-    things: ResMut<Assets<ThingAsset>>,
-    things_query: Query<(Entity, &Thing), Or<(Changed<Thing>, Without<WrapperThing>)>>,
-    wrapper_things_query: Query<&WrapperThing>,
+pub fn try_serialize_asset_for<Target, Wrapper, TargetAsset>(
+    things: Res<Assets<TargetAsset>>,
+    things_query: Query<(Entity, &Target), Or<(Changed<Target>, Without<Wrapper>)>>,
+    wrapper_things_query: Query<&Wrapper>,
     mut commands: Commands,
 )
 // -> bool
 where
-    Thing: Component + Deref<Target = Handle<ThingAsset>>,
-    ThingAsset: Asset,
+    Target: Component + Deref<Target = Handle<TargetAsset>>,
+    TargetAsset: Asset,
 
-    WrapperThing: Component + for<'a> From<&'a ThingAsset> + PartialEq,
+    Wrapper: Component + for<'a> From<&'a TargetAsset> + PartialEq,
 {
     for (e, thing_handle) in things_query.iter() {
-        
-        let Some(thing) = things.get(&**thing_handle) else {return};
-        let new_wrapper_thing = WrapperThing::from(thing);
-        let old_wrapper_thing = wrapper_things_query.get(e).unwrap_or(&new_wrapper_thing);
+        // let x = thing_handle.clone();
+        let Some(thing) = things.get(thing_handle.id()) else {
+            //println!("no thing found");
+            return;
+        };
+        let new_wrapper_thing = Wrapper::from(thing);
 
-        // don't re-insert the same component
-        if &new_wrapper_thing != old_wrapper_thing {
-            log::trace!("changing Wrapperthing to match changed asset for {:#?}", e);
-            commands.entity(e).try_insert(new_wrapper_thing);
+        let mut insert = true;
+        
+        if let Ok(old_wrapper_thing) = wrapper_things_query.get(e) {
+            // don't re-insert the same component
+            if &new_wrapper_thing != old_wrapper_thing {
+                log::trace!("changing Wrapper to match changed asset for {:#?}", e);
+                insert = false;
+            }
         }
+
+        if insert {
+            commands.entity(e).try_insert(new_wrapper_thing);
+
+        }
+
     }
     //return true;
 }
 /// takes a wrapper component, and deserializes it back into its unserializable asset handle varaint
-pub fn deserialize_asset_for<WrapperThing, Thing, ThingAsset>(
-    mut things: ResMut<Assets<ThingAsset>>,
+pub fn deserialize_asset_for<Wrapper, Target, TargetAsset>(
+    mut things: ResMut<Assets<TargetAsset>>,
     wrapper_thing_query: Query<
-        (Entity, &WrapperThing),
-        Or<(Changed<WrapperThing>, Without<Thing>)>,
+        (Entity, &Wrapper),
+        Or<(Changed<Wrapper>, Without<Target>)>,
     >,
-    things_query: Query<&Thing>,
+    things_query: Query<&Target>,
     mut commands: Commands,
 ) where
-    WrapperThing: Component + for<'a> From<&'a ThingAsset> + PartialEq,
-    // Thing: Asset + for<'a> From<&'a WrapperThing>,
-    Thing: Component + Deref<Target = Handle<ThingAsset>> + From<Handle<ThingAsset>>,
-    ThingAsset: Asset + for<'a> From<&'a WrapperThing> 
+    Wrapper: Component + for<'a> From<&'a TargetAsset> + PartialEq,
+    // Target: Asset + for<'a> From<&'a Wrapper>,
+    Target: Component + Deref<Target = Handle<TargetAsset>> + From<Handle<TargetAsset>>,
+    TargetAsset: Asset + for<'a> From<&'a Wrapper> 
 {
-    println!("THIS IS BROKEN FIX THIS");
+    //println!("THIS IS BROKEN FIX THIS");
+    //println!("entities in wrapper thing: {:#?}", wrapper_thing_query.iter().count());
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         log::trace!("converting wrapper thing {:#?}", e);
 
@@ -178,18 +192,18 @@ pub fn deserialize_asset_for<WrapperThing, Thing, ThingAsset>(
         // let Ok(old_thing) = things_query.get(e) else {return;};
         // let Some(old_asset) = things.get(&**old_thing) else {return;};
 
-        // let old_thing_as_wrapper = WrapperThing::from(&old_asset);            
+        // let old_thing_as_wrapper = Wrapper::from(&old_asset);            
 
         // if wrapper_thing != &old_thing_as_wrapper {
         //     should_try_insert = true
         // } else {
         //     should_try_insert = false
         // }
-
+        
         let should_try_insert = {
             if let Ok(old_thing) = things_query.get(e) {
                 if let Some(old_thing) = things.get(&**old_thing) {
-                    let old_thing_as_wrapper = WrapperThing::from(old_thing);            
+                    let old_thing_as_wrapper = Wrapper::from(old_thing);            
                     if wrapper_thing != &old_thing_as_wrapper {
                         true
                     } else {
@@ -200,10 +214,10 @@ pub fn deserialize_asset_for<WrapperThing, Thing, ThingAsset>(
         };
 
         if should_try_insert {
-            let new_thing = ThingAsset::from(wrapper_thing);
+            let new_thing = TargetAsset::from(wrapper_thing);
 
             let thing_handle = things.add(new_thing);
-            commands.entity(e).try_insert(Thing::from(thing_handle));
+            commands.entity(e).try_insert(Target::from(thing_handle));
 
         }
 
@@ -212,49 +226,49 @@ pub fn deserialize_asset_for<WrapperThing, Thing, ThingAsset>(
 
 /// takes a wrapper component, and attempts to deserialize it into its asset handle through [`Unwrap`]
 /// this is components that rely on file paths.
-pub fn deserialize_wrapper_for<WrapperThing, Thing, ThingAsset>(
+pub fn deserialize_wrapper_for<Wrapper, Target, TargetAsset>(
     wrapper_thing_query: Query<
-        (Entity, &WrapperThing),
-        Or<(Without<Thing>, Changed<WrapperThing>)>,
+        (Entity, &Wrapper),
+        Or<(Without<Target>, Changed<Wrapper>)>,
     >,
     asset_server: Res<AssetServer>,
-    mut things: ResMut<Assets<ThingAsset>>,
+    mut things: ResMut<Assets<TargetAsset>>,
 
     mut commands: Commands,
 ) where
-    WrapperThing: Component,
-    Thing: Component + Deref<Target = Handle<ThingAsset>> + From<Handle<ThingAsset>>,
-    ThingAsset: Asset + for<'a> Unwrap<&'a WrapperThing> 
+    Wrapper: Component,
+    Target: Component + Deref<Target = Handle<TargetAsset>> + From<Handle<TargetAsset>>,
+    TargetAsset: Asset + for<'a> Unwrap<&'a Wrapper> 
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        let asset_fetch_attempt = ThingAsset::unwrap(wrapper_thing);
+        let asset_fetch_attempt = TargetAsset::unwrap(wrapper_thing);
         
         match asset_fetch_attempt {
             Ok(asset) => {
                 let handle = things.add(asset);
-                commands.entity(e).try_insert(Thing::from(handle));
+                commands.entity(e).try_insert(Target::from(handle));
             }
             Err(file_path) => {
-                let handle: Handle<ThingAsset> = asset_server.load(file_path);
-                commands.entity(e).try_insert(Thing::from(handle));
+                let handle: Handle<TargetAsset> = asset_server.load(file_path);
+                commands.entity(e).try_insert(Target::from(handle));
             }
         }
     }
 }
 
 /// deserializes a wrapper component into its unserializable component variant.
-pub fn deserialize_for<WrapperThing, Thing>(
+pub fn deserialize_for<Wrapper, Target>(
     wrapper_thing_query: Query<
-        (Entity, &WrapperThing),
-        Or<(Without<Thing>, Changed<WrapperThing>)>,
+        (Entity, &Wrapper),
+        Or<(Without<Target>, Changed<Wrapper>)>,
     >,
     mut commands: Commands,
 ) where
-    Thing: Component + for<'a> From<&'a WrapperThing>,
-    WrapperThing: Component,
+    Target: Component + for<'a> From<&'a Wrapper>,
+    Wrapper: Component,
 {
     for (e, f) in wrapper_thing_query.iter() {
-        commands.entity(e).try_insert(Thing::from(f));
+        commands.entity(e).try_insert(Target::from(f));
     }
 }
 

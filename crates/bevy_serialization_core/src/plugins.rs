@@ -10,8 +10,9 @@ use std::{any::TypeId, marker::PhantomData};
 use crate::prelude::mesh::MeshPrimitive;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_ecs::query::{QueryData, WorldQuery};
-use bevy_render::camera::CameraRenderGraph;
-use moonshine_save::load::load_from_file_on_request;
+use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph};
+use moonshine_save::file_from_resource;
+use moonshine_save::load::{load, load_from_file_on_request};
 use moonshine_save::load::LoadPlugin;
 use moonshine_save::load::LoadSystem;
 use moonshine_save::save::SaveInput;
@@ -53,8 +54,8 @@ pub fn skip_serializing<SkippedType: 'static>(
     let mut skip_list = app.world_mut().get_resource_or_insert_with::<L>(|| L::default());
 
     let skip_list_copy = skip_list.clone();
-    skip_list.filter.components = skip_list_copy
-        .filter
+    skip_list.0.components = skip_list_copy
+        .0
         .components
         .deny_by_id(TypeId::of::<SkippedType>());
 
@@ -272,7 +273,8 @@ impl Plugin for SerializationBasePlugin {
         // default conversions
         .add_plugins(SerializeAssetFor::<MeshMaterial3d<StandardMaterial>, MaterialFlag, _>::default())
         .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh3d, Mesh>::default())
-        .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh3d, Mesh>::default());
+        .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh3d, Mesh>::default())
+        ;
     }
 }
 
@@ -295,6 +297,7 @@ impl Plugin for SerializationPlugin {
         .register_type::<[[f32; 3]; 3]>()
         .register_type::<[Vec3; 3]>()
         .register_type::<CameraRenderGraph>()
+        .register_type::<CameraMainTextureUsages>()
         .register_type::<TypeRegistryOnSave>()
         .register_type::<LoadRequest>()
         .register_type::<SaveRequest>()
@@ -324,17 +327,17 @@ impl Plugin for SerializationPlugin {
                 update_last_saved_typedata.run_if(resource_changed::<RefreshCounter>),
             )
             .add_systems(
-                Update,
-                save_default_with(save_filter).into_file_on_request::<SaveRequest>(),
+                PreUpdate,
+                //save_default_with(save_filter).into_file_on_request::<SaveRequest>(),
+                save_default_with(save_filter).into(file_from_resource::<SaveRequest>()),
             )
             .add_systems(Update, add_inherieted_visibility.after(LoadSystem::PostLoad))
             .add_systems(Update, add_view_visibility.after(LoadSystem::PostLoad))
-            .add_systems(Update, load_from_file_on_request::<LoadRequest>());
+            .add_systems(PreUpdate, load(file_from_resource::<LoadRequest>()));
     }
 }
 // save filter for this library.
 fn save_filter(f: Res<SerializeFilter>) -> SaveInput {
-    let f_modified = f.filter.clone();
-    //f_modified.components.deny::<ComputedVisibility>();
-    f_modified
+
+    f.0.clone()
 }
