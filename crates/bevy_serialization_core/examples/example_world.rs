@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_obj::ObjPlugin;
+use bevy_render::mesh::Indices;
 use bevy_serialization_core::{
     plugins::SerializationPlugin, prelude::{ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave}, resources::{LoadRequest, SaveRequest}
 };
@@ -27,7 +28,7 @@ fn main() {
             exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
             ..Default::default()
         }))
-        .add_plugins(ObjPlugin)
+        //.add_plugins(ObjPlugin)
         .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationBasePlugin)
@@ -35,20 +36,61 @@ fn main() {
         .add_systems(Startup, setup)
         // .add_systems(Update, visualize_components_for::<Save>)
         .add_systems(Update, save_file_selection)
-        .add_systems(Update, list_path)
+        .add_systems(PostStartup, serialize_as_gltf)
         .add_systems(Update, serialization_widgets_ui)
         .run();
 }
 
-pub fn list_path(
-    meshes: Query<&Mesh3d>,
+pub fn serialize_as_gltf(
+    mut meshes: ResMut<Assets<Mesh>>,
+    models: Query<(&Mesh3d, &Name), With<GltfTarget>>
 ) {
-    for mesh in meshes.iter() {
-        //println!("path is {:#?}", mesh.0.path());
-    }
+    let Ok((mesh, name)) = models.get_single()
+    .inspect_err(|err| warn!("test only works with 1 model at a time. Actual error: {:#?}", err))
+    else {return;};
 
+
+    let Some(mesh) = meshes.get(mesh) else {
+        warn!("mesh not fetchable from handle. Exiting");
+        return;
+    };
+    println!("serializing: {:#?}", name);
+
+    let Some(positions)= mesh.attribute(Mesh::ATTRIBUTE_POSITION) else {
+        warn!("Expected positions. Exiting");
+        return;
+    };
+    let Some(positions) = positions.as_float3() else {
+        warn!("Expected positions ot be float3. Exiting");
+        return;
+    };
+
+    let Some(normals) = mesh.attribute(Mesh::ATTRIBUTE_NORMAL) else {
+        warn!("Expected normals. Exiting");
+        return;
+    };
+    let Some(normals) = normals.as_float3() else {
+        warn!("Expected normals to be flaot3. Exiting");
+        return;
+    };
+
+    let Some(indices) = mesh.indices() else {
+        warn!("Expected indices. Exiting");
+        return;
+    };
+    let indices = indices.iter().map(|i| i as u32).collect::<Vec<u32>>();
+
+    let mut root = gltf_json::Root::default();
+
+    // let mut serializeable_mesh = SerializeableMesh {
+    //     positions: positions.to_vec(),
+    //     normals: normals.to_vec(),
+    //     indices: indices.to_vec(),
+    // };
 }
 
+#[derive(Component)]
+pub struct GltfTarget;
 /// set up a simple 3D scene
 fn setup(
     mut commands: Commands,
@@ -63,16 +105,25 @@ fn setup(
             MeshMaterial3d(materials.add(Color::srgb(0.4, 0.5, 0.3))),
         )
     );
-    let mesh_handle = asset_server.load::<Mesh>("../../../assets/cube.obj");
-    // cube
+    let gltf = GltfAssetLabel::Scene(0).from_asset("../../../assets/cube.glb");
+    commands.spawn(
+        SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("../../../assets/cube.glb"),))
+    );
+
+    let mesh_handle: Handle<Mesh> = asset_server.load(GltfAssetLabel::Mesh(0).from_asset("../../../assets/cube.glb"));
+    println!("mesh handle is {:#?}", mesh_handle);
+    // // cube
     commands.spawn(
         (
             //Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()),
+            //SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("../../../assets/cube.glb"))),
+
             Mesh3d(mesh_handle),
             MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
             Transform::from_xyz(0.0, 0.5, 0.0),
             Save,
             Name::new("Cube"),
+            GltfTarget
         )
     );
     // light

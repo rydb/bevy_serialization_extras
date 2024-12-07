@@ -16,6 +16,8 @@ members = [
 
 [workspace.dependencies]
 bevy-inspector-egui = "0.28.0"
+gltf = "1.4"
+gltf-json = "1.4"
 # bevy_camera_extras = "0.14"
 bevy_ui_extras = "0.16"
 bevy_rapier3d = "0.27"
