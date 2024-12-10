@@ -88,7 +88,7 @@ struct Vertex {
 }
 
 pub fn serialize_as_gltf(
-    mut meshes: ResMut<Assets<Mesh>>,
+    meshes: ResMut<Assets<Mesh>>,
     models: Query<(Entity, &Mesh3d, &Name), With<GltfTarget>>,
     mut commands: Commands,
 ) {
@@ -112,21 +112,6 @@ pub fn serialize_as_gltf(
         warn!("Expected positions ot be float3. Exiting");
         return;
     };
-
-    let Some(normals) = mesh.attribute(Mesh::ATTRIBUTE_NORMAL) else {
-        warn!("Expected normals. Exiting");
-        return;
-    };
-    let Some(normals) = normals.as_float3() else {
-        warn!("Expected normals to be flaot3. Exiting");
-        return;
-    };
-
-    let Some(indices) = mesh.indices() else {
-        warn!("Expected indices. Exiting");
-        return;
-    };
-
     let triangle_veritcies = triangles.to_vec().iter()
     .map(|n| {
         Vertex {
@@ -134,7 +119,6 @@ pub fn serialize_as_gltf(
             color: [0.0, 0.0, 0.0]
         }
     }).collect::<Vec<_>>();
-    let indices = indices.iter().map(|i| i as u32).collect::<Vec<u32>>();
 
     let (min, max) = bounding_coords(&triangle_veritcies);
 
@@ -249,12 +233,7 @@ pub fn serialize_as_gltf(
         Output::Binary => todo!(),
     }
     commands.entity(e).remove::<GltfTarget>();
-    // }
-    // let mut serializeable_mesh = SerializeableMesh {
-    //     positions: positions.to_vec(),
-    //     normals: normals.to_vec(),
-    //     indices: indices.to_vec(),
-    // };
+
 }
 
 #[derive(Component, Reflect)]
