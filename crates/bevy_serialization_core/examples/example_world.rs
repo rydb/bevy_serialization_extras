@@ -1,19 +1,19 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
+use gltf::json::{self as json};
 
-use std::{fs, io::Write, mem, path::PathBuf};
+use std::{borrow::Cow, fs, io::{self, Write}, mem, path::PathBuf};
 
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
-use bevy_obj::ObjPlugin;
-use bevy_render::mesh::Indices;
 use bevy_serialization_core::{
     plugins::SerializationPlugin, prelude::{ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave}, resources::{LoadRequest, SaveRequest}
 };
-use gltf_json::validation::Checked;
+use bytemuck::{Pod, Zeroable};
+use json::validation::Checked::Valid;
+use json::validation::USize64;
 use bevy_ui_extras::UiExtrasDebug;
 use egui::{Color32, RichText, TextEdit};
 use egui_extras::{Column, TableBuilder};
-use gltf_json::validation::USize64;
 use moonshine_save::save::Save;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
@@ -45,7 +45,7 @@ fn main() {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-enum Output {
+pub enum Output {
     /// Output standard glTF.
     Standard,
 
@@ -53,25 +53,27 @@ enum Output {
     Binary,
 }
 
-fn to_padded_byte_vector<T>(vec: Vec<T>) -> Vec<u8> {
-    let byte_length = vec.len() * mem::size_of::<T>();
-    let byte_capacity = vec.capacity() * mem::size_of::<T>();
-    let alloc = vec.into_boxed_slice();
-    let ptr = Box::<[T]>::into_raw(alloc) as *mut u8;
-    let mut new_vec = unsafe { Vec::from_raw_parts(ptr, byte_length, byte_capacity) };
-    while new_vec.len() % 4 != 0 {
-        new_vec.push(0); // pad to multiple of four bytes
-    }
-    new_vec
+struct MeshOut {
+    vertices: Vec<Vertex>,
+    indices: Vec<u32>,
 }
 
+// bytemuck crate uses unsafe under the hood.
+fn dynamic_mesh_to_bytes(mesh: &MeshOut) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(bytemuck::cast_slice(&mesh.vertices));
+    bytes.extend_from_slice(bytemuck::cast_slice(&mesh.indices));
+    bytes
+}
+
+
 /// Calculate bounding coordinates of a list of vertices, used for the clipping distance of the model
-fn bounding_coords(points: &[Vertex]) -> ([f32; 3], [f32; 3]) {
+fn bounding_coords(vertices: &[[f32; 3]]) -> ([f32; 3], [f32; 3]) {
     let mut min = [f32::MAX, f32::MAX, f32::MAX];
     let mut max = [f32::MIN, f32::MIN, f32::MIN];
 
-    for point in points {
-        let p = point.position;
+    for point in vertices.iter() {
+        let p = point;
         for i in 0..3 {
             min[i] = f32::min(min[i], p[i]);
             max[i] = f32::max(max[i], p[i]);
@@ -80,23 +82,37 @@ fn bounding_coords(points: &[Vertex]) -> ([f32; 3], [f32; 3]) {
     (min, max)
 }
 
-#[derive(Copy, Clone, Debug)]
+
+fn align_to_multiple_of_four(n: &mut usize) {
+    *n = (*n + 3) & !3;
+}
+
+#[derive(Copy, Clone, Debug, Pod, Zeroable)]
 #[repr(C)]
 struct Vertex {
     position: [f32; 3],
-    color: [f32; 3],
+    normal: [f32; 3],
 }
+
+#[derive(Debug)]
+pub enum GltfError {
+    //    FileNonExistant,
+    CouldNotWriteToFile(io::Error),
+    SerializationError,
+    GltfOutputError,
+    BinFileSizeLimitError,
+}
+
 
 pub fn serialize_as_gltf(
     meshes: ResMut<Assets<Mesh>>,
     models: Query<(Entity, &Mesh3d, &Name), With<GltfTarget>>,
     mut commands: Commands,
 ) {
+    
     let Ok((e, mesh, name)) = models.get_single()
     .inspect_err(|err| warn!("test only works with 1 model at a time. Actual error: {:#?}", err))
     else {return;};
-    type Position = [f32; 3];
-
     let Some(mesh) = meshes.get(mesh) else {
         warn!("mesh not fetchable from handle. Exiting");
         return;
@@ -107,34 +123,58 @@ pub fn serialize_as_gltf(
         warn!("Expected positions. Exiting");
         return;
     };
-    let ty: Option<&[Position]> = positions.as_float3();
-    let Some(triangles) = ty else {
+    let Some(positions) = positions.as_float3() else {
         warn!("Expected positions ot be float3. Exiting");
         return;
     };
-    let triangle_veritcies = triangles.to_vec().iter()
-    .map(|n| {
-        Vertex {
-            position: n.to_owned(),
-            color: [0.0, 0.0, 0.0]
-        }
-    }).collect::<Vec<_>>();
 
-    let (min, max) = bounding_coords(&triangle_veritcies);
+    let Some(normals) = mesh.attribute(Mesh::ATTRIBUTE_NORMAL) else {
+        warn!("Expected normals. Exiting");
+        return;
+    };
+    let Some(normals) = normals.as_float3() else {
+        warn!("normals not float3. Exiting");
+        return;
+    };
 
+    let Some(indices) = mesh.indices() else {
+        warn!("Expected indices. Exiting");
+        return;
+    };
 
-    let output = Output::Standard;
+    let indices = indices.iter().map(|i|  i as u32).collect::<Vec<u32>>();
 
-    let mut root = gltf_json::Root::default();
+    let result = export(
+        positions, 
+        normals, 
+        &indices, 
+        "cube", 
+        Output::Standard
+    );
 
+    println!("result print result: {:#?}", result);
+    commands.entity(e).remove::<GltfTarget>();
+}
 
-    //let triangle_size = size_of_val(triangles);
-    let triangle_size = mem::size_of::<Vertex>();
-    println!("triangle size: {:#}", triangle_size);
-    let buffer_length = triangles.len() * triangle_size;
-    println!("buffer length: {:#}", buffer_length);
-    let buffer = root.push(gltf_json::Buffer {  
-        byte_length: USize64::from(buffer_length),
+// export function where most of the action takes place
+type Result<T> = std::result::Result<T, GltfError>;
+pub fn export(
+    vertices: &[[f32; 3]],
+    normals: &[[f32; 3]],
+    indices: &[u32],
+    output_file: &str,
+    output: Output,
+) -> Result<()> {
+    let (min_vert, max_vert) = bounding_coords(vertices);
+    let (min_nornal, max_normal) = bounding_coords(normals);
+
+    let mut root = json::Root::default();
+
+    let total_buffer_length = (vertices.len() *  mem::size_of::<Vertex>() ) 
+                                    + (indices.len() * mem::size_of::<u32>());
+
+    let buffer = root.push(json::Buffer {
+        byte_length: USize64::from(total_buffer_length),
         extensions: Default::default(),
         extras: Default::default(),
         name: None,
@@ -144,97 +184,408 @@ pub fn serialize_as_gltf(
             None
         },
     });
-    let buffer_view = root.push(gltf_json::buffer::View {
+
+    // This part of the code configure the json buffer with the glTF format
+    // Create buffer views
+    // vertex buffer //
+    let buffer_view = root.push(json::buffer::View {
         buffer,
-        byte_length: USize64::from(buffer_length),
+        byte_length: USize64::from(total_buffer_length),
         byte_offset: None,
-        byte_stride: Some(gltf_json::buffer::Stride(triangle_size)),
+        byte_stride: Some(json::buffer::Stride(mem::size_of::<Vertex>() )),
         extensions: Default::default(),
         extras: Default::default(),
         name: None,
-        target: Some(Checked::Valid(gltf_json::buffer::Target::ArrayBuffer)),
+        target: Some(Valid(json::buffer::Target::ArrayBuffer)),
     });
-    let positions = root.push(gltf_json::Accessor {
+
+    // Create accessors
+
+    // vertices accessors
+    let positions = root.push(json::Accessor {
         buffer_view: Some(buffer_view),
         byte_offset: Some(USize64(0)),
-        count: USize64::from(triangle_veritcies.len()),
-        component_type: Checked::Valid(gltf_json::accessor::GenericComponentType(
-            gltf_json::accessor::ComponentType::F32,
+        count: USize64::from(vertices.len()),
+        component_type: Valid(json::accessor::GenericComponentType(
+            json::accessor::ComponentType::F32,
         )),
         extensions: Default::default(),
         extras: Default::default(),
-        type_: Checked::Valid(gltf_json::accessor::Type::Vec3),
-        min: Some(gltf_json::Value::from(Vec::from(min))),
-        max: Some(gltf_json::Value::from(Vec::from(max))),
+        type_: Valid(json::accessor::Type::Vec3),
+        min: Some(json::Value::from(Vec::from(min_vert))),
+        max: Some(json::Value::from(Vec::from(max_vert))),
         name: None,
         normalized: false,
         sparse: None,
     });
-    let colors = root.push(gltf_json::Accessor {
+
+    // normal accessor
+    let normal_accessor = root.push(json::Accessor {
         buffer_view: Some(buffer_view),
-        byte_offset: Some(USize64::from(3 * mem::size_of::<f32>())),
-        count: USize64::from(triangle_veritcies.len()),
-        component_type: Checked::Valid(gltf_json::accessor::GenericComponentType(
-            gltf_json::accessor::ComponentType::F32,
+        byte_offset: Some(USize64::from(mem::size_of::<[f32;3]>())),
+        count: USize64::from(normals.len()),
+        component_type: Valid(json::accessor::GenericComponentType(
+            json::accessor::ComponentType::F32,
         )),
         extensions: Default::default(),
         extras: Default::default(),
-        type_: Checked::Valid(gltf_json::accessor::Type::Vec3),
+        type_: Valid(json::accessor::Type::Vec3),
+        min: Some(json::Value::from(Vec::from(min_nornal))),
+        max: Some(json::Value::from(Vec::from(max_normal))),
+        name: None,
+        normalized: false,
+        sparse: None,
+    });
+    let indices_accessor = root.push(json::Accessor {
+        buffer_view: Some(buffer_view),
+        byte_offset: Some(USize64::from(vertices.len() * mem::size_of::<Vertex>())),
+        count: USize64::from(indices.len()),
+        component_type: Valid(json::accessor::GenericComponentType(
+            json::accessor::ComponentType::U32,
+        )),
+        extensions: Default::default(),
+        extras: Default::default(),
+        type_: Valid(json::accessor::Type::Scalar),
         min: None,
         max: None,
         name: None,
         normalized: false,
         sparse: None,
     });
-    let primitive = gltf_json::mesh::Primitive {
+
+    // Mesh
+    let primitive = json::mesh::Primitive {
         attributes: {
             let mut map = std::collections::BTreeMap::new();
-            map.insert(Checked::Valid(gltf_json::mesh::Semantic::Positions), positions);
-            map.insert(Checked::Valid(gltf_json::mesh::Semantic::Colors(0)), colors);
+            map.insert(Valid(json::mesh::Semantic::Positions), positions);
+            map.insert(Valid(json::mesh::Semantic::Normals), normal_accessor);
             map
         },
         extensions: Default::default(),
         extras: Default::default(),
-        indices: None,
+        indices: Some(indices_accessor),
         material: None,
-        mode: Checked::Valid(gltf_json::mesh::Mode::Triangles),
+        mode: Valid(json::mesh::Mode::Triangles),
         targets: None,
     };
 
-    let mesh = root.push(gltf_json::Mesh {
+    let mesh = root.push(json::Mesh {
         extensions: Default::default(),
         extras: Default::default(),
         name: None,
         primitives: vec![primitive],
         weights: None,
     });
-    let node = root.push(gltf_json::Node {
+
+    let node = root.push(json::Node {
         mesh: Some(mesh),
         ..Default::default()
     });
 
-    root.push(gltf_json::Scene {
+    // Scene
+    root.push(json::Scene {
         extensions: Default::default(),
         extras: Default::default(),
         name: None,
         nodes: vec![node],
-    });
+    }); // End of the json glTF config.
+
+    // Generate the glTF with 2 format options : full binary or a mix of text/binary.
+    // serialize the data
+
+    // Reconstruct the mesh format mesh { vertex, indices} from the "pieces".
+    let vertices_vec =  vertices.iter().zip(normals.iter()).map(|(pos, norm)|        
+         Vertex{ 
+        position: *pos,
+        normal: *norm,
+        }).collect();
+
+    let  mesh = MeshOut {
+        vertices: vertices_vec,
+        indices: indices.to_vec(),
+    };
+
     match output {
         Output::Standard => {
-            let _ = fs::create_dir("cube");
+            let _ = fs::create_dir("glTF_ouput_dir");
+            let path = format!("glTF_ouput_dir/{}.gltf", output_file);
+            let writer = match fs::File::create(path) {
+                Ok(file) => file,
+                Err(e) => return Err(GltfError::CouldNotWriteToFile(e)),
+            };
 
-            let writer = fs::File::create("cube/cube.gltf").expect("I/O error");
-            gltf_json::serialize::to_writer_pretty(writer, &root).expect("Serialization error");
+            if json::serialize::to_writer_pretty(writer, &root).is_err() {
+                return Err(GltfError::SerializationError);
+            };
 
-            let bin = to_padded_byte_vector(triangle_veritcies.to_vec());
-            let mut writer = fs::File::create("cube/buffer0.bin").expect("I/O error");
-            writer.write_all(&bin).expect("I/O error");
+            let bin = dynamic_mesh_to_bytes(&mesh);
+
+            let mut writer = match fs::File::create("glTF_ouput_dir/buffer0.bin") {
+                Ok(file) => file,
+                Err(e) => return Err(GltfError::CouldNotWriteToFile(e)),
+            };
+
+            writer
+                .write_all(&bin)
+                .map_err(GltfError::CouldNotWriteToFile)?;
         }
-        Output::Binary => todo!(),
-    }
-    commands.entity(e).remove::<GltfTarget>();
+        Output::Binary => {
+            let json_string = match json::serialize::to_string(&root) {
+                Ok(json) => json,
+                Err(_) => return Err(GltfError::SerializationError),
+            };
+            let mut json_offset = json_string.len();
+            align_to_multiple_of_four(&mut json_offset);
 
+            let bin = dynamic_mesh_to_bytes(&mesh);
+
+            let glb = gltf::binary::Glb {
+                header: gltf::binary::Header {
+                    magic: *b"glTF",
+                    version: 2,
+                    // N.B., the size of binary glTF file is limited to range of `u32`.
+                    length: (json_offset + total_buffer_length)
+                        .try_into()
+                        .map_err(|_| GltfError::BinFileSizeLimitError)?,
+                },
+
+                bin: Some(Cow::Owned(bin)),
+                json: Cow::Owned(json_string.into_bytes()),
+            };
+            let filename = format!("glTF_ouput_dir/{}.glb", output_file);
+
+            let writer = match std::fs::File::create(filename) {
+                Ok(file) => file,
+                Err(e) => return Err(GltfError::CouldNotWriteToFile(e)),
+            };
+            glb.to_writer(writer)
+                .map_err(|_| GltfError::GltfOutputError)?;
+        }
+    }
+
+    Ok(())
 }
+
+
+// pub fn serialize_as_gltf(
+//     meshes: ResMut<Assets<Mesh>>,
+//     models: Query<(Entity, &Mesh3d, &Name), With<GltfTarget>>,
+//     mut commands: Commands,
+// ) {
+//     let Ok((e, mesh, name)) = models.get_single()
+//     .inspect_err(|err| warn!("test only works with 1 model at a time. Actual error: {:#?}", err))
+//     else {return;};
+//     type Position = [f32; 3];
+//     let Some(mesh) = meshes.get(mesh) else {
+//         warn!("mesh not fetchable from handle. Exiting");
+//         return;
+//     };
+//     println!("serializing: {:#?}", name);
+
+//     let Some(positions)= mesh.attribute(Mesh::ATTRIBUTE_POSITION) else {
+//         warn!("Expected positions. Exiting");
+//         return;
+//     };
+//     let vertex_ty: Option<&[Position]> = positions.as_float3();
+//     let Some(positions) = vertex_ty else {
+//         warn!("Expected positions ot be float3. Exiting");
+//         return;
+//     };
+
+//     let Some(normals) = mesh.attribute(Mesh::ATTRIBUTE_NORMAL) else {
+//         warn!("Expected normals. Exiting");
+//         return;
+//     };
+//     let Some(normals) = normals.as_float3() else {
+//         warn!("normals not float3. Exiting");
+//         return;
+//     };
+//     // println!("positions length {:#}", positions.len());
+//     // println!("normals length {:#}", normals.len());
+//     let verticies = positions.iter().zip(normals.iter()).map(|(pos, norm)|        
+//         Vertex { 
+//             position: *pos,
+//             normal: *norm,
+//     }).collect::<Vec<Vertex>>();
+
+//     let Some(indices) = mesh.indices() else {
+//         warn!("Expected indices. Exiting");
+//         return;
+//     };
+
+//     println!("indicies: {:#?}", indices);
+//     let (vertex_min, vertex_max) = bounding_coords(&positions);
+//     let (min_nornal, max_normal) = bounding_coords(&normals);
+
+//     let indices = indices.iter().map(|i|  i as u32).collect::<Vec<u32>>();
+//     println!("indicies length: {:#}", indices.len());
+//     let output = Output::Standard;
+
+//     let mut root = gltf_json::Root::default();
+
+//     let total_buffer_length = (verticies.len() *  mem::size_of::<Vertex>() ) 
+//                                     + (indices.len() * mem::size_of::<u32>());
+
+//     println!("verticies length: {:#}", verticies.len());
+//     println!("indicies length: {:#}", indices.len());
+
+//     let vertex_buffer = root.push(gltf_json::Buffer {  
+//         byte_length: USize64::from(total_buffer_length),
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         name: None,
+//         uri: if output == Output::Standard {
+//             Some("buffer0.bin".into())
+//         } else {
+//             None
+//         },
+//     });
+
+//     let vertex_buffer_view = root.push(gltf_json::buffer::View {
+//         buffer: vertex_buffer,
+//         byte_length: USize64::from(total_buffer_length),
+//         byte_offset: None,
+//         byte_stride: Some(gltf_json::buffer::Stride(mem::size_of::<Vertex>())),
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         name: None,
+//         target: Some(Checked::Valid(gltf_json::buffer::Target::ArrayBuffer)),
+//     });
+//     let positions = root.push(gltf_json::Accessor {
+//         buffer_view: Some(vertex_buffer_view),
+//         byte_offset: Some(USize64(0)),
+//         count: USize64::from(verticies.len()),
+//         component_type: Checked::Valid(gltf_json::accessor::GenericComponentType(
+//             gltf_json::accessor::ComponentType::F32,
+//         )),
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         type_: Checked::Valid(gltf_json::accessor::Type::Vec3),
+//         min: Some(gltf_json::Value::from(Vec::from(vertex_min))),
+//         max: Some(gltf_json::Value::from(Vec::from(vertex_max))),
+//         name: None,
+//         normalized: false,
+//         sparse: None,
+//     });
+//     // normal accessor
+//     let normal_accessor = root.push(gltf_json::Accessor {
+//         buffer_view: Some(vertex_buffer_view),
+//         byte_offset: Some(USize64::from(mem::size_of::<[f32;3]>())),
+//         count: USize64::from(normals.len()),
+//         component_type: Checked::Valid(gltf_json::accessor::GenericComponentType(
+//             gltf_json::accessor::ComponentType::F32,
+//         )),
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         type_: Checked::Valid(gltf_json::accessor::Type::Vec3),
+//         min: Some(gltf_json::Value::from(Vec::from(min_nornal))),
+//         max: Some(gltf_json::Value::from(Vec::from(max_normal))),
+//         name: None,
+//         normalized: false,
+//         sparse: None,
+//     });
+//     let indices_accessor = root.push(gltf_json::Accessor {
+//         buffer_view: Some(vertex_buffer_view),
+//         byte_offset: Some(USize64::from(verticies.len() * mem::size_of::<Vertex>())),
+//         count: USize64::from(indices.len()),
+//         component_type: Checked::Valid(gltf_json::accessor::GenericComponentType(
+//             gltf_json::accessor::ComponentType::U32,
+//         )),
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         type_: Checked::Valid(gltf_json::accessor::Type::Scalar),
+//         min: None,
+//         max: None,
+//         name: None,
+//         normalized: false,
+//         sparse: None,
+//     });
+
+
+//     let primitive = gltf_json::mesh::Primitive {
+//         attributes: {
+//             let mut map = std::collections::BTreeMap::new();
+//             map.insert(Checked::Valid(gltf_json::mesh::Semantic::Positions), positions);
+//             map.insert(Checked::Valid(gltf_json::mesh::Semantic::Normals), normal_accessor);
+//             map
+//         },
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         indices: Some(indices_accessor),
+//         material: None,
+//         mode: Checked::Valid(gltf_json::mesh::Mode::Triangles),
+//         targets: None,
+//     };
+
+//     let mesh = root.push(gltf_json::Mesh {
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         name: None,
+//         primitives: vec![primitive],
+//         weights: None,
+//     });
+//     let node = root.push(gltf_json::Node {
+//         mesh: Some(mesh),
+//         ..Default::default()
+//     });
+
+//     root.push(gltf_json::Scene {
+//         extensions: Default::default(),
+//         extras: Default::default(),
+//         name: None,
+//         nodes: vec![node],
+//     });
+
+//     let  mesh = MeshOut {
+//         vertices: verticies,
+//         indices: indices.to_vec(),
+//     };
+
+//     match output {
+//         Output::Standard => {
+//             let _ = fs::create_dir("cube");
+//             let json_string = match gltf_json::serialize::to_string(&root) {
+//                 Ok(json) => json,
+//                 Err(err) => {panic!("{:#}", err)},
+//             };
+
+//             let writer = fs::File::create("cube/cube.gltf").expect("I/O error");
+//             gltf_json::serialize::to_writer_pretty(writer, &root).expect("Serialization error");
+
+//             let mut json_offset = json_string.len();
+//             align_to_multiple_of_four(&mut json_offset);
+
+//             let bin = dynamic_mesh_to_bytes(&mesh);
+            
+//             let glb = gltf::binary::Glb {
+//                 header: gltf::binary::Header {
+//                     magic: *b"glTF",
+//                     version: 2,
+//                     // N.B., the size of binary glTF file is limited to range of `u32`.
+//                     length: (json_offset + total_buffer_length)
+//                         .try_into()
+//                         .unwrap()
+//                         //.map_err(|err| GltfError::BinFileSizeLimitError)?,
+//                 },
+
+//                 bin: Some(Cow::Owned(bin)),
+//                 json: Cow::Owned(json_string.into_bytes()),
+//             };
+
+//             let writer = fs::File::create("cube/buffer0.bin").expect("I/O error");
+            
+            
+//             let results = glb.to_writer(writer);
+
+//             println!("mesh write results: {:#?}", results);
+//                 //.map_err(|_| GltfError::GltfOutputError)?;
+//             //writer.write_all(&bin).expect("I/O error");
+//         }
+//         Output::Binary => todo!(),
+//     }
+//     commands.entity(e).remove::<GltfTarget>();
+
+// }
 
 #[derive(Component, Reflect)]
 pub struct GltfTarget;

@@ -38,6 +38,7 @@ log = {workspace = true}
 gltf = {workspace = true}
 gltf-json = {workspace = true}
 [dev-dependencies]
+bytemuck = {workspace = true}
 bevy = {workspace = true, features = ["dynamic_linking"]}
 bevy_ui_extras = {workspace = true}
 bevy-inspector-egui = {workspace = true}

@@ -1,6 +1,5 @@
-use bevy::prelude::*;
+use bevy::{picking::pointer::{PointerInteraction, PointerPress}, prelude::*};
 use bevy_egui::EguiContext;
-use bevy_mod_raycast::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::{plugins::SerializationPlugin, prelude::SerializationBasePlugin};
 use bevy_serialization_physics::prelude::{link::{JointAxesMaskWrapper, JointFlag}, SerializationPhysicsPlugin};
@@ -13,46 +12,39 @@ use egui::{text::LayoutJob, ScrollArea, TextFormat, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
-//RapierImpulseJointHandle
-
 fn main() {
     App::new()
-    //raycasting
-    .add_plugins(DefaultPlugins.set(bevy_mod_raycast::low_latency_window_plugin()))
-    .add_plugins(CursorRayPlugin)
-    //.add_plugins(RaycastPluginState)
+    .add_plugins(DefaultPlugins)
+    .add_plugins(MeshPickingPlugin)
     .add_plugins((
         RapierPhysicsPlugin::<NoUserData>::default(),
         RapierDebugRenderPlugin::default(),
     ))
     .add_plugins(UiExtrasDebug::default())
-    // .add_plugins(WorldInspectorPlugin::new())
     .add_plugins(SerializationPlugin)
     .add_plugins(SerializationPhysicsPlugin)
     .add_plugins(SerializationBasePlugin)
-    //.insert_resource()
-    //.add_plugins(SerializationPlugin)
     .register_type::<Selectable>()
     .init_resource::<SelectedMotorAxis>()
     .init_resource::<PhysicsUtilitySelection>()
     .add_systems(Update, visualize_components_for::<Selected>(bevy_ui_extras::Display::Window))
-    .add_systems(Update, selector_raycast)
+    .add_systems(Update, selection_behaviour)
     .add_systems(Startup, setup_graphics)
     .add_systems(Startup, create_revolute_joints)
     .add_systems(Update, motor_controller_ui)
     .add_systems(Update, physics_utilities_ui)
     .add_systems(Update, rapier_joint_info_ui)
-    //.add_systems(PostUpdate, )
-    //.add_systems(Update, display_rapier_joint_info)
     .run();
 }
 
 pub fn setup_graphics(mut commands: Commands) {
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(ORIGIN.x - 5.0, ORIGIN.y, ORIGIN.z)
+    commands.spawn(
+        (
+            Camera3d::default(),
+            Transform::from_xyz(ORIGIN.x - 5.0, ORIGIN.y, ORIGIN.z)
             .looking_at(Vec3::new(13.0, 1.0, 1.0), Vec3::Y),
-        ..Default::default()
-    });
+        )
+    );
 }
 const DASHES: usize = 5;
 const CUBE_COUNT: usize = 2;
@@ -102,16 +94,11 @@ fn create_revolute_joints(
 
     let mut curr_parent = commands
         .spawn((
-            //TransformBundle::from(Transform::from_xyz(origin.x, origin.y, 0.0)),
             RigidBody::Fixed,
             AsyncCollider::default(),
-            PbrBundle {
-                mesh: meshes.add(Cuboid::new(0.5, 0.5, 0.5)),
-                transform: Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
-                material: materials.add(Color::Srgba(Srgba::BLUE)),
-                //transform: Transform::from_xyz(15.0, 3.0, 30.0),
-                ..default()
-            }, 
+            Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
+            Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
+            MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE)))
         ))
         .id();
 
@@ -131,12 +118,9 @@ fn create_revolute_joints(
                 .spawn((
                     RigidBody::Dynamic,
                     AsyncCollider::default(),
-                    PbrBundle {
-                        mesh: meshes.add(Cuboid::new(0.5, 0.5, 0.5)),
-                        transform: Transform::from_translation(positions[k]),
-                        material: materials.add(Color::Srgba(Srgba::BLUE)),
-                        ..default()
-                    }, //Collider::cuboid(rad, rad, rad),
+                    Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
+                    Transform::from_translation(positions[k]),
+                    MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE)))
                 ))
                 .id();
         }
@@ -164,27 +148,25 @@ fn create_revolute_joints(
     }
 }
 
-//FIXME: This should be in its own crate, but for speed sake, this is here for now.
-pub fn selector_raycast(
-    cursor_ray: Res<CursorRay>,
-    mut raycast: Raycast,
-    mouse_press: Res<ButtonInput<MouseButton>>,
-    mut selectables: Query<Entity, (With<Selectable>, With<Transform>)>,
-    selected: Query<(Entity, &Selected)>,
+pub fn selection_behaviour(
+    pointers: Query<(&PointerInteraction, &PointerPress)>,
     mut commands: Commands,
+    selected: Query<&Selected>,
+    mouse_press: Res<ButtonInput<MouseButton>>,
 ) {
-    if let Some(cursor_ray) = **cursor_ray {
-        let hits = raycast.cast_ray(cursor_ray, &default());
-        for (e, _) in hits.iter() {
-            if mouse_press.just_pressed(MouseButton::Left) {
-                if let Ok(e) = selectables.get_mut(e.clone()) {
-                    match selected.get(e) {
-                        Ok(..) => commands.entity(e).remove::<Selected>(),
-                        Err(..) => commands.entity(e).insert(Selected),
-                    };
-                }
-            }
+    let Ok((hits, press)) = pointers.get_single()
+    .inspect_err(|err| warn!("error: {:#}", err))
+    else {return;};
+    
+    if press.is_primary_pressed() && mouse_press.just_pressed(MouseButton::Left){
+        let Some((e, _)) = hits.first() else {return;};
+        let e = *e;
+        if selected.contains(e) {
+            commands.entity(e).remove::<Selected>();
+        } else {
+            commands.entity(e).insert(Selected);
         }
+
     }
 }
 
