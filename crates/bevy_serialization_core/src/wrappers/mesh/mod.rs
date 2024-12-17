@@ -1,3 +1,5 @@
+
+
 //use bevy::prelude::*;
 use nalgebra::{Matrix3, Vector3};
 //use urdf_rs::Visual;
@@ -9,6 +11,14 @@ use bevy_reflect::prelude::*;
 use bevy_render::prelude::*;
 use bevy_utils::prelude::*;
 use bevy_math::prelude::*;
+
+
+pub mod obj;
+
+//TODO: Until: 
+// https://github.com/KhronosGroup/glTF-External-Reference
+// becomes an extension supported by gltf-rs, or the spec is merged into gltf. gltf serialization cannot be supported in this library.
+// pub mod gltf;
 
 #[derive(Component, Default, Reflect, Clone)]
 #[reflect(Component)]
@@ -155,11 +165,3 @@ impl Unwrap<&GeometryFile> for Mesh {
         return Err(value.source.clone());
     }
 }
-
-// impl ManagedTypeRegistration for GeometryFile {
-//     fn get_all_type_registrations() -> Vec<TypeRegistration> {
-//         let type_registry = Vec::new();
-
-//         type_registry
-//     }
-// }

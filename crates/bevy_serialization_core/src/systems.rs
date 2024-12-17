@@ -1,10 +1,6 @@
 use crate::{
     prelude::{ComponentsOnSave, TypeRegistryOnSave}, resources::{AssetSpawnRequestQueue, RequestFrom}, traits::*
 };
-// use bevy::{
-//     ecs::query::{QueryData, WorldQuery},
-//     prelude::*,
-// };
 use core::fmt::Debug;
 use std::{any::TypeId, collections::{HashMap, VecDeque}, ops::Deref};
 
@@ -12,7 +8,6 @@ use bevy_ecs::{prelude::*, query::{QueryData, WorldQuery}};
 use bevy_asset::prelude::*;
 use bevy_reflect::TypeInfo;
 use bevy_render::prelude::*;
-use log::warn;
 use moonshine_save::save::Save;
 
 //FIXME: implement this properly. Once an asset builder that could use this exists.
