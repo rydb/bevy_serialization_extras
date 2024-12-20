@@ -1,24 +1,28 @@
-//! A simple 3D scene with light shining over a cube sitting on a plane.
-
-
+//! This is a demo showcasing save/load functionality of bevy_serialization_core.
 
 use bevy::{prelude::*, window::PrimaryWindow};
+use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_egui::EguiContext;
 use bevy_serialization_core::{
-    plugins::SerializationPlugin, prelude::{ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave}, resources::{LoadRequest, SaveRequest}
+    plugins::SerializationPlugin,
+    prelude::{
+        ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable,
+        ShowUnserializable, TypeRegistryOnSave,
+    },
+    resources::{LoadRequest, SaveRequest},
 };
 use bevy_ui_extras::UiExtrasDebug;
 use egui::{Color32, RichText, TextEdit};
 use egui_extras::{Column, TableBuilder};
 use moonshine_save::save::Save;
+use std::{env, path::PathBuf};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
-//use urdf_rs::Geometry;
-use std::{env, path::PathBuf};
 const SAVES_LOCATION: &str = "crates/bevy_serialization_core/saves";
 
 fn main() {
     App::new()
+        .add_plugins(AppSourcesPlugin::CRATE)
         .insert_resource(SetSaveFile {
             name: "red".to_owned(),
         })
@@ -26,16 +30,11 @@ fn main() {
             exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
             ..Default::default()
         }))
-        // .register_type::<GltfTarget>()
-        //.add_plugins(ObjPlugin)
         .insert_resource(UtilitySelection::default())
-
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationBasePlugin)
         .add_plugins(UiExtrasDebug::default())
         .add_systems(Startup, setup)
-        // .add_systems(Update, visualize_components_for::<Save>)
-        //.add_systems(Startup, import_gltf)
         .add_systems(Update, save_file_selection)
         .add_systems(Update, serialization_widgets_ui)
         .run();
@@ -46,61 +45,72 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    //asset_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
 ) {
     // plane
-    commands.spawn(
-        (
-            Mesh3d(meshes.add(Plane3d::default().mesh().size(5.0, 5.0))),
-            MeshMaterial3d(materials.add(Color::srgb(0.4, 0.5, 0.3))),
-        )
-    );
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(5.0, 5.0))),
+        MeshMaterial3d(materials.add(Color::srgb(0.4, 0.5, 0.3))),
+    ));
 
     let mesh_handle =
-        //asset_server.load(GltfAssetLabel::Primitive{mesh: 0, primitive: 0}.from_asset("../../../assets/correct_cube.gltf"));
-        //asset_server.load(GltfAssetLabel::Mesh(0).from_asset("../../../assets/cube.gltf"));
-        meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()
+        asset_server.load(GltfAssetLabel::Primitive{mesh: 0, primitive: 0}.from_asset("root://cube.glb"))
+        //asset_server.load(GltfAssetLabel::Mesh(0).from_asset("../../../assets/cube.gltf"))
+        //meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()
     ;
     println!("mesh handle is {:#?}", mesh_handle);
-    // // cube 
-    commands.spawn(
-        (
-            //Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()),
-            // SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("../../../assets/cube.gltf"))),
-
-            Mesh3d(mesh_handle),
-            MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
-            Transform::from_xyz(0.0, 0.5, 0.0),
-            Save,
-            Name::new("Cube"),
-            //GltfTarget
-        )
-    );
+    // // cube
+    commands.spawn((
+        Mesh3d(mesh_handle),
+        MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
+        Transform::from_xyz(0.0, 0.5, 0.0),
+        Save,
+        Name::new("Cube"),
+        //GltfTarget
+    ));
     // light
-    commands.spawn(
-        (
-            PointLight {
-                intensity: 1500.0,
-                shadows_enabled: true,
-                ..default()
-            },
-            Transform::from_xyz(4.0 ,8.0, 4.0),
-            Save,
-        )
-    );
+    commands.spawn((
+        PointLight {
+            intensity: 1500.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform::from_xyz(4.0, 8.0, 4.0),
+        Save,
+    ));
     // camera
-    commands.spawn(
-        (
-            Camera3d::default(),
-            Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            Save,
-        )
-    );
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Save,
+    ));
 }
 
 #[derive(Resource, Default)]
 pub struct SetSaveFile {
     pub name: String,
+}
+
+pub const ROOT: &str = "root";
+
+/// for filepath asset-loading sanity.
+pub enum AppSourcesPlugin {
+    CRATE,
+    MAIN,
+}
+
+impl Plugin for AppSourcesPlugin {
+    fn build(&self, app: &mut App) {
+        let asset_folder_location = match *self {
+            Self::CRATE => "../../assets",
+            Self::MAIN => "assets",
+        };
+        app.register_asset_source(
+            ROOT,
+            AssetSource::build()
+                .with_reader(move || Box::new(FileAssetReader::new(asset_folder_location))),
+        );
+    }
 }
 
 pub fn save_file_selection(
@@ -177,7 +187,6 @@ pub fn serialization_widgets_ui(
     mut refresh_counter: ResMut<RefreshCounter>,
     mut show_serializable: ResMut<ShowSerializable>,
     mut show_unserializable: ResMut<ShowUnserializable>,
-    //mut asset_server: Res<AssetServer>,
 ) {
     for mut context in primary_window.iter_mut() {
         egui::Window::new("debug widget window")

@@ -1,7 +1,7 @@
 use bevy_rapier3d::prelude::AdditionalMassProperties;
 
-use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
+use bevy_reflect::prelude::*;
 
 #[derive(Reflect, Component, Clone)]
 #[reflect(Component)]

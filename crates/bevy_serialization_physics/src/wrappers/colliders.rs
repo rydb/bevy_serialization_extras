@@ -1,8 +1,8 @@
 use bevy_rapier3d::{geometry::ComputedColliderShape, prelude::AsyncCollider};
 use strum_macros::EnumIter;
 
-use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
+use bevy_reflect::prelude::*;
 
 #[derive(Component, EnumIter, Reflect, Clone, Default)]
 #[reflect(Component)]

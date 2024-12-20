@@ -4,17 +4,17 @@
     4294967303: (
       components: {
         "bevy_core::name::Name": (
-          hash: 5804745042553424177,
+          hash: 7887523716694876243,
           name: "Cube",
         ),
         "bevy_render::primitives::Aabb": (
           center: (0.0, 0.0, 0.0),
-          half_extents: (0.5, 0.5, 0.5),
+          half_extents: (1.0, 1.0, 1.0),
         ),
         "bevy_render::view::visibility::InheritedVisibility": (true),
         "bevy_render::view::visibility::ViewVisibility": (true),
         "bevy_render::view::visibility::Visibility": Inherited,
-        "bevy_serialization_core::wrappers::material::MaterialFlag": Wrapper((
+        "bevy_serialization_core::wrappers::material::MaterialFlag3d": Wrapper((
           color: Srgba((
             red: 1.0,
             green: 0.0,
@@ -22,7 +22,7 @@
             alpha: 1.0,
           )),
         )),
-        "bevy_serialization_core::wrappers::mesh::GeometryFlag": Procedural(()),
+        "bevy_serialization_core::wrappers::mesh::MeshFlag": AssetPath("root://cube.glb#Mesh0/Primitive0"),
         "bevy_transform::components::global_transform::GlobalTransform": ((1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.5, 0.0)),
         "bevy_transform::components::transform::Transform": (
           translation: (0.0, 0.5, 0.0),

@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::*;
-use bevy_reflect::Reflect;
+// use bevy_ecs::prelude::*;
+// use bevy_reflect::Reflect;
 
-#[derive(Component, Reflect)]
-pub struct GltfTarget;
+// #[derive(Component, Reflect)]
+// pub struct GltfTarget;

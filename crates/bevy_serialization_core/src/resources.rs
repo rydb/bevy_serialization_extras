@@ -1,8 +1,8 @@
 use bevy_derive::{Deref, DerefMut};
 use bevy_reflect::Reflect;
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph, Exposure};
-use bevy_transform::components::Transform;
 use bevy_render::prelude::*;
+use bevy_transform::components::Transform;
 // use moonshine_save::FilePath;
 use moonshine_save::save::SaveInput;
 use moonshine_save::GetFilePath;
@@ -10,23 +10,14 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::{any::TypeId, collections::VecDeque};
 
-
-
-use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
-
+use bevy_ecs::prelude::*;
 
 /// keeps track of number of times refresh request has been sent. For ui utils.
 #[derive(Resource, Default)]
 pub struct RefreshCounter {
     pub counter: usize,
 }
-
-// #[derive(Resource, Default, Clone)]
-// pub struct AssetFolder<T: Asset> {
-//     pub path: PathBuf,
-//     pub path_for_asset_type: PhantomData<T>
-// }
 
 #[derive(Clone)]
 pub enum RequestFrom<T: Asset> {
@@ -79,13 +70,12 @@ impl Default for SerializeFilter {
         // components that do not implement reflect break save/load.
         // this is just an a default list of unimplemented components to skip serializing over to stop this breakage.
         // make a pr to fix this if this issue is resolved.
-        Self(
-            {
-                // Due to bevy_scene taking `self` and not `&mut self`, to stop partial move errors, It requires... this.. for initialization.
-                let filter = SaveInput::default();
-                let mut new_filter = SaveInput::default();
-                
-                new_filter.components = filter
+        Self({
+            // Due to bevy_scene taking `self` and not `&mut self`, to stop partial move errors, It requires... this.. for initialization.
+            let filter = SaveInput::default();
+            let mut new_filter = SaveInput::default();
+
+            new_filter.components = filter
                 .components
                 .clone()
                 .deny::<CameraMainTextureUsages>()
@@ -95,10 +85,8 @@ impl Default for SerializeFilter {
                 //.deny::<InheritedVisibility>()
                 
                 ;
-                new_filter
-            }
-
-        )
+            new_filter
+        })
     }
 }
 

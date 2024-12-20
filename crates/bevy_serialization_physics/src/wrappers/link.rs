@@ -12,9 +12,9 @@ use rapier3d::{
     na::Isometry3,
 };
 
-use bevy_reflect::prelude::*;
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_math::Vec3;
+use bevy_reflect::prelude::*;
 use bevy_transform::prelude::*;
 
 #[derive(Component, Default, Reflect)]
@@ -187,11 +187,14 @@ impl From<&ImpulseJoint> for JointFlag {
         //     effort: Default::default(),
         //     velocity: joint.limits[0].impulse.into(),
         // };
-        let joint_limit_rapier = joint.limits(rapier3d::prelude::JointAxis::AngX).unwrap_or(&JointLimits {
-            min: 99999.0,
-            max: 99999.0,
-            impulse: 999999.0,
-        });
+        let joint_limit_rapier =
+            joint
+                .limits(rapier3d::prelude::JointAxis::AngX)
+                .unwrap_or(&JointLimits {
+                    min: 99999.0,
+                    max: 99999.0,
+                    impulse: 999999.0,
+                });
         let joint_limit = JointLimitWrapper {
             lower: joint_limit_rapier.min as f64,
             upper: joint_limit_rapier.max as f64,
@@ -417,4 +420,3 @@ impl From<&MotorModelWrapper> for MotorModel {
         }
     }
 }
-

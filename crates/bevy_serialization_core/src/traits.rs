@@ -1,6 +1,6 @@
-use std::{collections::HashMap, ops::Deref};
-use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
+use bevy_ecs::prelude::*;
+use std::{collections::HashMap, fmt::Display, ops::Deref};
 
 /// trait that explains how to take struct and unwrap it into a bevy thing.
 /// Like [`From`], but returns either the Target to be unwrapped or a filepath to thing.
@@ -22,21 +22,23 @@ where
     fn into_hashmap(value: T) -> HashMap<String, Self>;
 }
 
-
 use crate::resources::AssetSpawnRequest;
 use thiserror::Error;
-use urdf_rs::UrdfError;
 
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum LoadError {
-    //FIXME: figure out how to convert urdf into a generic error. This lib should not need to import urdf_rs for a single error!!!
-    #[error("Failed load urdf")]
-    Io(#[from] UrdfError),
-    // #[error("Failed to parse urdf")]
-    // SaveError,
+    Error(String),
 }
 
+impl Display for LoadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let res = match self {
+            LoadError::Error(err) => write!(f, "Error: {:#}", err),
+        };
+        res
+    }
+}
 /// deserialize trait that works by offloading deserialization to desired format's deserializer
 pub trait LazyDeserialize
 where
@@ -72,32 +74,25 @@ pub trait AsBundle<T: Bundle> {
 pub trait Unfold<T> {
     fn unfolded(value: T) -> Self;
 }
-
+/// conversion from ComponentWrapper -> Component(Handle<Asset>)
 pub trait FromWrapper<T>
-    where
-        Self: AssetKind + Deref<Target = Handle<Self::AssetKind>>,
+where
+    Self: AssetKind + Deref<Target = Handle<Self::AssetKind>>,
 {
-    fn from_wrapper(value: &T, asset_server: &Res<AssetServer>, assets: &mut ResMut<Assets<Self::AssetKind>>) -> Self;
+    fn from_wrapper(
+        value: &T,
+        asset_server: &Res<AssetServer>,
+        assets: &mut ResMut<Assets<Self::AssetKind>>,
+    ) -> Self;
 }
 
-pub trait FromAsset<T> 
-    where
-        T: AssetKind + Deref<Target = Handle<T::AssetKind>>,
-        // Self: From<&'a T::AssetKind>
+/// conversion from Component(Handle<Asset>) -> ComponentWrapper
+pub trait FromAsset<T>
+where
+    T: AssetKind + Deref<Target = Handle<T::AssetKind>>,
 {
     fn from_asset(value: &T, assets: &ResMut<Assets<T::AssetKind>>) -> Self;
-
 }
-
-// pub trait FromAsset<T>
-//     where
-//         Self: Component + AssetKind
-// {
-//     fn from(value: &Self, asset_server: ResMut<Assets<Self::AssetKind>>) {
-        
-//     }
-// }
-
 pub trait AssetKind {
-    type AssetKind: Asset; 
+    type AssetKind: Asset;
 }

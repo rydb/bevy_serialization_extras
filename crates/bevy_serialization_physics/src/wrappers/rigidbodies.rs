@@ -1,8 +1,8 @@
 use bevy_rapier3d::prelude::RigidBody;
 use strum_macros::EnumIter;
 
-use bevy_reflect::prelude::*;
 use bevy_ecs::prelude::*;
+use bevy_reflect::prelude::*;
 
 #[derive(Component, Reflect, Clone, Default, EnumIter)]
 #[reflect(Component)]

@@ -13,10 +13,10 @@ A library that allows the editing of non-reflect components via wrapper componen
 .add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
 
 // AssetHandle <-> WrapperComponent
-.add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag>::default())
+.add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag3d>::default())
 
 // WrapperComponent -> AssetHandle
-.add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh>::default())
+.add_plugins(DeserializeAssetFrom::<MeshFlag, Mesh>::default())
 
 // Query -> Component, 
 .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())

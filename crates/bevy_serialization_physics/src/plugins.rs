@@ -6,13 +6,18 @@ use bevy_rapier3d::{
 use bevy_serialization_core::plugins::{SerializeComponentFor, SerializeQueryFor};
 
 use crate::{
-    prelude::{collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag, friction::FrictionFlag, link::JointRecieverFlag}, systems::{bind_joints_to_entities, local_frame2_shift}, wrappers::{
+    prelude::{
+        collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag,
+        friction::FrictionFlag, link::JointRecieverFlag,
+    },
+    systems::{bind_joints_to_entities, local_frame2_shift},
+    wrappers::{
         colliders::ColliderFlag,
         link::{JointFlag, LinkFlag, Linkage, StructureFlag},
         mass::MassFlag,
         rigidbodies::RigidBodyFlag,
         solvergroupfilter::SolverGroupsFlag,
-    }
+    },
 };
 
 use bevy_app::prelude::*;

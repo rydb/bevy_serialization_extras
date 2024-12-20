@@ -1,8 +1,14 @@
-use bevy::{picking::pointer::{PointerInteraction, PointerPress}, prelude::*};
+use bevy::{
+    picking::pointer::{PointerInteraction, PointerPress},
+    prelude::*,
+};
 use bevy_egui::EguiContext;
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::{plugins::SerializationPlugin, prelude::SerializationBasePlugin};
-use bevy_serialization_physics::prelude::{link::{JointAxesMaskWrapper, JointFlag}, SerializationPhysicsPlugin};
+use bevy_serialization_physics::prelude::{
+    link::{JointAxesMaskWrapper, JointFlag},
+    SerializationPhysicsPlugin,
+};
 
 use bevy::prelude::Vec3;
 use bevy_ui_extras::{systems::visualize_components_for, UiExtrasDebug};
@@ -14,43 +20,43 @@ use strum_macros::{Display, EnumIter};
 
 fn main() {
     App::new()
-    .add_plugins(DefaultPlugins)
-    .add_plugins(MeshPickingPlugin)
-    .add_plugins((
-        RapierPhysicsPlugin::<NoUserData>::default(),
-        RapierDebugRenderPlugin::default(),
-    ))
-    .add_plugins(UiExtrasDebug::default())
-    .add_plugins(SerializationPlugin)
-    .add_plugins(SerializationPhysicsPlugin)
-    .add_plugins(SerializationBasePlugin)
-    .register_type::<Selectable>()
-    .init_resource::<SelectedMotorAxis>()
-    .init_resource::<PhysicsUtilitySelection>()
-    .add_systems(Update, visualize_components_for::<Selected>(bevy_ui_extras::Display::Window))
-    .add_systems(Update, selection_behaviour)
-    .add_systems(Startup, setup_graphics)
-    .add_systems(Startup, create_revolute_joints)
-    .add_systems(Update, motor_controller_ui)
-    .add_systems(Update, physics_utilities_ui)
-    .add_systems(Update, rapier_joint_info_ui)
-    .run();
+        .add_plugins(DefaultPlugins)
+        .add_plugins(MeshPickingPlugin)
+        .add_plugins((
+            RapierPhysicsPlugin::<NoUserData>::default(),
+            RapierDebugRenderPlugin::default(),
+        ))
+        .add_plugins(UiExtrasDebug::default())
+        .add_plugins(SerializationPlugin)
+        .add_plugins(SerializationPhysicsPlugin)
+        .add_plugins(SerializationBasePlugin)
+        .register_type::<Selectable>()
+        .init_resource::<SelectedMotorAxis>()
+        .init_resource::<PhysicsUtilitySelection>()
+        .add_systems(
+            Update,
+            visualize_components_for::<Selected>(bevy_ui_extras::Display::Window),
+        )
+        .add_systems(Update, selection_behaviour)
+        .add_systems(Startup, setup_graphics)
+        .add_systems(Startup, create_revolute_joints)
+        .add_systems(Update, motor_controller_ui)
+        .add_systems(Update, physics_utilities_ui)
+        .add_systems(Update, rapier_joint_info_ui)
+        .run();
 }
 
 pub fn setup_graphics(mut commands: Commands) {
-    commands.spawn(
-        (
-            Camera3d::default(),
-            Transform::from_xyz(ORIGIN.x - 5.0, ORIGIN.y, ORIGIN.z)
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(ORIGIN.x - 5.0, ORIGIN.y, ORIGIN.z)
             .looking_at(Vec3::new(13.0, 1.0, 1.0), Vec3::Y),
-        )
-    );
+    ));
 }
 const DASHES: usize = 5;
 const CUBE_COUNT: usize = 2;
 const ORIGIN: Vec3 = Vec3::new(0.0, 0.0, 0.0);
 const NUM: usize = 1;
-
 
 #[derive(Component, Reflect)]
 pub struct Selectable;
@@ -85,7 +91,7 @@ pub struct PhysicsUtilitySelection {
 }
 
 fn create_revolute_joints(
-    mut commands: Commands, 
+    mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -98,7 +104,7 @@ fn create_revolute_joints(
             AsyncCollider::default(),
             Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
             Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
-            MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE)))
+            MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
         ))
         .id();
 
@@ -120,7 +126,7 @@ fn create_revolute_joints(
                     AsyncCollider::default(),
                     Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
                     Transform::from_translation(positions[k]),
-                    MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE)))
+                    MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
                 ))
                 .id();
         }
@@ -133,7 +139,7 @@ fn create_revolute_joints(
             RevoluteJointBuilder::new(z)
                 .local_anchor2(Vec3::new(0.0, 0.0, -shift))
                 .motor_velocity(100.0, 20.0),
-            RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(-shift, 0.0, 0.0)), 
+            RevoluteJointBuilder::new(x).local_anchor2(Vec3::new(-shift, 0.0, 0.0)),
         ];
 
         commands
@@ -148,26 +154,29 @@ fn create_revolute_joints(
     }
 }
 
-
 pub fn selection_behaviour(
     pointers: Query<(&PointerInteraction, &PointerPress)>,
     mut commands: Commands,
     selected: Query<&Selected>,
     mouse_press: Res<ButtonInput<MouseButton>>,
 ) {
-    let Ok((hits, press)) = pointers.get_single()
-    .inspect_err(|err| warn!("error: {:#}", err))
-    else {return;};
-    
-    if press.is_primary_pressed() && mouse_press.just_pressed(MouseButton::Left){
-        let Some((e, _)) = hits.first() else {return;};
+    let Ok((hits, press)) = pointers
+        .get_single()
+        .inspect_err(|err| warn!("error: {:#}", err))
+    else {
+        return;
+    };
+
+    if press.is_primary_pressed() && mouse_press.just_pressed(MouseButton::Left) {
+        let Some((e, _)) = hits.first() else {
+            return;
+        };
         let e = *e;
         if selected.contains(e) {
             commands.entity(e).remove::<Selected>();
         } else {
             commands.entity(e).insert(Selected);
         }
-
     }
 }
 
@@ -197,8 +206,6 @@ pub fn rapier_joint_info_ui(
             });
     }
 }
-
-
 
 pub fn motor_controller_ui(
     mut selected_joints: Query<(Entity, &mut JointFlag), With<Selected>>,
