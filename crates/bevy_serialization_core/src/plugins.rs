@@ -1,6 +1,5 @@
 use std::ops::{Deref, Range};
 use std::{any::TypeId, marker::PhantomData};
-use crate::prelude::mesh::MeshPrimitive;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_ecs::query::{QueryData, WorldQuery};
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph};
@@ -14,7 +13,7 @@ use moonshine_save::save::SaveSystem;
 use crate::traits::{ChangeChecked, FromStructure, IntoHashMap, LazyDeserialize};
 use super::resources::*;
 use super::systems::*;
-use crate::wrappers::mesh::{GeometryFile, GeometryFlag};
+use crate::wrappers::mesh::GeometryFlag;
 use crate::{
     traits::*,
     wrappers::material::MaterialFlag,
@@ -138,39 +137,43 @@ where
     }
 }
 
+
+
 /// plugin for serialization for WrapperComponent -> Asset, Asset -> WrapperComponent
 #[derive(Default)]
-pub struct SerializeAssetFor<T, U, V> {
+pub struct SerializeAssetFor<T, U>
+where
+    T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
+    U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq
+    // T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + From<Handle<T::AssetKind>>,
+    // U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T::AssetKind> + PartialEq,
+    // T::AssetKind: Asset + for<'a> From<&'a U>
+
+{
     thing: PhantomData<fn() -> T>,
     wrapper_thing: PhantomData<fn() -> U>,
-    thing_asset: PhantomData<fn() -> V>,
 
 }
 
-impl<T, U, V> Plugin for SerializeAssetFor<T, U, V>
+
+
+impl<T, U> Plugin for SerializeAssetFor<T, U>
 where
-    T: 'static + Component + Deref<Target = Handle<V>> + From<Handle<V>>,
-    U: 'static + Component + GetTypeRegistration + for<'a> From<&'a V> + PartialEq,
-    V: 'static + Asset + for<'a> From<&'a U>
+    T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
+    U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq
+// T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + From<Handle<T::AssetKind>>,
+    // U: 'static + Component + GetTypeRegistration + for<'a> From<&'a T::AssetKind> + PartialEq,
+    // T::AssetKind: Asset + for<'a> From<&'a U>
 {
     fn build(&self, app: &mut App) {
         skip_serializing::<T>(app);
 
         app
         .register_type::<U>()
-        // .add_systems(
-        //     PreUpdate,
-        //     (try_serialize_asset_for::<T, U>,), //.after(resource_added::<SaveRequest>())
-        // )
-        // .add_systems(
-        //     Update,
-        //     //(
-        //     deserialize_asset_for::<U, T>, //).after(LoadSet::PostLoad)
-        // );
         .add_systems(PreUpdate, 
             (
-                try_serialize_asset_for::<T, U, V>,
-                deserialize_asset_for::<U, T, V>,
+                try_serialize_asset_for::<T, U>,
+                deserialize_asset_for::<U, T>,
             ).chain()
 
         );
@@ -264,7 +267,8 @@ impl Plugin for SerializationBasePlugin {
         app
 
         // default conversions
-        .add_plugins(SerializeAssetFor::<MeshMaterial3d<StandardMaterial>, MaterialFlag, _>::default())
+        .add_plugins(SerializeAssetFor::<MeshMaterial3d<StandardMaterial>, MaterialFlag>::default())
+        .add_plugins(SerializeAssetFor::<Mesh3d, GeometryFlag>::default())
         // .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh3d, Mesh>::default())
         // .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh3d, Mesh>::default())
         ;
@@ -284,8 +288,6 @@ impl Plugin for SerializationPlugin {
         .register_type::<Camera3dDepthTextureUsage>()
         .register_type::<InheritedVisibility>()
         .register_type::<ScreenSpaceTransmissionQuality>()
-        .register_type::<GeometryFile>()
-        .register_type::<MeshPrimitive>()
         .register_type::<GeometryFlag>()
         .register_type::<[[f32; 3]; 3]>()
         .register_type::<[Vec3; 3]>()

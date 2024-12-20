@@ -2,6 +2,7 @@ use bevy_derive::{Deref, DerefMut};
 use bevy_reflect::Reflect;
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph, Exposure};
 use bevy_transform::components::Transform;
+use bevy_render::prelude::*;
 // use moonshine_save::FilePath;
 use moonshine_save::save::SaveInput;
 use moonshine_save::GetFilePath;
@@ -90,6 +91,7 @@ impl Default for SerializeFilter {
                 .deny::<CameraMainTextureUsages>()
                 .deny::<CameraRenderGraph>()
                 .deny::<Exposure>()
+                .deny::<Mesh3d>()
                 //.deny::<InheritedVisibility>()
                 
                 ;

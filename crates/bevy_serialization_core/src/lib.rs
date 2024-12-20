@@ -1,6 +1,5 @@
 
 pub mod asset_source;
-pub mod bundles;
 pub mod plugins;
 pub mod queries;
 pub mod resources;
@@ -10,7 +9,7 @@ pub mod wrappers;
 
 pub mod prelude {
     pub use crate::{
-        asset_source::*, bundles::*, plugins::*, queries::*, resources::*, traits::*,
+        asset_source::*, plugins::*, queries::*, resources::*, traits::*,
         wrappers::*,
     };
 }

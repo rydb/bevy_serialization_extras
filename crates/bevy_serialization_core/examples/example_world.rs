@@ -1,15 +1,12 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
-use gltf::Document;
-use gltf_json::validation::Checked;
 
-use std::{fs, io::{self, Write}, mem, path::PathBuf};
+
 
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::EguiContext;
 use bevy_serialization_core::{
     plugins::SerializationPlugin, prelude::{ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave}, resources::{LoadRequest, SaveRequest}
 };
-use bytemuck::{Pod, Zeroable};
 use bevy_ui_extras::UiExtrasDebug;
 use egui::{Color32, RichText, TextEdit};
 use egui_extras::{Column, TableBuilder};
@@ -17,7 +14,7 @@ use moonshine_save::save::Save;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 //use urdf_rs::Geometry;
-use std::env;
+use std::{env, path::PathBuf};
 const SAVES_LOCATION: &str = "crates/bevy_serialization_core/saves";
 
 fn main() {
@@ -49,7 +46,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
+    //asset_server: Res<AssetServer>,
 ) {
     // plane
     commands.spawn(
@@ -59,8 +56,11 @@ fn setup(
         )
     );
 
-    let mesh_handle: Handle<Mesh> = asset_server.load(GltfAssetLabel::Primitive{mesh: 0, primitive: 0}.from_asset("../../../assets/correct_cube.gltf"));
-    // let mesh_handle: Handle<Mesh> = asset_server.load(GltfAssetLabel::Mesh(0).from_asset("../../../assets/cube.gltf"));
+    let mesh_handle =
+        //asset_server.load(GltfAssetLabel::Primitive{mesh: 0, primitive: 0}.from_asset("../../../assets/correct_cube.gltf"));
+        //asset_server.load(GltfAssetLabel::Mesh(0).from_asset("../../../assets/cube.gltf"));
+        meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()
+    ;
     println!("mesh handle is {:#?}", mesh_handle);
     // // cube 
     commands.spawn(

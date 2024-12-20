@@ -119,26 +119,27 @@ pub fn deserialize_as_one<T, U>(
 }
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
-pub fn try_serialize_asset_for<Target, Wrapper, TargetAsset>(
-    things: Res<Assets<TargetAsset>>,
+pub fn try_serialize_asset_for<Target, Wrapper>(
+    assets: ResMut<Assets<Target::AssetKind>>,
     things_query: Query<(Entity, &Target), Or<(Changed<Target>, Without<Wrapper>)>>,
     wrapper_things_query: Query<&Wrapper>,
     mut commands: Commands,
 )
 // -> bool
 where
-    Target: Component + Deref<Target = Handle<TargetAsset>>,
-    TargetAsset: Asset,
+    Target: AssetKind + Component + Deref<Target = Handle<Target::AssetKind>>,
+    Target::AssetKind: Asset,
+    //TargetAsset: Asset,
 
-    Wrapper: Component + for<'a> From<&'a TargetAsset> + PartialEq,
+    Wrapper: Component + FromAsset<Target> + PartialEq,
 {
     for (e, thing_handle) in things_query.iter() {
         // let x = thing_handle.clone();
-        let Some(thing) = things.get(thing_handle.id()) else {
-            //println!("no thing found");
-            return;
-        };
-        let new_wrapper_thing = Wrapper::from(thing);
+        // let Some(thing) = things.get(thing_handle.id()) else {
+        //     //println!("no thing found");
+        //     return;
+        // };
+        let new_wrapper_thing = Wrapper::from_asset(thing_handle, &assets);
 
         let mut insert = true;
         
@@ -158,20 +159,26 @@ where
     }
     //return true;
 }
+
+
 /// takes a wrapper component, and deserializes it back into its unserializable asset handle varaint
-pub fn deserialize_asset_for<Wrapper, Target, TargetAsset>(
-    mut things: ResMut<Assets<TargetAsset>>,
+pub fn deserialize_asset_for<Wrapper, Target>(
+    mut assets: ResMut<Assets<Target::AssetKind>>,
     wrapper_thing_query: Query<
         (Entity, &Wrapper),
         Or<(Changed<Wrapper>, Without<Target>)>,
     >,
     things_query: Query<&Target>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
 ) where
-    Wrapper: Component + for<'a> From<&'a TargetAsset> + PartialEq,
-    // Target: Asset + for<'a> From<&'a Wrapper>,
-    Target: Component + Deref<Target = Handle<TargetAsset>> + From<Handle<TargetAsset>>,
-    TargetAsset: Asset + for<'a> From<&'a Wrapper> 
+    //Target: Component + AssetKind + Deref<Target = Handle<Target::AssetKind>> + From<Handle<Target::AssetKind>>,
+    Target: Component + AssetKind + Deref<Target = Handle<Target::AssetKind>> + FromWrapper<Wrapper>,
+    Wrapper: Component + FromAsset<Target> + PartialEq
+    // Wrapper: Component + for<'a> From<&'a Target::AssetKind> + PartialEq,
+    // Target::AssetKind: Asset + for<'a> From<&'a Wrapper>
+    //Target: Component + Deref<Target = Handle<TargetAsset>> + From<Handle<TargetAsset>>,
+    //TargetAsset: Asset + for<'a> From<&'a Wrapper> 
 {
     //println!("THIS IS BROKEN FIX THIS");
     //println!("entities in wrapper thing: {:#?}", wrapper_thing_query.iter().count());
@@ -197,27 +204,28 @@ pub fn deserialize_asset_for<Wrapper, Target, TargetAsset>(
         
         let should_try_insert = {
             if let Ok(old_thing) = things_query.get(e) {
-                if let Some(old_thing) = things.get(&**old_thing) {
-                    let old_thing_as_wrapper = Wrapper::from(old_thing);            
-                    if wrapper_thing != &old_thing_as_wrapper {
-                        true
-                    } else {
-                        false
-                    }
-                } else {true}
+                //if let Some(old_thing) = assets.get(&**old_thing) {
+                let old_thing_as_wrapper = Wrapper::from_asset(old_thing, &assets);            
+                if wrapper_thing != &old_thing_as_wrapper {
+                    true
+                } else {
+                    false
+                }
+                //} else {true}
             } else {true}
         };
 
         if should_try_insert {
-            let new_thing = TargetAsset::from(wrapper_thing);
+            let new_thing = Target::from_wrapper(wrapper_thing, &asset_server, &mut assets);
 
-            let thing_handle = things.add(new_thing);
-            commands.entity(e).try_insert(Target::from(thing_handle));
+            //let thing_handle = things.add(new_thing);
+            commands.entity(e).try_insert(new_thing);
 
         }
 
     }
 }
+
 
 /// takes a wrapper component, and attempts to deserialize it into its asset handle through [`Unwrap`]
 /// this is components that rely on file paths.

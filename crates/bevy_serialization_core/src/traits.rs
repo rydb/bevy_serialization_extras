@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
 
@@ -71,4 +71,33 @@ pub trait AsBundle<T: Bundle> {
 /// denotes that this struct unfolds into something else. Usually means that the struct is "object oriented", and can be unfolded into an ECS compliant variant.
 pub trait Unfold<T> {
     fn unfolded(value: T) -> Self;
+}
+
+pub trait FromWrapper<T>
+    where
+        Self: AssetKind + Deref<Target = Handle<Self::AssetKind>>,
+{
+    fn from_wrapper(value: &T, asset_server: &Res<AssetServer>, assets: &mut ResMut<Assets<Self::AssetKind>>) -> Self;
+}
+
+pub trait FromAsset<T> 
+    where
+        T: AssetKind + Deref<Target = Handle<T::AssetKind>>,
+        // Self: From<&'a T::AssetKind>
+{
+    fn from_asset(value: &T, assets: &ResMut<Assets<T::AssetKind>>) -> Self;
+
+}
+
+// pub trait FromAsset<T>
+//     where
+//         Self: Component + AssetKind
+// {
+//     fn from(value: &Self, asset_server: ResMut<Assets<Self::AssetKind>>) {
+        
+//     }
+// }
+
+pub trait AssetKind {
+    type AssetKind: Asset; 
 }
