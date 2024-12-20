@@ -227,39 +227,6 @@ pub fn deserialize_asset_for<Wrapper, Target>(
 }
 
 
-/// takes a wrapper component, and attempts to deserialize it into its asset handle through [`Unwrap`]
-/// this is components that rely on file paths.
-pub fn deserialize_wrapper_for<Wrapper, Target, TargetAsset>(
-    wrapper_thing_query: Query<
-        (Entity, &Wrapper),
-        Or<(Without<Target>, Changed<Wrapper>)>,
-    >,
-    asset_server: Res<AssetServer>,
-    mut things: ResMut<Assets<TargetAsset>>,
-
-    mut commands: Commands,
-) where
-    Wrapper: Component,
-    Target: Component + Deref<Target = Handle<TargetAsset>> + From<Handle<TargetAsset>>,
-    TargetAsset: Asset + for<'a> Unwrap<&'a Wrapper> 
-{
-    //println!("deserialize targets: {:#?}", wrapper_thing_query.iter().count());
-    for (e, wrapper_thing) in wrapper_thing_query.iter() {
-        let asset_fetch_attempt = TargetAsset::unwrap(wrapper_thing);
-        
-        match asset_fetch_attempt {
-            Ok(asset) => {
-                let handle = things.add(asset);
-                commands.entity(e).try_insert(Target::from(handle));
-            }
-            Err(file_path) => {
-                let handle: Handle<TargetAsset> = asset_server.load(file_path);
-                commands.entity(e).try_insert(Target::from(handle));
-            }
-        }
-    }
-}
-
 /// deserializes a wrapper component into its unserializable component variant.
 pub fn deserialize_for<Wrapper, Target>(
     wrapper_thing_query: Query<

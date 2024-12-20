@@ -180,44 +180,6 @@ where
     }
 }
 
-/// Plugin for deserialization for WrapperComponent -> Asset.
-/// This is for assets that don't have 1:1 conversions from asset to warpper.
-///
-/// !!!Changes made to these assets at runtime will not be saved!!!
-pub struct DeserializeAssetFrom<U, T, V> {
-    wrapper_thing: PhantomData<fn() -> U>,
-    thing: PhantomData<fn() -> T>,
-    thing_asset: PhantomData<fn() -> V>,
-}
-
-impl<U, T, V> Plugin for DeserializeAssetFrom<U, T, V>
-where
-    U: 'static + Component + GetTypeRegistration,
-    T: 'static + Component + Deref<Target = Handle<V>> + From<Handle<V>>,
-    V: 'static + Asset + for<'a> Unwrap<&'a U>,
-{
-    fn build(&self, app: &mut App) {
-        skip_serializing::<T>(app);
-        
-        app
-        .register_type::<U>()
-        .add_systems(
-            Update,
-            (deserialize_wrapper_for::<U, T, V>).after(LoadSystem::PostLoad),
-        );
-    }
-}
-
-impl<U, T, V> Default for DeserializeAssetFrom<U, T, V> {
-    fn default() -> Self {
-        Self {
-            wrapper_thing: PhantomData,
-            thing: PhantomData,
-            thing_asset: PhantomData,
-        }
-    }
-}
-
 pub struct SerializeManyAsOneFor<T, U> {
     things_query: PhantomData<fn() -> T>,
     composed_things_resource: PhantomData<fn() -> U>,
@@ -269,8 +231,6 @@ impl Plugin for SerializationBasePlugin {
         // default conversions
         .add_plugins(SerializeAssetFor::<MeshMaterial3d<StandardMaterial>, MaterialFlag>::default())
         .add_plugins(SerializeAssetFor::<Mesh3d, GeometryFlag>::default())
-        // .add_plugins(DeserializeAssetFrom::<GeometryFlag, Mesh3d, Mesh>::default())
-        // .add_plugins(DeserializeAssetFrom::<GeometryFile, Mesh3d, Mesh>::default())
         ;
     }
 }
