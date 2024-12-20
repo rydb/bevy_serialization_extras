@@ -27,7 +27,6 @@ use bevy_reflect::{GetTypeRegistration, ReflectDeserialize, ReflectSerialize};
 use bevy_render::prelude::*;
 
 /// plugin for converting a query result of something(s) into a singular component.
-#[derive(Default)]
 pub struct SerializeQueryFor<S, T, U>
 where
     S: 'static + QueryData + ChangeChecked,
@@ -75,15 +74,23 @@ where
     }
 }
 
-// impl<S, T, U> Default for SerializeQueryFor<S, T, U> {
-//     fn default() -> Self {
-//         Self {
-//             query: PhantomData,
-//             thing: PhantomData,
-//             wrapper_thing: PhantomData,
-//         }
-//     }
-// }
+impl<S, T, U> Default for SerializeQueryFor<S, T, U>
+where
+    S: 'static + QueryData + ChangeChecked,
+    T: 'static
+        + Component
+        + Debug
+        + for<'a, 'b> From<&'b <<S as QueryData>::ReadOnly as WorldQuery>::Item<'a>>,
+    U: 'static + Component + for<'a> From<&'a T> + GetTypeRegistration,
+{
+    fn default() -> Self {
+        Self {
+            query: PhantomData,
+            thing: PhantomData,
+            wrapper_thing: PhantomData,
+        }
+    }
+}
 
 /// plugin for serialization for WrapperComponent -> Component, Component -> WrapperComponent
 #[derive(Default)]

@@ -66,7 +66,7 @@ pub struct JointRecieverFlag {
     pub id: String,
 }
 
-#[derive(QueryData)]
+#[derive(QueryData,)]
 pub struct Linkage {
     entity: Entity,
     // It is required that all reference lifetimes are explicitly annotated, just like in any
@@ -133,7 +133,7 @@ impl From<&JointFlag> for GenericJoint {
                 (&joint_motors[5]).into(),
             ],
             contacts_enabled: value.contacts_enabled,
-            //FIXME:  fix jointflag to have a proper enum for this later
+            //FIXME: fix jointflag to have a proper enum for this later
             enabled: rapier3d::dynamics::JointEnabled::Enabled,
             //FIXME: figure out what this is for?
             user_data: 0,
@@ -154,17 +154,6 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
         }
     }
 }
-
-// impl From<&JointFlag> for ImpulseJoint {
-//         fn from(value: &JointFlag) -> Self {
-//             let joint = GenericJoint::from(value);
-//             let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
-//             Self {
-//                 parent: value.entity,
-//                 data: bevy_rapier_joint,
-//             }
-//         }
-//     }
 
 impl From<&ImpulseJoint> for JointFlag {
     fn from(value: &ImpulseJoint) -> Self {
@@ -282,15 +271,6 @@ bitflags::bitflags! {
         const ANG_AXES = Self::ANG_X.bits() | Self::ANG_Y.bits() | Self::ANG_Z.bits();
     }
 }
-//pub axis:
-
-// pub struct LazyIsometry {
-//     transform: Transform,
-// }
-
-// pub struct t {
-//     ttt: ImpulseJoint
-// }
 
 #[derive(Component, Debug, Default, Reflect, Clone)]
 #[reflect(Component)]

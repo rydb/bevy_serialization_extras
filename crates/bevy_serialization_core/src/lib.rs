@@ -1,3 +1,5 @@
+//! The backbone of bevy_serialziation_extras
+
 pub mod plugins;
 pub mod queries;
 pub mod resources;
