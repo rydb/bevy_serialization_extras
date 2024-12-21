@@ -22,7 +22,7 @@
             alpha: 1.0,
           )),
         )),
-        "bevy_serialization_core::wrappers::mesh::MeshFlag": AssetPath("root://cube.glb#Mesh0/Primitive0"),
+        "bevy_serialization_core::wrappers::mesh::MeshFlag3d": AssetPath("root://cube.glb#Mesh0/Primitive0"),
         "bevy_transform::components::global_transform::GlobalTransform": ((1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.5, 0.0)),
         "bevy_transform::components::transform::Transform": (
           translation: (0.0, 0.5, 0.0),

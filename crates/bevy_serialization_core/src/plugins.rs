@@ -1,7 +1,7 @@
 use super::resources::*;
 use super::systems::*;
 use crate::traits::{ChangeChecked, FromStructure, IntoHashMap, LazyDeserialize};
-use crate::wrappers::mesh::MeshFlag;
+use crate::wrappers::mesh::MeshFlag3d;
 use crate::{traits::*, wrappers::material::MaterialFlag3d};
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_ecs::query::{QueryData, WorldQuery};
@@ -201,7 +201,7 @@ impl Plugin for SerializationBasePlugin {
                 MeshMaterial3d<StandardMaterial>,
                 MaterialFlag3d,
             >::default())
-            .add_plugins(SerializeAssetFor::<Mesh3d, MeshFlag>::default());
+            .add_plugins(SerializeAssetFor::<Mesh3d, MeshFlag3d>::default());
     }
 }
 
@@ -217,7 +217,7 @@ impl Plugin for SerializationPlugin {
             .register_type::<Camera3dDepthTextureUsage>()
             .register_type::<InheritedVisibility>()
             .register_type::<ScreenSpaceTransmissionQuality>()
-            .register_type::<MeshFlag>()
+            .register_type::<MeshFlag3d>()
             .register_type::<[[f32; 3]; 3]>()
             .register_type::<[Vec3; 3]>()
             .register_type::<CameraRenderGraph>()

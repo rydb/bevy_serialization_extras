@@ -16,7 +16,7 @@ A library that allows the editing of non-reflect components via wrapper componen
 .add_plugins(SerializeAssetFor::<StandardMaterial, MaterialFlag3d>::default())
 
 // WrapperComponent -> AssetHandle
-.add_plugins(DeserializeAssetFrom::<MeshFlag, Mesh>::default())
+.add_plugins(DeserializeAssetFrom::<MeshFlag3d, Mesh>::default())
 
 // Query -> Component, 
 .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())

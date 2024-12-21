@@ -66,7 +66,7 @@ pub struct JointRecieverFlag {
     pub id: String,
 }
 
-#[derive(QueryData,)]
+#[derive(QueryData)]
 pub struct Linkage {
     entity: Entity,
     // It is required that all reference lifetimes are explicitly annotated, just like in any
