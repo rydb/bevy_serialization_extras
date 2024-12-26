@@ -1,0 +1,13 @@
+<robot name="cube">
+    <link name="base_link">
+        <inertial>
+            <mass value="0.010288200184753522"/>
+            <inertia ixx="0.000092" ixy="0.000000" ixz="-0.000000" iyy="0.000049" iyz="-0.000000" izz="0.000111"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <box size="1.0 1.0 1.0"/>
+            </geometry>
+        </visual>
+    </link>
+</robot>

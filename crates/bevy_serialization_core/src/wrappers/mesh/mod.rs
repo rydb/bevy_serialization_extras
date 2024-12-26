@@ -9,8 +9,6 @@ use bevy_math::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_render::prelude::*;
 
-pub mod obj;
-
 //TODO: Until:
 // https://github.com/KhronosGroup/glTF-External-Reference
 // becomes an extension supported by gltf-rs, or the spec is merged into gltf. gltf serialization cannot be supported in this library.

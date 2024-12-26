@@ -101,7 +101,7 @@ fn create_revolute_joints(
     let mut curr_parent = commands
         .spawn((
             RigidBody::Fixed,
-            AsyncCollider::default(),
+            Name::new("joint root"),
             Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
             Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
             MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
@@ -123,7 +123,6 @@ fn create_revolute_joints(
             handles[k] = commands
                 .spawn((
                     RigidBody::Dynamic,
-                    AsyncCollider::default(),
                     Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
                     Transform::from_translation(positions[k]),
                     MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),

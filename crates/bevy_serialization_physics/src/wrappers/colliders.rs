@@ -4,8 +4,14 @@ use strum_macros::EnumIter;
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
 
+use super::{
+    collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag,
+    solvergroupfilter::SolverGroupsFlag,
+};
+
 #[derive(Component, EnumIter, Reflect, Clone, Default)]
 #[reflect(Component)]
+#[require(CcdFlag, CollisionGroupsFlag, SolverGroupsFlag)]
 pub enum ColliderFlag {
     /// laggy: no-internal geometry(will clip through things)
     Trimesh,
@@ -13,6 +19,7 @@ pub enum ColliderFlag {
     /// fast: accurate assuming mesh geometry is convex, inaccurate otherwise.
     Convex,
 }
+
 impl From<&ColliderFlag> for AsyncCollider {
     fn from(value: &ColliderFlag) -> Self {
         match value {

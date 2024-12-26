@@ -1,0 +1,71 @@
+<robot name="diff_bot">
+    <link name="base_link">
+        <inertial>
+            <mass value="0.0055398003262668895"/>
+            <inertia ixx="0.000044" ixy="-0.000000" ixz="-0.000000" iyy="0.000021" iyz="-0.000000" izz="0.000060"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <mesh filename="package://model_pkg/models/base.obj"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="left_wheel_joint" type="continuous">
+        <origin xyz="1.0 0.825 0.35"/>
+        <parent link="base_link"/>
+        <child link="left_wheel_link"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+    <link name="left_wheel_link">
+        <inertial>
+            <mass value="0.00037744371459065025"/>
+            <inertia ixx="0.000001" ixy="0.000000" ixz="0.000000" iyy="0.000000" iyz="-0.000000" izz="0.000000"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <mesh filename="package://model_pkg/models/left_wheel_decimated.obj"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="right_wheel_joint" type="continuous">
+        <origin xyz="-1 0.825 0.35"/>
+        <parent link="base_link"/>
+        <child link="right_wheel_link"/>
+        <axis xyz="1 0 0"/>
+    </joint>
+
+    <link name="right_wheel_link">
+        <inertial>
+            <mass value="0.00037744376437338965"/>
+            <inertia ixx="0.000001" ixy="0.000000" ixz="-0.000000" iyy="0.000000" iyz="0.000000" izz="0.000000"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <mesh filename="package://model_pkg/models/right_wheel_decimated.obj"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="caster_wheel_joint" type="fixed">
+        <origin xyz="-0.3 -1.31 0.0"/>
+        <parent link="base_link"/>
+        <child link="caster_wheel_link"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+    <link name="caster_wheel_link">
+        <inertial>
+            <mass value="1.1041741290746848e-05"/>
+            <inertia ixx="0.000000" ixy="-0.000000" ixz="0.000000" iyy="0.000000" iyz="0.000000" izz="0.000000"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <mesh filename="package://model_pkg/models/caster_wheel_decimated.obj"/>
+            </geometry>
+        </visual>
+    </link>
+
+</robot>

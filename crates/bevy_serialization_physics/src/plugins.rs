@@ -1,4 +1,3 @@
-use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{
     dynamics::{AdditionalMassProperties, ImpulseJoint, RigidBody},
     geometry::{AsyncCollider, SolverGroups},
@@ -27,8 +26,7 @@ pub struct SerializationPhysicsPlugin;
 
 impl Plugin for SerializationPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ObjPlugin)
-            .register_type::<StructureFlag>()
+        app.register_type::<StructureFlag>()
             .register_type::<LinkFlag>()
             .register_type::<JointRecieverFlag>()
             .register_type::<JointFlag>()

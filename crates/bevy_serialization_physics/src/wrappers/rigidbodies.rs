@@ -4,8 +4,11 @@ use strum_macros::EnumIter;
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
 
+use super::{colliders::ColliderFlag, friction::FrictionFlag, mass::MassFlag};
+
 #[derive(Component, Reflect, Clone, Default, EnumIter)]
 #[reflect(Component)]
+#[require(ColliderFlag, FrictionFlag, MassFlag)]
 pub enum RigidBodyFlag {
     #[default]
     Fixed,

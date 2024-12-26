@@ -5,14 +5,32 @@ edition = "2021"
 
 [dependencies]
 bevy_serialization_core = {workspace = true}
-
+bevy_serialization_physics = {workspace = true}
 bevy_ecs = {workspace = true}
+bevy_transform = {workspace = true}
 bevy_render = {workspace = true}
 bevy_reflect = {workspace = true}
 bevy_color = {workspace = true}
 bevy_utils = {workspace = true}
+bevy_state = {workspace = true}
+bevy_asset = {workspace = true}
+bevy_app = {workspace = true}
+bevy_core = {workspace = true}
+thiserror = {workspace = true}
 derive_more = {workspace = true}
 glam = {workspace = true}
 nalgebra = {workspace = true}
 urdf-rs = {workspace = true}
 bevy_math = {workspace = true}
+
+[dev-dependencies]
+strum_macros = {workspace = true}
+bevy = {workspace = true, features = ["dynamic_linking"]}
+bevy_ui_extras = {workspace = true}
+egui = {workspace = true}
+strum = {workspace = true}
+moonshine-save = {workspace = true}
+bevy_camera_extras = {workspace = true}
+bevy_egui = {workspace = true}
+bevy_rapier3d = {workspace = true}
+bevy_obj = {workspace = true}
