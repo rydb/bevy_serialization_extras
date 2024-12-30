@@ -36,9 +36,14 @@ See: <https://github.com/rydb/bevy_serialization_urdf>
 
 ![edit_example.png](edit_example.png)
 
-- type registration for wrappers through `ManagedTypeRegistration` trait
-
 - A visualization util to list serializable/unserializable components(W.I.P)
+
+
+
+https://github.com/user-attachments/assets/fb1a1b09-db3f-4476-9b0d-800b296ccb8a
+
+
+
 
 ## Usage
 
