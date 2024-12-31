@@ -1,9 +1,6 @@
 use bevy_core::Name;
 use bevy_render::prelude::Visibility;
-use bevy_serialization_core::{
-    prelude::{material::MaterialFlag3d, mesh::MeshFlag3d, AssetSpawnRequest},
-    traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError},
-};
+use bevy_serialization_core::prelude::{material::MaterialFlag3d, mesh::MeshFlag3d};
 use bevy_serialization_physics::prelude::{
     colliders::ColliderFlag,
     continous_collision::CcdFlag,
@@ -40,6 +37,11 @@ use urdf_rs::{Joint, Link, Pose, Robot, Visual};
 use derive_more::From;
 
 use bevy_ecs::{prelude::*, query::QueryData};
+
+use crate::{
+    resources::AssetSpawnRequest,
+    traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError},
+};
 
 use super::{loader::Urdf, visual::VisualWrapper};
 

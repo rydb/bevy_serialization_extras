@@ -4,7 +4,7 @@
     4294967303: (
       components: {
         "bevy_core::name::Name": (
-          hash: 7887523716694876243,
+          hash: 10297836143885421262,
           name: "Cube",
         ),
         "bevy_render::primitives::Aabb": (

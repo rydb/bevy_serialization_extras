@@ -10,12 +10,10 @@ use bevy_rapier3d::{
     render::RapierDebugRenderPlugin,
 };
 use bevy_serialization_assemble::{
-    plugins::{AssetSourcesUrdfPlugin, UrdfSerializationPlugin},
-    urdf::{loader::Urdf, resources::CachedUrdf},
+    resources::{AssetSpawnRequest, AssetSpawnRequestQueue},
+    urdf::{loader::Urdf, resources::CachedUrdf, AssetSourcesUrdfPlugin, UrdfSerializationPlugin},
 };
-use bevy_serialization_core::prelude::{
-    AssetSpawnRequest, AssetSpawnRequestQueue, SerializationBasePlugin, SerializationPlugin,
-};
+use bevy_serialization_core::prelude::{SerializationBasePlugin, SerializationPlugin};
 use bevy_serialization_physics::prelude::{
     link::{JointFlag, StructureFlag},
     rigidbodies::RigidBodyFlag,

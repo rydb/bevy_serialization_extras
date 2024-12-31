@@ -1,14 +1,9 @@
 use crate::{
     prelude::{ComponentsOnSave, TypeRegistryOnSave},
-    resources::{AssetSpawnRequestQueue, RequestFrom},
     traits::*,
 };
 use core::fmt::Debug;
-use std::{
-    any::TypeId,
-    collections::{HashMap, VecDeque},
-    ops::Deref,
-};
+use std::{any::TypeId, collections::HashMap, ops::Deref};
 
 use bevy_asset::prelude::*;
 use bevy_ecs::{
@@ -16,25 +11,7 @@ use bevy_ecs::{
     query::{QueryData, WorldQuery},
 };
 use bevy_reflect::TypeInfo;
-use bevy_render::prelude::*;
 use moonshine_save::save::Save;
-
-//FIXME: implement this properly. Once an asset builder that could use this exists.
-pub fn serialize_structures_as_assets<ThingSet, AssetType>(//thing_query: Query<ThingSet>,
-    //asset_server: Res<AssetServer>,
-    //mut assets: ResMut<Assets<AssetType>>,
-)
-where
-    ThingSet: QueryData,
-    AssetType: Asset + for<'w, 's> IntoHashMap<Query<'w, 's, ThingSet>> + Clone,
-{
-    // let assets_list: HashMap<String, AssetType> = IntoHashMap::into_hashmap(thing_query);
-    // //println!("assets list is {:#?}", assets_list.keys());
-    // for (name, uncached_asset) in assets_list.iter() {
-    //     asset_server.add(uncached_asset.clone());
-    //     //LazyDeserialize::deserialize(uncached_asset.clone(), asset_handle.path());
-    // }
-}
 
 // pub fn serialize_structures_as_resource<ThingSet, ThingResource> (
 //     thing_query: Query<ThingSet>,
@@ -50,49 +27,6 @@ where
 //         ThingResource::from(thing_query)
 //     )
 // }
-
-pub fn deserialize_assets_as_structures<TargetAsset>(
-    thing_assets: Res<Assets<TargetAsset>>,
-    mut asset_spawn_requests: ResMut<AssetSpawnRequestQueue<TargetAsset>>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) where
-    TargetAsset: Asset + Clone + FromStructure + LazyDeserialize,
-{
-    let mut failed_requests = VecDeque::new();
-    while asset_spawn_requests.requests.len() != 0 {
-        if let Some(request) = asset_spawn_requests.requests.pop_front() {
-            match request.source.clone() {
-                RequestFrom::AssetServerPath(path) => {
-                    log::trace!("processing request from path: {:#?}", path.clone());
-                    let asset_handle = asset_server.load(path);
-
-                    //passes off request to the front of the queue for the next update as the asset is likely to not have loaded yet until next update.
-                    let mut unready_asset_request = request;
-                    //turns asset request into assset id as now former "file" path is now a part of the Res<Assets<T>>
-                    unready_asset_request.source = RequestFrom::AssetHandle(asset_handle);
-                    failed_requests.push_front(unready_asset_request);
-                }
-                RequestFrom::AssetHandle(handle) => {
-                    log::trace!("processing request from assetid {:#?}", handle);
-                    log::trace!("failed load attempts: {:#?}", request.failed_load_attempts);
-                    if let Some(asset) = thing_assets.get(&handle) {
-                        FromStructure::into_entities(&mut commands, asset.clone(), request);
-                    } else {
-                        let mut failed_request = request;
-                        failed_request.failed_load_attempts += 1;
-                        failed_requests.push_back(failed_request);
-                    }
-                }
-            }
-        }
-    }
-    // re-add failed requests to asset_spawn_requests, as there could be a chance the asset just hasn't loaded yet.
-    asset_spawn_requests.requests.append(&mut failed_requests);
-    // for (asset_id, asset) in thing_assets.iter() {
-    //     //FromStructure::into_structures(&mut commands, asset, asset_load_request.requests.clone());
-    // }
-}
 
 /// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Target, Wrapper>(
@@ -215,27 +149,27 @@ pub fn deserialize_for<Wrapper, Target>(
     }
 }
 
-/// adds computed visability to componnets that don't have it. this should probably be removed
-/// at some point...
-pub fn add_inherieted_visibility(
-    computed_visiblity_query: Query<Entity, Without<InheritedVisibility>>,
-    mut commands: Commands,
-) {
-    for e in computed_visiblity_query.iter() {
-        commands
-            .entity(e)
-            .try_insert(InheritedVisibility::default());
-    }
-}
+// /// adds computed visability to componnets that don't have it. this should probably be removed
+// /// at some point...
+// pub fn add_inherieted_visibility(
+//     computed_visiblity_query: Query<Entity, Without<InheritedVisibility>>,
+//     mut commands: Commands,
+// ) {
+//     for e in computed_visiblity_query.iter() {
+//         commands
+//             .entity(e)
+//             .try_insert(InheritedVisibility::default());
+//     }
+// }
 
-pub fn add_view_visibility(
-    computed_visiblity_query: Query<Entity, Without<ViewVisibility>>,
-    mut commands: Commands,
-) {
-    for e in computed_visiblity_query.iter() {
-        commands.entity(e).try_insert(ViewVisibility::default());
-    }
-}
+// pub fn add_view_visibility(
+//     computed_visiblity_query: Query<Entity, Without<ViewVisibility>>,
+//     mut commands: Commands,
+// ) {
+//     for e in computed_visiblity_query.iter() {
+//         commands.entity(e).try_insert(ViewVisibility::default());
+//     }
+// }
 
 pub fn update_last_saved_typedata(world: &mut World) {
     let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();

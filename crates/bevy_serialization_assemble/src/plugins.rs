@@ -1,46 +1,59 @@
+use std::marker::PhantomData;
+
 /// plugin that contains everything required for a urdf -> bevy conversion
 ///
 /// NOTE: !!! .dae is not supported! If a .dae support plugin gets added, make an issue, and it can be added.
 /// In the meantime, use .obj!!!
 ///
 use bevy_app::prelude::*;
-use bevy_asset::{
-    io::{file::FileAssetReader, AssetSource},
-    AssetApp,
-};
-use bevy_serialization_core::prelude::SerializeManyAsOneFor;
+use bevy_asset::Asset;
+use bevy_ecs::{prelude::*, query::QueryData};
+use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
-use crate::urdf::{
-    loader::{Urdf, UrdfLoaderPlugin},
-    resources::CachedUrdf,
-    urdf::LinkQuery,
+use crate::{
+    resources::AssetSpawnRequestQueue,
+    systems::{deserialize_assets_as_structures, serialize_structures_as_assets},
+    traits::{FromStructure, IntoHashMap, LazyDeserialize},
 };
 
-const PACKAGE: &str = "package";
-
-/// asset sources for urdf. Needs to be loaded before [`DefaultPlugins`]
-pub struct AssetSourcesUrdfPlugin {
-    // path to folder that `package://`` leads to
-    pub assets_folder_local_path: String,
+/// Plugin for serializing collections of entities/components into a singular asset and vice versa.
+pub struct SerializeManyAsOneFor<T, U> {
+    things_query: PhantomData<fn() -> T>,
+    composed_things_resource: PhantomData<fn() -> U>,
 }
 
-impl Plugin for AssetSourcesUrdfPlugin {
-    fn build(&self, app: &mut App) {
-        let path = self.assets_folder_local_path.clone();
-        app.register_asset_source(
-            PACKAGE,
-            AssetSource::build().with_reader(move || Box::new(FileAssetReader::new(path.clone()))),
-        );
+impl<U, T> Default for SerializeManyAsOneFor<U, T> {
+    fn default() -> Self {
+        Self {
+            things_query: PhantomData,
+            composed_things_resource: PhantomData,
+        }
     }
 }
 
-pub struct UrdfSerializationPlugin;
-
-impl Plugin for UrdfSerializationPlugin {
+impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
+where
+    T: 'static + QueryData,
+    U: 'static
+        + Asset
+        + Default
+        + Clone
+        + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
+        + FromStructure
+        + LazyDeserialize, //+ LazySerialize,
+{
     fn build(&self, app: &mut App) {
-        app.register_type::<CachedUrdf>()
-            .add_plugins(UrdfLoaderPlugin)
-            .insert_resource(CachedUrdf::default())
-            .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default());
+        app.world_mut()
+            .get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(|| {
+                AssetSpawnRequestQueue::<U>::default()
+            });
+        app.add_systems(
+            PreUpdate,
+            (serialize_structures_as_assets::<T, U>,).before(SaveSystem::Save),
+        )
+        .add_systems(
+            Update,
+            (deserialize_assets_as_structures::<U>).after(LoadSystem::PostLoad),
+        );
     }
 }

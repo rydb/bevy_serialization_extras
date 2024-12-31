@@ -1,63 +1,11 @@
 use bevy_asset::prelude::*;
 use bevy_ecs::prelude::*;
-use std::{collections::HashMap, fmt::Display, ops::Deref};
+use std::ops::Deref;
 
 /// trait that explains how to take struct and unwrap it into a bevy thing.
 /// Like [`From`], but returns either the Target to be unwrapped or a filepath to thing.
 pub trait Unwrap<T>: Sized {
     fn unwrap(value: T) -> Result<Self, String>;
-}
-
-pub trait FromStructure
-where
-    Self: Sized + Asset,
-{
-    fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>);
-}
-
-pub trait IntoHashMap<T>
-where
-    Self: Sized,
-{
-    fn into_hashmap(value: T) -> HashMap<String, Self>;
-}
-
-use crate::resources::AssetSpawnRequest;
-use thiserror::Error;
-
-#[non_exhaustive]
-#[derive(Error, Debug)]
-pub enum LoadError {
-    Error(String),
-}
-
-impl Display for LoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let res = match self {
-            LoadError::Error(err) => write!(f, "Error: {:#}", err),
-        };
-        res
-    }
-}
-/// deserialize trait that works by offloading deserialization to desired format's deserializer
-pub trait LazyDeserialize
-where
-    Self: Sized,
-{
-    fn deserialize(absolute_path: String) -> Result<Self, LoadError>;
-}
-
-pub trait LazySerialize
-where
-    Self: Sized,
-{
-    fn serialize(absolute_path: String) -> Result<Self, LoadError>;
-}
-
-///trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
-pub trait Structure<T> {
-    /// returns the name of the structure this struct refers to.
-    fn structure(value: T) -> String;
 }
 
 // component on a query that is checked for changes

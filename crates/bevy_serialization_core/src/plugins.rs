@@ -1,6 +1,6 @@
 use super::resources::*;
 use super::systems::*;
-use crate::traits::{ChangeChecked, FromStructure, IntoHashMap, LazyDeserialize};
+use crate::traits::ChangeChecked;
 use crate::wrappers::mesh::MeshFlag3d;
 use crate::{traits::*, wrappers::material::MaterialFlag3d};
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
@@ -10,11 +10,9 @@ use core::fmt::Debug;
 use moonshine_save::file_from_resource;
 use moonshine_save::load::load;
 use moonshine_save::load::LoadPlugin;
-use moonshine_save::load::LoadSystem;
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::save::SaveInput;
 use moonshine_save::save::SavePlugin;
-use moonshine_save::save::SaveSystem;
 use std::ops::{Deref, Range};
 use std::{any::TypeId, marker::PhantomData};
 
@@ -149,47 +147,6 @@ where
     }
 }
 
-/// Plugin for serializing collections of entities/components into a singular asset and vice versa.
-pub struct SerializeManyAsOneFor<T, U> {
-    things_query: PhantomData<fn() -> T>,
-    composed_things_resource: PhantomData<fn() -> U>,
-}
-
-impl<U, T> Default for SerializeManyAsOneFor<U, T> {
-    fn default() -> Self {
-        Self {
-            things_query: PhantomData,
-            composed_things_resource: PhantomData,
-        }
-    }
-}
-
-impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
-where
-    T: 'static + QueryData,
-    U: 'static
-        + Asset
-        + Default
-        + Clone
-        + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
-        + FromStructure
-        + LazyDeserialize, //+ LazySerialize,
-{
-    fn build(&self, app: &mut App) {
-        app.world_mut()
-            .get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(|| {
-                AssetSpawnRequestQueue::<U>::default()
-            });
-        app.add_systems(
-            PreUpdate,
-            (serialize_structures_as_assets::<T, U>,).before(SaveSystem::Save),
-        )
-        .add_systems(
-            Update,
-            (deserialize_assets_as_structures::<U>).after(LoadSystem::PostLoad),
-        );
-    }
-}
 /// base addons for [`SerializationPlugins`]. Adds wrappers for some bevy structs that don't serialize/fully reflect otherwise.
 pub struct SerializationBasePlugin;
 
@@ -254,11 +211,11 @@ impl Plugin for SerializationPlugin {
                 //save_default_with(save_filter).into_file_on_request::<SaveRequest>(),
                 save_default_with(save_filter).into(file_from_resource::<SaveRequest>()),
             )
-            .add_systems(
-                Update,
-                add_inherieted_visibility.after(LoadSystem::PostLoad),
-            )
-            .add_systems(Update, add_view_visibility.after(LoadSystem::PostLoad))
+            // .add_systems(
+            //     Update,
+            //     add_inherieted_visibility.after(LoadSystem::PostLoad),
+            // )
+            // .add_systems(Update, add_view_visibility.after(LoadSystem::PostLoad))
             .add_systems(PreUpdate, load(file_from_resource::<LoadRequest>()));
     }
 }
