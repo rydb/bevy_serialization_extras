@@ -3,15 +3,15 @@ pub mod resources;
 pub mod urdf;
 pub mod visual;
 
-use crate::plugins::SerializeManyAsOneFor;
-use crate::urdf::loader::Urdf;
-use crate::urdf::loader::UrdfLoaderPlugin;
 use bevy_app::prelude::*;
-use bevy_asset::io::file::FileAssetReader;
 use bevy_asset::io::AssetSource;
 use bevy_asset::AssetApp;
 use resources::CachedUrdf;
 use urdf::LinkQuery;
+use crate::urdf::loader::UrdfLoaderPlugin;
+use crate::plugins::SerializeManyAsOneFor;
+use crate::urdf::loader::Urdf;
+use bevy_asset::io::file::FileAssetReader;
 
 pub const PACKAGE: &str = "package";
 
@@ -31,6 +31,11 @@ impl Plugin for AssetSourcesUrdfPlugin {
     }
 }
 
+/// plugin that contains everything required for a urdf -> bevy conversion
+///
+/// NOTE: !!! .dae is not supported! If a .dae support plugin gets added, make an issue, and it can be added.
+/// In the meantime, use .obj!!!
+///
 pub struct UrdfSerializationPlugin;
 
 impl Plugin for UrdfSerializationPlugin {

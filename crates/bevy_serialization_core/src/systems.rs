@@ -149,28 +149,6 @@ pub fn deserialize_for<Wrapper, Target>(
     }
 }
 
-// /// adds computed visability to componnets that don't have it. this should probably be removed
-// /// at some point...
-// pub fn add_inherieted_visibility(
-//     computed_visiblity_query: Query<Entity, Without<InheritedVisibility>>,
-//     mut commands: Commands,
-// ) {
-//     for e in computed_visiblity_query.iter() {
-//         commands
-//             .entity(e)
-//             .try_insert(InheritedVisibility::default());
-//     }
-// }
-
-// pub fn add_view_visibility(
-//     computed_visiblity_query: Query<Entity, Without<ViewVisibility>>,
-//     mut commands: Commands,
-// ) {
-//     for e in computed_visiblity_query.iter() {
-//         commands.entity(e).try_insert(ViewVisibility::default());
-//     }
-// }
-
 pub fn update_last_saved_typedata(world: &mut World) {
     let mut enetities_to_save = world.query_filtered::<Entity, With<Save>>();
 

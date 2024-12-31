@@ -65,14 +65,6 @@ fn main() {
             cursor_grabbed_by_default: true,
             ..default()
         })
-        // .add_plugins(CameraExtrasPlugin::default())
-        // .init_resource::<SelectedMotorAxis>()
-        // .init_resource::<PhysicsUtilitySelection>()
-        // Ui
-        //.add_systems(Update, selector_raycast)
-        // .add_systems(Update, physics_utilities_ui)
-        // .add_systems(Update, rapier_joint_info_ui)
-        // .add_systems(Update, motor_controller_ui)
         .add_systems(Update, urdf_widgets_ui)
         .add_systems(
             Update,
@@ -136,15 +128,6 @@ pub fn bind_left_and_right_wheel(
 pub struct UrdfHandles {
     pub handle_vec: Vec<Handle<Urdf>>,
 }
-
-// pub fn make_robots_selectable(
-//     robots: Query<(Entity, &StructureFlag), Without<Selectable>>,
-//     mut commands: Commands,
-// ) {
-//     for (e, ..) in robots.iter() {
-//         commands.entity(e).insert(Selectable);
-//     }
-// }
 
 pub fn control_robot(
     mut rigid_body_flag: Query<&mut RigidBodyFlag, (Without<JointFlag>, With<StructureFlag>)>,
@@ -227,10 +210,6 @@ pub fn queue_urdf_load_requests(
     // set load_urdf_path to the urdf you want to load.
 
     let load_urdf_path = "root://model_pkg/urdf/diff_bot.xml";
-    //let load_urdf_path = "urdf_tutorial/urdfs/tutorial_bot.xml";
-    //let load_urdf_path = "urdf_tutorial/urdfs/issue_test.xml";
-    //let load_urdf_path = "urdf_tutorial/urdfs/full_urdf_tutorial_bot.xml";
-
     cached_urdf.urdf = asset_server.load(load_urdf_path);
 
     urdf_load_requests.requests.push_front(AssetSpawnRequest {
@@ -323,11 +302,8 @@ pub struct UtilitySelection {
 pub fn urdf_widgets_ui(
     mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
     mut utility_selection: ResMut<UtilitySelection>,
-    //mut asset_server: Res<AssetServer>,
     cached_urdf: Res<CachedUrdf>,
     urdfs: Res<Assets<Urdf>>,
-    //mut joint_flags: Query<&mut JointFlag>,
-    //rapier_joints: Query<&ImpulseJoint>,
 ) {
     for mut context in primary_window.iter_mut() {
         egui::Window::new("debug widget window")

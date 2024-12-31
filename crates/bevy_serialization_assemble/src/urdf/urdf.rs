@@ -14,21 +14,6 @@ use bevy_serialization_physics::prelude::{
 };
 use bevy_transform::components::Transform;
 use std::collections::HashMap;
-// use bevy_serialization_extras::prelude::{
-//     colliders::ColliderFlag,
-//     continous_collision::CcdFlag,
-//     link::{
-//         Dynamics, GeometryShiftMarked, JointAxesMaskWrapper, JointFlag, JointLimitWrapper,
-//         JointMotorWrapper, LinkFlag, StructureFlag,
-//     },
-//     mass::MassFlag,
-//     material::MaterialFlag,
-//     mesh::{GeometryFile, GeometryFlag},
-//     rigidbodies::RigidBodyFlag,
-//     solvergroupfilter::{GroupWrapper, SolverGroupsFlag},
-//     *,
-// };
-// use bevy_transform::prelude::*;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
 use nalgebra::{Matrix3, Vector3};
@@ -38,10 +23,7 @@ use derive_more::From;
 
 use bevy_ecs::{prelude::*, query::QueryData};
 
-use crate::{
-    resources::AssetSpawnRequest,
-    traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError},
-};
+use crate::{resources::AssetSpawnRequest, traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError}};
 
 use super::{loader::Urdf, visual::VisualWrapper};
 
