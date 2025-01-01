@@ -1,6 +1,6 @@
 [package]
 name = "bevy_serialization_extras"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 repository = "https://github.com/rydb/bevy_serialization_extras"
 readme = "README.md"
@@ -56,8 +56,8 @@ yaserde = "0.12"
 derive_more = "1"
 bitvec = "1.0"
 log = "0.4.2"
-bevy_serialization_core = {path = "./crates/bevy_serialization_core", version = "0.5.0"}
-bevy_serialization_physics = {path = "./crates/bevy_serialization_physics", version = "0.5.0"}
+bevy_serialization_core = {path = "./crates/bevy_serialization_core", version = "0.6.0"}
+bevy_serialization_physics = {path = "./crates/bevy_serialization_physics", version = "0.6.0"}
 bevy_serialization_assemble = {path = "./crates/bevy_serialization_assemble", version = "0.1"}
 
 [dependencies]
