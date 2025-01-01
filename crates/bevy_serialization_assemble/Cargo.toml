@@ -2,6 +2,10 @@
 name = "bevy_serialization_assemble"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/rydb/bevy_serialization_extras"
+license = "MIT"
+description = "A crate for assembling assets from entities and components"
+
 
 [dependencies]
 bevy_serialization_core = {workspace = true}
