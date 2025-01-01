@@ -9,22 +9,16 @@ use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     render::RapierDebugRenderPlugin,
 };
-use bevy_serialization_assemble::{
-    resources::{AssetSpawnRequest, AssetSpawnRequestQueue},
-    urdf::{loader::Urdf, resources::CachedUrdf, AssetSourcesUrdfPlugin, UrdfSerializationPlugin},
-};
-use bevy_serialization_core::prelude::{SerializationBasePlugin, SerializationPlugin};
-use bevy_serialization_physics::prelude::{
-    link::{JointFlag, StructureFlag},
-    rigidbodies::RigidBodyFlag,
-    SerializationPhysicsPlugin,
-};
+use bevy_serialization_assemble::prelude::*;
+use bevy_serialization_core::prelude::*;
+use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
 use egui::{
     text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat,
 };
 use moonshine_save::save::Save;
 
+use resources::CachedUrdf;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 

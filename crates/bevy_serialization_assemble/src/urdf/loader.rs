@@ -3,10 +3,10 @@
 
 use bevy_app::prelude::*;
 use bevy_asset::{io::Reader, prelude::*, AssetLoader, LoadContext};
-use bevy_reflect::TypePath;
 use bevy_state::prelude::States;
 use thiserror::Error;
-use urdf_rs::Robot;
+
+use super::*;
 
 //contains the machinery required to load urdfs
 pub struct UrdfLoaderPlugin;
@@ -19,24 +19,6 @@ impl Plugin for UrdfLoaderPlugin {
 
 #[derive(Default)]
 pub struct UrdfLoader;
-
-#[derive(Asset, TypePath, Debug, Clone)]
-pub struct Urdf {
-    pub robot: Robot,
-}
-
-impl Default for Urdf {
-    fn default() -> Self {
-        Self {
-            robot: Robot {
-                name: "DEFAULT_IN_CASE_OF_ERROR".to_owned(),
-                links: Vec::new(),
-                joints: Vec::new(),
-                materials: Vec::new(),
-            },
-        }
-    }
-}
 
 /// Possible errors that can be produced by [`UrdfLoaderError`]
 #[non_exhaustive]

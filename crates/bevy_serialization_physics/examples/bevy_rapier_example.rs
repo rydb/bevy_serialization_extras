@@ -4,11 +4,8 @@ use bevy::{
 };
 use bevy_egui::EguiContext;
 use bevy_rapier3d::prelude::*;
-use bevy_serialization_core::{plugins::SerializationPlugin, prelude::SerializationBasePlugin};
-use bevy_serialization_physics::prelude::{
-    link::{JointAxesMaskWrapper, JointFlag},
-    SerializationPhysicsPlugin,
-};
+use bevy_serialization_core::prelude::*;
+use bevy_serialization_physics::prelude::*;
 
 use bevy::prelude::Vec3;
 use bevy_ui_extras::{systems::visualize_components_for, UiExtrasDebug};

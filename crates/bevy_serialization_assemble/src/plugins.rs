@@ -1,12 +1,15 @@
 use std::marker::PhantomData;
 
-
 use bevy_app::prelude::*;
-use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_asset::Asset;
+use bevy_ecs::{prelude::*, query::QueryData};
 use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
-use crate::{resources::AssetSpawnRequestQueue, systems::{deserialize_assets_as_structures, serialize_structures_as_assets}, traits::{FromStructure, IntoHashMap, LazyDeserialize}};
+use crate::{
+    resources::AssetSpawnRequestQueue,
+    systems::{deserialize_assets_as_structures, serialize_structures_as_assets},
+    traits::{FromStructure, IntoHashMap, LazyDeserialize},
+};
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
 pub struct SerializeManyAsOneFor<T, U> {
@@ -49,5 +52,3 @@ where
         );
     }
 }
-
-

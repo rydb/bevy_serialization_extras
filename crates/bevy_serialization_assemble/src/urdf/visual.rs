@@ -3,10 +3,6 @@ use bevy_serialization_core::prelude::{
     material::{MaterialFlag3d, MaterialWrapper},
     mesh::{MeshFlag3d, MeshPrefab},
 };
-// use bevy_serialization_core::prelude::{
-//     mesh::{GeometryFile, GeometryFlag, MeshPrimitive},
-//     FileCheckPicker,
-// };
 use derive_more::From;
 use glam::Vec3;
 use nalgebra::Vector3;

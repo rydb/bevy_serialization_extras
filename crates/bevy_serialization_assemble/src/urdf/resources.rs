@@ -2,7 +2,7 @@ use bevy_asset::Handle;
 use bevy_ecs::prelude::*;
 use bevy_reflect::Reflect;
 
-use super::loader::Urdf;
+use super::*;
 
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]

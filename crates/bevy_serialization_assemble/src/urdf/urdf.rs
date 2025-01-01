@@ -13,23 +13,23 @@ use bevy_serialization_physics::prelude::{
     solvergroupfilter::{GroupWrapper, SolverGroupsFlag},
 };
 use bevy_transform::components::Transform;
-use std::collections::HashMap;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
 use nalgebra::{Matrix3, Vector3};
+use std::collections::HashMap;
 use urdf_rs::{Joint, Link, Pose, Robot, Visual};
+use visual::VisualWrapper;
 
 use derive_more::From;
 
 use bevy_ecs::{prelude::*, query::QueryData};
 
-use crate::{resources::AssetSpawnRequest, traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError}};
+use crate::{
+    resources::AssetSpawnRequest,
+    traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError},
+};
 
-use super::{loader::Urdf, visual::VisualWrapper};
-
-// use crate::loaders::urdf_loader::Urdf;
-
-// use super::material_and_mesh::VisualWrapper;
+use super::*;
 
 /// the collection of things that qualify as a "link", in the ROS 2 context.
 #[derive(QueryData)]
