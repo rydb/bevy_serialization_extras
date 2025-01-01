@@ -84,5 +84,5 @@ pub fn load_urdf<'a>(bytes: &'a [u8]) -> Result<Urdf, UrdfLoaderError> {
 pub enum LoadState {
     #[default]
     Unloaded,
-    Loaded,
+    // Loaded,
 }
