@@ -6,7 +6,7 @@
         </inertial>
         <visual>
             <geometry>
-                <mesh filename="package://model_pkg/models/base.obj"/>
+                <mesh filename="package://model_pkg/models/base.glb"/>
             </geometry>
         </visual>
     </link>
@@ -25,7 +25,7 @@
         </inertial>
         <visual>
             <geometry>
-                <mesh filename="package://model_pkg/models/left_wheel_decimated.obj"/>
+                <mesh filename="package://model_pkg/models/left_wheel_decimated.glb"/>
             </geometry>
         </visual>
     </link>
@@ -44,7 +44,7 @@
         </inertial>
         <visual>
             <geometry>
-                <mesh filename="package://model_pkg/models/right_wheel_decimated.obj"/>
+                <mesh filename="package://model_pkg/models/right_wheel_decimated.glb"/>
             </geometry>
         </visual>
     </link>
@@ -63,7 +63,7 @@
         </inertial>
         <visual>
             <geometry>
-                <mesh filename="package://model_pkg/models/caster_wheel_decimated.obj"/>
+                <mesh filename="package://model_pkg/models/caster_wheel_decimated.glb"/>
             </geometry>
         </visual>
     </link>

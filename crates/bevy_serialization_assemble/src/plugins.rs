@@ -12,12 +12,32 @@ use crate::{
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
-pub struct SerializeManyAsOneFor<T, U> {
+pub struct SerializeManyAsOneFor<T, U> 
+where
+    T: 'static + QueryData,
+    U: 'static
+        + Asset
+        + Default
+        + Clone
+        + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
+        + FromStructure
+        + LazyDeserialize, //+ LazySerialize,
+{
     things_query: PhantomData<fn() -> T>,
     composed_things_resource: PhantomData<fn() -> U>,
 }
 
-impl<U, T> Default for SerializeManyAsOneFor<U, T> {
+impl<T, U> Default for SerializeManyAsOneFor<T, U> 
+where
+    T: 'static + QueryData,
+    U: 'static
+        + Asset
+        + Default
+        + Clone
+        + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
+        + FromStructure
+        + LazyDeserialize, //+ LazySerialize,
+{
     fn default() -> Self {
         Self {
             things_query: PhantomData,

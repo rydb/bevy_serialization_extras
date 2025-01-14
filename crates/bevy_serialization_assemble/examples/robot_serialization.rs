@@ -77,22 +77,6 @@ fn main() {
         .run();
 }
 
-#[derive(Component)]
-pub struct WasFrozen;
-
-// //FIXME: physics bodies fly out of control when spawned, this freezes them for the user to unpause until thats fixed.
-// pub fn freeze_spawned_robots(
-//     mut robots: Query<
-//         (Entity, &mut RigidBodyFlag),
-//         (With<StructureFlag>, Without<JointFlag>, Without<WasFrozen>),
-//     >,
-//     mut commands: Commands,
-// ) {
-//     for (e, mut body) in robots.iter_mut() {
-//         *body = RigidBodyFlag::Fixed;
-//         commands.entity(e).insert(WasFrozen);
-//     }
-// }
 #[derive(Component, Reflect, Display)]
 pub enum Wheel {
     Left,

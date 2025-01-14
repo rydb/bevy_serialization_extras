@@ -157,7 +157,7 @@ impl<'a> FromStructure for Urdf {
 }
 
 impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
-    fn into_hashmap(value: Query<'_, '_, LinkQuery>) -> HashMap<String, Self> {
+    fn into_hashmap(value: Query<'_, '_, LinkQuery>, _world: &World) -> HashMap<String, Self> {
         let mut urdf_map = HashMap::new();
         for link in value.iter() {
             let structure_name = link.structure.name.clone();

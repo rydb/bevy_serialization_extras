@@ -58,6 +58,8 @@ fn setup(
         //asset_server.load(GltfAssetLabel::Mesh(0).from_asset("../../../assets/cube.gltf"))
         //meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()
     ;
+
+    
     println!("mesh handle is {:#?}", mesh_handle);
     // // cube
     commands.spawn((

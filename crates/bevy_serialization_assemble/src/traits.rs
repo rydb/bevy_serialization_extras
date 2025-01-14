@@ -5,7 +5,7 @@ pub trait IntoHashMap<T>
 where
     Self: Sized,
 {
-    fn into_hashmap(value: T) -> HashMap<String, Self>;
+    fn into_hashmap(value: T, world: &World ) -> HashMap<String, Self>;
 }
 
 ///trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
