@@ -21,7 +21,7 @@ where
         + Clone
         + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
         + FromStructure
-        + LazyDeserialize, //+ LazySerialize,
+        //+ LazyDeserialize, //+ LazySerialize,
 {
     things_query: PhantomData<fn() -> T>,
     composed_things_resource: PhantomData<fn() -> U>,
@@ -36,7 +36,7 @@ where
         + Clone
         + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
         + FromStructure
-        + LazyDeserialize, //+ LazySerialize,
+        //+ LazyDeserialize, //+ LazySerialize,
 {
     fn default() -> Self {
         Self {
@@ -54,8 +54,9 @@ where
         + Default
         + Clone
         + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
-        + FromStructure
-        + LazyDeserialize, //+ LazySerialize,
+        + FromStructure,
+    
+        //+ LazyDeserialize, //+ LazySerialize,
 {
     fn build(&self, app: &mut App) {
         app.world_mut()

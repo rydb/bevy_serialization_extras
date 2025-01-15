@@ -14,11 +14,21 @@ pub trait Structure<T> {
     fn structure(value: T) -> String;
 }
 
+// pub struct SubStructure<T: Component>(pub T);
+
+pub trait SubStructure {
+    type SubStructure;
+}
+
+/// conversion from asset -> world entities with components
 pub trait FromStructure
 where
-    Self: Sized + Asset,
+    Self: Sized
+    // + SubStructure,
+
 {
-    fn into_entities(commands: &mut Commands, value: Self, spawn_request: AssetSpawnRequest<Self>);
+    fn into_entities(commands: &mut Commands, parent: Option<Entity>, value: Self);
+    // -> Self::SubStructure;
 }
 
 /// deserialize trait that works by offloading deserialization to desired format's deserializer
@@ -26,7 +36,7 @@ pub trait LazyDeserialize
 where
     Self: Sized,
 {
-    fn deserialize(absolute_path: String) -> Result<Self, LoadError>;
+    fn deserialize(absolute_path: String, world: &World) -> Result<Self, LoadError>;
 }
 
 pub trait LazySerialize

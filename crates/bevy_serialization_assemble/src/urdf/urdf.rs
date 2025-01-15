@@ -43,19 +43,19 @@ pub struct LinkQuery {
     pub joint: Option<&'static JointFlag>,
 }
 
-impl LazyDeserialize for Urdf {
-    fn deserialize(absolute_path: String) -> Result<Self, LoadError> {
-        let res = urdf_rs::read_file(absolute_path);
-        let urdf = match res {
-            Ok(urdf) => urdf,
-            Err(err) => return Err(LoadError::Error(err.to_string())),
-        };
-        Ok(Urdf { robot: urdf })
-    }
-}
+// impl LazyDeserialize for Urdf {
+//     fn deserialize(absolute_path: String, world: &World) -> Result<Self, LoadError> {
+//         let res = urdf_rs::read_file(absolute_path);
+//         let urdf = match res {
+//             Ok(urdf) => urdf,
+//             Err(err) => return Err(LoadError::Error(err.to_string())),
+//         };
+//         Ok(Urdf { robot: urdf })
+//     }
+// }
 
 impl<'a> FromStructure for Urdf {
-    fn into_entities(commands: &mut Commands, value: Self, _: AssetSpawnRequest<Self>) {
+    fn into_entities(commands: &mut Commands, parent: Option<Entity>, value: Self) {
         //let name = request.item.clone();
         //let robot = value.world_urdfs.get(&request.item).unwrap();
         //log::info!("urdf is {:#?}", value.clone());
@@ -153,6 +153,7 @@ impl<'a> FromStructure for Urdf {
                 .insert(new_joint)
                 .insert(RigidBodyFlag::Dynamic);
         }
+        //Ok(())
     }
 }
 
