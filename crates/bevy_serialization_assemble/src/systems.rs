@@ -11,7 +11,7 @@ use std::ops::Deref;
 /// E.G: GltfMesh -> Handle<Mesh> -> Mesh3d(Handle<Mesh>)
 /// useful for splitting apart assets that are composed of sub-assets.
 pub fn split_open_spawn_request<Request, Target>(
-    requests: Query<(Entity, &Request)>,
+    requests: Query<(Entity, &Request), Added<Request>>,
     assets: Res<Assets<Target>>,
     mut commands: Commands,
 ) 
@@ -31,7 +31,10 @@ pub fn split_open_spawn_request<Request, Target>(
             warn!("asset not loaded yet. Skipping");
             continue
         };
-        FromStructure::into_entities(&mut commands, Some(e),asset.clone());
+        FromStructure::into_entities(&mut commands, e,asset.clone());
+        // for bundle in components {
+        //     commands.entity(e).insert(bundle);
+        // }
     }
 }
 
@@ -78,7 +81,10 @@ pub fn deserialize_assets_as_structures<TargetAsset>(
                     trace!("processing request from assetid {:#?}", handle);
                     trace!("failed load attempts: {:#?}", request.failed_load_attempts);
                     if let Some(asset) = thing_assets.get(&handle) {
-                        FromStructure::into_entities(&mut commands, None, asset.clone());
+                        let root = commands.spawn_empty().id();
+                        FromStructure::into_entities(&mut commands, root, asset.clone());
+                        // let root = commands.spawn_empty().id();
+                        // FromStructure::into_entities(asset.clone());
                     } else {
                         let mut failed_request = request;
                         failed_request.failed_load_attempts += 1;

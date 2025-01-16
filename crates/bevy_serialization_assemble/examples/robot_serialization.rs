@@ -9,7 +9,7 @@ use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     render::RapierDebugRenderPlugin,
 };
-use bevy_serialization_assemble::prelude::*;
+use bevy_serialization_assemble::{gltf::GltfSerializationPlugin, prelude::*};
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
@@ -50,6 +50,7 @@ fn main() {
         .add_plugins(SerializationPhysicsPlugin)
         .add_plugins(SerializationBasePlugin)
         .add_plugins(UrdfSerializationPlugin)
+        .add_plugins(GltfSerializationPlugin)
         // rapier physics plugins
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())

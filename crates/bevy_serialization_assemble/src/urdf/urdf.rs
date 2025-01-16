@@ -25,8 +25,7 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::{
-    resources::AssetSpawnRequest,
-    traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError},
+    gltf::GltfNodeSpawnRequest, resources::AssetSpawnRequest, traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError}
 };
 
 use super::*;
@@ -55,7 +54,7 @@ pub struct LinkQuery {
 // }
 
 impl<'a> FromStructure for Urdf {
-    fn into_entities(commands: &mut Commands, parent: Option<Entity>, value: Self) {
+    fn into_entities(commands: &mut Commands, _root: Entity, value: Self) {
         //let name = request.item.clone();
         //let robot = value.world_urdfs.get(&request.item).unwrap();
         //log::info!("urdf is {:#?}", value.clone());
@@ -104,19 +103,21 @@ impl<'a> FromStructure for Urdf {
             .insert(Name::new(link.name.clone()))
             //.insert(LinkFlag::from(&link.clone().into()))
             .insert(StructureFlag { name: robot.name.clone() })
-            .insert(MassFlag {mass: 1.0})
             //.insert(MassFlag { mass: link.inertial.mass.value as f32})
             ;
-            if let Some(visual) = link.visual.first() {
-                let visual_wrapper = VisualWrapper::from(visual.clone());
+            // if let Some(visual) = link.visual.first() {
+            //     let visual_wrapper = VisualWrapper::from(visual.clone());
 
-                let mesh = MeshFlag3d::from(&visual_wrapper);
-                commands.entity(e).insert(mesh);
+            //     let mesh = MeshFlag3d::from(&visual_wrapper);
+            //     commands.entity(e).insert(mesh);
 
-                commands
-                    .entity(e)
-                    .insert(MaterialFlag3d::from(&visual_wrapper));
-            }
+            //     commands
+            //         .entity(e)
+            //         .insert(MaterialFlag3d::from(&visual_wrapper));
+            // }
+
+            FromStructure::into_entities(commands, e, link.visual.clone());
+            //FromStructure::into_entities(commands, e, VisualWrapper(link.visual.clone()));
             //let mut temp_rotate_for_demo = spawn_request.position;
             //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
             // to account for this, this will need a proper fix later.
@@ -130,12 +131,7 @@ impl<'a> FromStructure for Urdf {
                 //     //local: temp_rotate_for_demo,
                 //     ..default()
                 // })
-                .insert(ColliderFlag::default())
-                .insert(SolverGroupsFlag {
-                    memberships: GroupWrapper::GROUP_1,
-                    filters: GroupWrapper::GROUP_2,
-                })
-                .insert(GeometryShiftMarked::default())
+                //.insert(GeometryShiftMarked::default())
                 .insert(RigidBodyFlag::Dynamic)
                 .insert(CcdFlag::default());
         }

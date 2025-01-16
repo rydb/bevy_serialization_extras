@@ -1,4 +1,4 @@
-use bevy_asset::prelude::*;
+use bevy_asset::{AssetServer, Assets, Handle};
 use log::warn;
 //use bevy::prelude::*;
 //use urdf_rs::Visual;
@@ -59,6 +59,7 @@ impl FromWrapper<MeshFlag3d> for Mesh3d {
                 MeshPrefab::Capsule(capsule3d) => assets.add(*capsule3d),
                 MeshPrefab::Sphere(sphere) => assets.add(*sphere),
             },
+            //MeshFlag3d::Handle(handle) => handle.clone(),
         };
         Mesh3d(asset)
     }

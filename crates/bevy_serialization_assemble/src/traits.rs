@@ -16,19 +16,17 @@ pub trait Structure<T> {
 
 // pub struct SubStructure<T: Component>(pub T);
 
-pub trait SubStructure {
-    type SubStructure;
+pub enum ApplyTarget {
+    Root,
+    Child,
 }
-
 /// conversion from asset -> world entities with components
-pub trait FromStructure
-where
-    Self: Sized
-    // + SubStructure,
-
-{
-    fn into_entities(commands: &mut Commands, parent: Option<Entity>, value: Self);
-    // -> Self::SubStructure;
+pub trait FromStructure{
+    
+    fn into_entities(commands: &mut Commands, root: Entity, value: Self);
+    //TODO: re-attempt returning a bundle instead of adding components manually if optional components in bundle get stabalized(mabye 0.16?).
+    //that is only blocker of improving the correctness of this method.
+    //-> Vec<impl Bundle>;
 }
 
 /// deserialize trait that works by offloading deserialization to desired format's deserializer
