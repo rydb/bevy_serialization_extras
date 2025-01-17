@@ -1,37 +1,51 @@
+use crate::gltf::Request;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{FromStructure, IntoHashMap, LazyDeserialize};
 use bevy_asset::prelude::*;
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_log::prelude::*;
 use std::collections::VecDeque;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 
 /// takes a spawn request component and attempt to split off the component inside:
 /// E.G: GltfMesh -> Handle<Mesh> -> Mesh3d(Handle<Mesh>)
 /// useful for splitting apart assets that are composed of sub-assets.
-pub fn split_open_spawn_request<Request, Target>(
-    requests: Query<(Entity, &Request), Added<Request>>,
+pub fn split_open_spawn_request<Source, Target>(
+    mut requests: Query<(Entity, &mut Source)>,
     assets: Res<Assets<Target>>,
+    asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) 
     where
-        Request: Component + Deref<Target = Option<Handle<Target>>> + Clone,
+        Source: Component + DerefMut<Target = Request<Target>> + Clone,
         Target: Asset + Clone + FromStructure,
 {
-    for (e, request) in requests.iter() {
-        let check = request.clone();
-        let Some(ref handle) = *check else {
-            // //TODO: implement a proper warning for this
-            // warn!("invalid request. Skipping");
-            // continue;
-            continue;
+    let x = World::new();
+
+    for (e, mut source) in requests.iter_mut() {
+
+        let request = (**source).clone();
+        let handle = match request {
+            Request::Path(path) => {
+                let handle = asset_server.load(path);
+                println!("upgrading string path and skipping for {:#}.", e);
+                **source = Request::Handle(handle);
+                continue;
+            },
+            Request::Handle(handle) => {
+                println!("loaded {:#?}", handle);
+                handle
+            },
         };
-        let Some(asset) = assets.get(handle) else {
+        let Some(asset) = assets.get(&handle) else {
             warn!("asset not loaded yet. Skipping");
             continue
         };
-        FromStructure::into_entities(&mut commands, e,asset.clone());
+        let components = FromStructure::components(asset.clone());
+        commands.entity(e).insert(components);
+        // remove source when its no longer nessecary/has been added
+        commands.entity(e).remove::<Source>();
         // for bundle in components {
         //     commands.entity(e).insert(bundle);
         // }
@@ -81,10 +95,10 @@ pub fn deserialize_assets_as_structures<TargetAsset>(
                     trace!("processing request from assetid {:#?}", handle);
                     trace!("failed load attempts: {:#?}", request.failed_load_attempts);
                     if let Some(asset) = thing_assets.get(&handle) {
-                        let root = commands.spawn_empty().id();
-                        FromStructure::into_entities(&mut commands, root, asset.clone());
-                        // let root = commands.spawn_empty().id();
-                        // FromStructure::into_entities(asset.clone());
+                        let components = FromStructure::components(asset.clone());
+                        commands.spawn(
+                            components
+                        );   
                     } else {
                         let mut failed_request = request;
                         failed_request.failed_load_attempts += 1;

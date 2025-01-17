@@ -25,7 +25,7 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::{
-    gltf::GltfNodeSpawnRequest, resources::AssetSpawnRequest, traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError}
+    gltf::GltfNodeSpawnRequest, resources::AssetSpawnRequest, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}
 };
 
 use super::*;
@@ -53,12 +53,8 @@ pub struct LinkQuery {
 //     }
 // }
 
-impl<'a> FromStructure for Urdf {
-    fn into_entities(commands: &mut Commands, _root: Entity, value: Self) {
-        //let name = request.item.clone();
-        //let robot = value.world_urdfs.get(&request.item).unwrap();
-        //log::info!("urdf is {:#?}", value.clone());
-
+impl FromStructureChildren for Urdf {
+    fn childrens_components(value: Self) -> Vec<impl Bundle> {
         let robot = value.robot;
 
         let mut structured_link_map = HashMap::new();
@@ -75,65 +71,50 @@ impl<'a> FromStructure for Urdf {
             structured_link_map.insert(link.name.clone(), link.clone());
         }
 
-        // structured_linkage_map.insert(UrdfLinkage {
-        //     link:
-        // })
-        // let query_items =structured_link_map.iter().map(|(key, link)|
-        //     {
-        //         LinkQueryItem {
-        //             name: Some(&Name::new(link.name.clone())),
-        //             structure: &StructureFlag { name: value.name.clone() },
-        //             inertial: Some(&MassFlag { mass: link.inertial.mass.value as f32}),
-        //             // implement visual properly
-        //             visual: FileCheckItem {component: &GeometryFlag::default(), component_file: None},
-        //             // implement collision properly. Grouped colliders will need to be ignored for the sake of model coherence.
-        //             collision: Some(&ColliderFlag::default()),
-        //             // implement joint loading properly..
-        //             joint: Some(&JointFlag::default()) }
-        //     }
-        // ).collect::<Vec<Self>>();
         let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
-
+        
+        let children = Vec::new();
+        //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
+        // to account for this, this will need a proper fix later.
+        //temp_rotate_for_demo.rotate_x(-PI * 0.5);
         for (_, link) in structured_link_map.iter() {
-            let e = *structured_entities_map
-                .entry(link.name.clone())
-                .or_insert(commands.spawn_empty().id());
+            children.push(
+                (
+                    FromStructure::components(link.visual.clone()),
+                )
+            )
+            // let e = *structured_entities_map
+            //     .entry(link.name.clone())
+            //     .or_insert(commands.spawn_empty().id());
 
-            commands.entity(e)
-            .insert(Name::new(link.name.clone()))
-            //.insert(LinkFlag::from(&link.clone().into()))
-            .insert(StructureFlag { name: robot.name.clone() })
-            //.insert(MassFlag { mass: link.inertial.mass.value as f32})
-            ;
-            // if let Some(visual) = link.visual.first() {
-            //     let visual_wrapper = VisualWrapper::from(visual.clone());
+            // commands.entity(e)
+            // .insert(Name::new(link.name.clone()))
+            // //.insert(LinkFlag::from(&link.clone().into()))
+            // .insert(StructureFlag { name: robot.name.clone() })
+            // //.insert(MassFlag { mass: link.inertial.mass.value as f32})
+            // ;
+            // // if let Some(visual) = link.visual.first() {
+            // //     let visual_wrapper = VisualWrapper::from(visual.clone());
 
-            //     let mesh = MeshFlag3d::from(&visual_wrapper);
-            //     commands.entity(e).insert(mesh);
+            // //     let mesh = MeshFlag3d::from(&visual_wrapper);
+            // //     commands.entity(e).insert(mesh);
 
-            //     commands
-            //         .entity(e)
-            //         .insert(MaterialFlag3d::from(&visual_wrapper));
-            // }
+            // //     commands
+            // //         .entity(e)
+            // //         .insert(MaterialFlag3d::from(&visual_wrapper));
+            // // }
 
-            FromStructure::into_entities(commands, e, link.visual.clone());
-            //FromStructure::into_entities(commands, e, VisualWrapper(link.visual.clone()));
-            //let mut temp_rotate_for_demo = spawn_request.position;
-            //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
-            // to account for this, this will need a proper fix later.
-            //temp_rotate_for_demo.rotate_x(-PI * 0.5);
+            // //FromStructure::into_entities(commands, e, link.visual.clone());
+            
+            // //let mut temp_rotate_for_demo = spawn_request.position;
 
-            commands
-                .entity(e)
-                .insert(Visibility::default())
-                .insert(Transform::default())
-                // .insert(TransformBundle {
-                //     //local: temp_rotate_for_demo,
-                //     ..default()
-                // })
-                //.insert(GeometryShiftMarked::default())
-                .insert(RigidBodyFlag::Dynamic)
-                .insert(CcdFlag::default());
+
+            // commands
+            //     .entity(e)
+            //     .insert(Visibility::default())
+            //     .insert(Transform::default())
+            //     .insert(RigidBodyFlag::Dynamic)
+            //     .insert(CcdFlag::default());
         }
 
         for (_, joint) in structured_joint_map.iter() {

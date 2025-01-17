@@ -1,11 +1,11 @@
-use std::{any::Any, collections::HashMap, ops::Deref};
-use bevy_derive::Deref;
+use std::{any::Any, collections::HashMap, marker::PhantomData, ops::Deref};
+use bevy_derive::{Deref, DerefMut};
 use bevy_serialization_core::prelude::SerializeAssetFor;
 use bevy_transform::prelude::*;
 use bevy_pbr::{MeshMaterial3d, StandardMaterial};
 use bevy_app::Plugin;
 use bevy_core::Name;
-use bevy_ecs::{prelude::*, query::QueryData};
+use bevy_ecs::{component::{ComponentId, StorageType}, prelude::*, query::QueryData, world::DeferredWorld};
 use bevy_gltf::{Gltf, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_asset::prelude::*;
 use bevy_app::prelude::*;
@@ -14,64 +14,120 @@ use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::warn;
 use bevy_reflect::{Reflect, TypePath};
 
-use crate::{plugins::SerializeManyAsOneFor, systems::split_open_spawn_request, traits::{FromStructure, IntoHashMap, LazyDeserialize, LoadError}};
+use crate::{plugins::SerializeManyAsOneFor, systems::split_open_spawn_request, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}};
 
 
 // /// flag for the root entity for a gltf node
-// #[derive(Component, Default, Clone, Asset, TypePath)]
-// pub struct NodeFlag(Option<GltfNode>);
 
-#[derive(Component)]
-pub struct NodeFlag(String);
+#[derive(Component, Clone, Reflect)]
+pub enum Request<T: Asset> {
+    Path(String),
+    Handle(Handle<T>)
+}
 
-#[derive(Component, Clone, Deref)]
-pub struct GltfNodeSpawnRequest(pub String);
-
-#[derive(Component, Clone, Deref)]
-pub struct GltfMeshSpawnRequest(Option<Handle<GltfMesh>>);
-
-// impl Default for GltfNodeWrapper {
-//     fn default() -> Self {
-//         Self(
-//             GltfNode {
-//                 index: 0,
-//                 name: "".to_string(),
-//                 children: Vec::default(),
-//                 mesh: None,
-//                 skin: None,
-//                 transform: Transform::default(),
-//                 is_animation_root: false,
-//                 extras: None,
-//             }
-//         )
+// impl<T> Component for Request<T> {
+//     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+    
+//     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {}
+    
+//     fn register_required_components(
+//         _component_id: ComponentId,
+//         _components: &mut bevy_ecs::component::Components,
+//         _storages: &mut bevy_ecs::storage::Storages,
+//         _required_components: &mut bevy_ecs::component::RequiredComponents,
+//         _inheritance_depth: u16,
+//     ) {
 //     }
 // }
 
+pub struct Maybe<T: Component>(pub Option<T>);
 
-/// the collection of things that qualify as a "link", in the ROS 2 context.
-#[derive(QueryData)]
-pub struct GltfNodeQuery {
-    pub node: &'static NodeFlag,
-    pub children: &'static Children,
+
+/// A hook that runs whenever [`Maybe`] is added to an entity.
+///
+/// Generates a [`MaybeCommand`].
+fn maybe_hook<B: Component>(mut world: DeferredWorld<'_>, entity: Entity, _component_id: ComponentId) {
+    // Component hooks can't perform structural changes, so we need to rely on commands.
+    world.commands().queue(MaybeCommand {
+        entity,
+        _phantom: PhantomData::<B>,
+    });
 }
+
+struct MaybeCommand<B> {
+    entity: Entity,
+    _phantom: PhantomData<B>,
+}
+
+impl<B: Component> Command for MaybeCommand<B> {
+    fn apply(self, world: &mut World) {
+        let Ok(mut entity_mut) = world.get_entity_mut(self.entity) else {
+            #[cfg(debug_assertions)]
+            panic!("Entity with Maybe component not found");
+
+            #[cfg(not(debug_assertions))]
+            return;
+        };
+
+        let Some(maybe_component) = entity_mut.take::<Maybe<B>>() else {
+            #[cfg(debug_assertions)]
+            panic!("Maybe component not found");
+
+            #[cfg(not(debug_assertions))]
+            return;
+        };
+
+        if let Some(component) = maybe_component.into() {
+            entity_mut.insert(component);
+        }
+    }
+}
+
+impl<T: Component> Component for Maybe<T> {
+    const STORAGE_TYPE: bevy_ecs::component::StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
+        _hooks.on_add(maybe_hook::<T>);
+    }
+}
+
+// #[derive(Component)]
+// pub struct NodeFlag(String);
+
+#[derive(Component, Reflect, Clone, Deref, DerefMut)]
+pub struct GltfNodeSpawnRequest(pub Handle<GltfNode>);
+
+#[derive(Component, Reflect, Clone, Deref, DerefMut)]
+pub struct GltfMeshSpawnRequest(pub Handle<GltfMesh>);
+
+
+
+// /// the collection of things that qualify as a "link", in the ROS 2 context.
+// #[derive(QueryData)]
+// pub struct GltfNodeQuery {
+//     pub node: &'static NodeFlag,
+//     pub children: &'static Children,
+// }
 
 
 // pub struct GltfMeshQuery {
 //     pub spawn_request: &'static GltfSpawnRequest
 // }
 
-pub struct GltfSerializationPlugin;
+// pub struct GltfSerializationPlugin;
 
-impl Plugin for GltfSerializationPlugin {
-    fn build(&self, app: &mut bevy_app::App) {
-        app
-        //.add_plugins(SerializeManyAsOneFor::<GltfMeshQuery, GltfSpawnRequest>::default())
-        .add_systems(Update, split_open_spawn_request::<GltfNodeSpawnRequest, GltfNode>)
-        .add_systems(Update, split_open_spawn_request::<GltfMeshSpawnRequest, GltfMesh>)
-        //.add_plugins(SerializeManyAsOneFor::<GltfNodeQuery, GltfNodeWrapper>::default())
-        ;
-    }
-}
+// impl Plugin for GltfSerializationPlugin {
+//     fn build(&self, app: &mut bevy_app::App) {
+//         app
+//         .register_type::<GltfNodeSpawnRequest>()
+//         .register_type::<GltfMeshSpawnRequest>()
+//         //.add_plugins(SerializeManyAsOneFor::<GltfMeshQuery, GltfSpawnRequest>::default())
+//         .add_systems(Update, split_open_spawn_request::<GltfNodeSpawnRequest, GltfNode>)
+//         .add_systems(Update, split_open_spawn_request::<GltfMeshSpawnRequest, GltfMesh>)
+//         //.add_plugins(SerializeManyAsOneFor::<GltfNodeQuery, GltfNodeWrapper>::default())
+//         ;
+//     }
+// }
 
 // impl LazyDeserialize for GltfNodeWrapper {
 //     fn deserialize(absolute_path: String, world: &World) -> Result<Self, crate::traits::LoadError> {
@@ -84,39 +140,26 @@ impl Plugin for GltfSerializationPlugin {
 //     }
 // }
 
-impl FromStructure for GltfMesh {
-    fn into_entities(commands: &mut Commands, root: Entity, value: Self) {
+impl FromStructureChildren for GltfMesh {
+    fn childrens_components(value: Self) -> Vec<impl Bundle> {
+        let mut children = Vec::new();
         for primitive in value.primitives {
-            let child = commands.spawn(
-                Mesh3d(primitive.mesh.clone())
-            ).id();
-
-            if let Some(mat) = &primitive.material {
-                commands.entity(child).insert(MeshMaterial3d(mat.clone()));
-            }
+            let mat = primitive.material.map(|n| MeshMaterial3d(n));
+            children.push(
+                (
+                    Mesh3d(primitive.mesh.clone()),
+                    Maybe(mat),
+                )
+            )
         }
+        children
     }
-    // fn into_entities(value: Self) -> Vec<impl Bundle>{
-    //     let mut children = Vec::default();
-    //     for primitive in value.primitives.iter() {
-    //         // if let Some(mat) = &primitive.material {
-    //         //     children.push((
-    //         //             Mesh3d(mesh),
-    //         //             MeshMaterial3d(mat.clone())
-    //         //     ))
-    //         // } else {
-    //         //     children.push((
-    //         //         Mesh3d(mesh)
-    //         //     ));
-    //         // }
-    //     }
-    //     children
-    // }
 }
 
 impl FromStructure for GltfNode {
-    fn into_entities(commands: &mut Commands, root: Entity, value: Self) {
-        commands.entity(root).insert(GltfMeshSpawnRequest(value.mesh));
+    fn components(value: Self) -> impl Bundle {
+        let mesh = value.mesh.map(|n| GltfMeshSpawnRequest(n));
+        Maybe(mesh)
     }
 }
 
