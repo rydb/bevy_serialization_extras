@@ -1,11 +1,13 @@
 
-use bevy_ecs::prelude::*;
+use bevy_ecs::{component::StorageType, prelude::*};
 use bevy_color::{Color, LinearRgba};
+use bevy_gltf::GltfNode;
 use bevy_hierarchy::BuildChildren;
 use bevy_serialization_core::prelude::{
     material::{MaterialFlag3d, MaterialWrapper},
     mesh::{MeshFlag3d, MeshPrefab},
 };
+use bevy_log::warn;
 use bevy_serialization_physics::prelude::{ColliderFlag, GroupWrapper, MassFlag, SolverGroupsFlag};
 use derive_more::From;
 use glam::Vec3;
@@ -14,69 +16,102 @@ use urdf_rs::Visual;
 
 use bevy_math::prelude::*;
 
-use crate::{gltf::{GltfMeshSpawnRequest, GltfNodeSpawnRequest}, traits::{FromStructure, FromStructureChildren}};
+use crate::{gltf::{GltfMeshSpawnRequest, GltfNodeSpawnRequest, Request}, traits::{FromStructure, FromStructureChildren}};
+
+#[derive(Clone)]
+pub enum Resolve<T: Component + Clone, U: Component + Clone> {
+    One(T),
+    Other(U)
+}
+
+impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
+        _hooks.on_add(|mut world, e, comp| {
+            let comp = {
+                match world.entity(e).get::<Self>() {
+                    Some(val) => val.clone(),
+                    None => {
+                        warn!("could not get resolve on: {:#}", e);
+                        return
+                    },
+                }
+            };
+            match comp {
+                Resolve::One(one) => {world.commands().entity(e).insert(one);},
+                Resolve::Other(other) => {world.commands().entity(e).insert(other);},
+            }
+            world.commands().entity(e).remove::<Self>();
+        });
+    }
+}
 
 #[derive(From, Clone)]
 pub struct VisualWrapper(pub Visual);
 
-impl FromStructureChildren for Vec<Visual> {
-    fn childrens_components(value: Self) -> Vec<impl Bundle> {
-        let children = Vec::new();
-        for visual in value {
-            children.push((
-                ColliderFlag::default(),
-                SolverGroupsFlag {
-                    memberships: GroupWrapper::GROUP_1,
-                    filters: GroupWrapper::GROUP_2,
-                },
-                MassFlag {mass: 1.0},
+impl FromStructure for Visual {
+    fn components(value: Self) -> impl Bundle {
+        //let mut children = Vec::new();
                 
-            ));
-                
+        //for visual in value {
+        (
+            // ColliderFlag::default(),
+            // SolverGroupsFlag {
+            //     memberships: GroupWrapper::GROUP_1,
+            //     filters: GroupWrapper::GROUP_2,
+            // },
+            // MassFlag {mass: 1.0},
+            match value.geometry {
+                urdf_rs::Geometry::Box { size } => {
+                    let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
+                    Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cuboid(Cuboid {
+                        half_size: Vec3::new(
+                            bevy_size[0] as f32,
+                            bevy_size[1] as f32,
+                            bevy_size[2] as f32,
+                        ),
+                    })))
+                }
+                urdf_rs::Geometry::Cylinder { radius, length } => {
+                    //TODO: double check that this is correct
+                    Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cylinder(Cylinder {
+                        radius: radius as f32,
+                        half_height: length as f32,
+                    })))
+                }
+                urdf_rs::Geometry::Capsule { radius, length } => {
+                    //TODO: double check that this is correct
+                    Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Capsule(Capsule3d {
+                        radius: radius as f32,
+                        half_length: length as f32,
+                    })))
+                }
+                urdf_rs::Geometry::Sphere { radius } => Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Sphere(Sphere {
+                    radius: radius as f32,
+                }))),
+                urdf_rs::Geometry::Mesh { filename, .. } => {
+                    Resolve::Other(Request::<GltfNode>::Path(filename))
+                    //Err(filename)
+                    // commands.entity(child).insert(
+                    //     GltfNodeSpawnRequest(filename)
+                    // );
+                    //Self::AssetPath(filename.to_owned()),
 
-            // let flag = match &visual.geometry {
-            //     urdf_rs::Geometry::Box { size } => {
-            //         let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
-            //         Ok(MeshFlag3d::Prefab(MeshPrefab::Cuboid(Cuboid {
-            //             half_size: Vec3::new(
-            //                 bevy_size[0] as f32,
-            //                 bevy_size[1] as f32,
-            //                 bevy_size[2] as f32,
-            //             ),
-            //         })))
-            //     }
-            //     urdf_rs::Geometry::Cylinder { radius, length } => {
-            //         //TODO: double check that this is correct
-            //         Ok(MeshFlag3d::Prefab(MeshPrefab::Cylinder(Cylinder {
-            //             radius: *radius as f32,
-            //             half_height: *length as f32,
-            //         })))
-            //     }
-            //     urdf_rs::Geometry::Capsule { radius, length } => {
-            //         //TODO: double check that this is correct
-            //         Ok(MeshFlag3d::Prefab(MeshPrefab::Capsule(Capsule3d {
-            //             radius: *radius as f32,
-            //             half_length: *length as f32,
-            //         })))
-            //     }
-            //     urdf_rs::Geometry::Sphere { radius } => Ok(MeshFlag3d::Prefab(MeshPrefab::Sphere(Sphere {
-            //         radius: *radius as f32,
-            //     }))),
-            //     urdf_rs::Geometry::Mesh { filename, .. } => {
-            //         Err(filename)
-            //         // commands.entity(child).insert(
-            //         //     GltfNodeSpawnRequest(filename)
-            //         // );
-            //         //Self::AssetPath(filename.to_owned()),
-
-            //     }
-            // };
-            match flag {
-                Ok(flag) => {commands.entity(child).insert(flag);},
-                Err(file) => {commands.entity(root).insert(GltfNodeSpawnRequest(crate::gltf::Request::Path(file.to_owned())));},
+                }
             }
-            commands.entity(root).add_child(child);
-        }
+        )
+
+                                
+
+            // let flag = match &
+            // match flag {
+            //     Ok(flag) => {commands.entity(child).insert(flag);},
+            //     Err(file) => {commands.entity(root).insert(GltfNodeSpawnRequest(crate::gltf::Request::Path(file.to_owned())));},
+            // }
+            // commands.entity(root).add_child(child);
+        //}
+        //children
     }
 }
 

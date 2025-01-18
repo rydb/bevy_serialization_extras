@@ -4,6 +4,8 @@ pub mod urdf;
 pub mod visual;
 
 use crate::plugins::SerializeManyAsOneFor;
+use crate::systems::split_open_self;
+use crate::systems::split_open_self_children;
 use crate::urdf::loader::UrdfLoaderPlugin;
 use bevy_app::prelude::*;
 use bevy_asset::io::file::FileAssetReader;
@@ -13,6 +15,9 @@ use bevy_asset::AssetApp;
 use bevy_reflect::TypePath;
 use resources::CachedUrdf;
 use urdf::LinkQuery;
+use urdf::LinksNJoints;
+use urdf::UrdfJoint;
+use urdf::Visuals;
 use urdf_rs::Robot;
 
 pub const PACKAGE: &str = "package";
@@ -63,6 +68,10 @@ impl Plugin for UrdfSerializationPlugin {
         app.register_type::<CachedUrdf>()
             .add_plugins(UrdfLoaderPlugin)
             .insert_resource(CachedUrdf::default())
-            .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default());
+            .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
+            .add_systems(Update, split_open_self_children::<LinksNJoints>)
+            .add_systems(Update, split_open_self::<UrdfJoint>)
+            .add_systems(Update, split_open_self_children::<Visuals>)
+            ;
     }
 }

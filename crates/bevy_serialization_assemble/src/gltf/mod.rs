@@ -14,7 +14,7 @@ use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::warn;
 use bevy_reflect::{Reflect, TypePath};
 
-use crate::{plugins::SerializeManyAsOneFor, systems::split_open_spawn_request, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}};
+use crate::{plugins::SerializeManyAsOneFor, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}};
 
 
 // /// flag for the root entity for a gltf node
@@ -77,7 +77,8 @@ impl<B: Component> Command for MaybeCommand<B> {
             return;
         };
 
-        if let Some(component) = maybe_component.into() {
+        if let Some(component) = maybe_component.0 {
+            warn!("inserting component");
             entity_mut.insert(component);
         }
     }

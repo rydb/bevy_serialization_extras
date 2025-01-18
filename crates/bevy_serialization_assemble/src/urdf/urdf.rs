@@ -17,7 +17,7 @@ use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
 use nalgebra::{Matrix3, Vector3};
 use std::collections::HashMap;
-use urdf_rs::{Joint, Link, Pose, Robot, Visual};
+use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
 use visual::VisualWrapper;
 
 use derive_more::From;
@@ -25,7 +25,7 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::{
-    gltf::GltfNodeSpawnRequest, resources::AssetSpawnRequest, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}
+    gltf::{GltfNodeSpawnRequest, Maybe}, resources::AssetSpawnRequest, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}
 };
 
 use super::*;
@@ -53,83 +53,165 @@ pub struct LinkQuery {
 //     }
 // }
 
-impl FromStructureChildren for Urdf {
+/// Links + Joints merged together.
+/// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
+/// so they are merged here.
+#[derive(Component, Clone)]
+pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
+
+#[derive(Component, Clone)]
+pub struct Visuals(Vec<Visual>);
+
+#[derive(Component, Clone)]
+pub struct UrdfJoint(Joint);
+
+#[derive(Component)]
+pub struct LinkColliders(Vec<Collision>);
+
+// impl FromStructureChildren for Joints {
+//     fn childrens_components(value: Self) -> Vec<impl Bundle> {
+//         todo!()
+//     }
+// }
+
+impl FromStructure for UrdfJoint {
+    fn components(value: Self)
+    -> impl Bundle {
+        (
+            JointFlag::from(&JointWrapper(value.0)),
+        )
+    }
+}
+
+impl FromStructureChildren for Visuals {
     fn childrens_components(value: Self) -> Vec<impl Bundle> {
-        let robot = value.robot;
+        let mut children = Vec::new();
+        for visual in value.0 {
+            
+            children.push((
+                // ColliderFlag::default(),
+                // SolverGroupsFlag {
+                //     memberships: GroupWrapper::GROUP_1,
+                //     filters: GroupWrapper::GROUP_2,
+                // },
+                // MassFlag {mass: 1.0},
+                FromStructure::components(visual),
+            ));
+        }
+        children
+    }
+}
 
-        let mut structured_link_map = HashMap::new();
+impl FromStructureChildren for LinksNJoints {
+    fn childrens_components(value: Self) -> Vec<impl Bundle> {
+        let mut children = Vec::new();
+
+        for (link, joint) in value.0 {
+            let joint = joint.map(|n| UrdfJoint(n));
+            children.push(
+                (
+                    Name::new(link.name),
+                    Visuals(link.visual),
+                    LinkColliders(link.collision),
+                    Maybe(joint)
+                )
+            )
+        }
+        children
+    }
+}
+
+impl FromStructure for Urdf {
+    fn components(value: Self) -> impl Bundle {
+        //let robot = value.robot;
+
+        // let mut structured_link_map = HashMap::new();
         let mut structured_joint_map = HashMap::new();
-        let mut structured_material_map = HashMap::new();
+        // let mut structured_material_map = HashMap::new();
 
-        for joint in &robot.joints {
+        for joint in &value.robot.joints {
             structured_joint_map.insert(joint.child.link.clone(), joint.clone());
         }
-        for material in &robot.materials {
-            structured_material_map.insert(material.name.clone(), material.clone());
-        }
-        for link in &robot.links {
-            structured_link_map.insert(link.name.clone(), link.clone());
-        }
+        // for material in &robot.materials {
+        //     structured_material_map.insert(material.name.clone(), material.clone());
+        // }
+        // for link in &robot.links {
+        //     structured_link_map.insert(link.name.clone(), link.clone());
+        // }
 
-        let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
-        
-        let children = Vec::new();
+        // let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
+        let mut linkage = Vec::new();
+        for link in value.robot.links {
+            linkage.push((
+                link.clone(),
+                structured_joint_map
+                .get_key_value(&link.name).map(|(_, joint)| joint.clone())
+            ))
+        }
+        (
+            Name::new(value.robot.name),
+            LinksNJoints(linkage),
+        )
         //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
         // to account for this, this will need a proper fix later.
         //temp_rotate_for_demo.rotate_x(-PI * 0.5);
-        for (_, link) in structured_link_map.iter() {
-            children.push(
-                (
-                    FromStructure::components(link.visual.clone()),
-                )
-            )
-            // let e = *structured_entities_map
-            //     .entry(link.name.clone())
-            //     .or_insert(commands.spawn_empty().id());
 
-            // commands.entity(e)
-            // .insert(Name::new(link.name.clone()))
-            // //.insert(LinkFlag::from(&link.clone().into()))
-            // .insert(StructureFlag { name: robot.name.clone() })
-            // //.insert(MassFlag { mass: link.inertial.mass.value as f32})
-            // ;
-            // // if let Some(visual) = link.visual.first() {
-            // //     let visual_wrapper = VisualWrapper::from(visual.clone());
+        
+        // for (_, link) in structured_link_map.iter() {
+        //     children.push(
+        //         (
+        //             //FromStructure::components(link.visual.clone()),
+        //             LinkVisuals(link.visual.clone()),
+        //             LinkColliders(link.collision.clone())
+        //         )
+        //     )
+        //     // let e = *structured_entities_map
+        //     //     .entry(link.name.clone())
+        //     //     .or_insert(commands.spawn_empty().id());
 
-            // //     let mesh = MeshFlag3d::from(&visual_wrapper);
-            // //     commands.entity(e).insert(mesh);
+        //     // commands.entity(e)
+        //     // .insert(Name::new(link.name.clone()))
+        //     // //.insert(LinkFlag::from(&link.clone().into()))
+        //     // .insert(StructureFlag { name: robot.name.clone() })
+        //     // //.insert(MassFlag { mass: link.inertial.mass.value as f32})
+        //     // ;
+        //     // // if let Some(visual) = link.visual.first() {
+        //     // //     let visual_wrapper = VisualWrapper::from(visual.clone());
 
-            // //     commands
-            // //         .entity(e)
-            // //         .insert(MaterialFlag3d::from(&visual_wrapper));
-            // // }
+        //     // //     let mesh = MeshFlag3d::from(&visual_wrapper);
+        //     // //     commands.entity(e).insert(mesh);
 
-            // //FromStructure::into_entities(commands, e, link.visual.clone());
+        //     // //     commands
+        //     // //         .entity(e)
+        //     // //         .insert(MaterialFlag3d::from(&visual_wrapper));
+        //     // // }
+
+        //     // //FromStructure::into_entities(commands, e, link.visual.clone());
             
-            // //let mut temp_rotate_for_demo = spawn_request.position;
+        //     // //let mut temp_rotate_for_demo = spawn_request.position;
 
 
-            // commands
-            //     .entity(e)
-            //     .insert(Visibility::default())
-            //     .insert(Transform::default())
-            //     .insert(RigidBodyFlag::Dynamic)
-            //     .insert(CcdFlag::default());
-        }
+        //     // commands
+        //     //     .entity(e)
+        //     //     .insert(Visibility::default())
+        //     //     .insert(Transform::default())
+        //     //     .insert(RigidBodyFlag::Dynamic)
+        //     //     .insert(CcdFlag::default());
+        // }
 
-        for (_, joint) in structured_joint_map.iter() {
-            let e = *structured_entities_map
-                .entry(joint.child.link.clone())
-                .or_insert(commands.spawn_empty().id());
+        // for (_, joint) in structured_joint_map.iter() {
+        //     let e = *structured_entities_map
+        //         .entry(joint.child.link.clone())
+        //         .or_insert(commands.spawn_empty().id());
 
-            //log::info!("spawning joint on {:#?}", e);
-            let new_joint = JointFlag::from(&JointWrapper::from(joint.clone()));
+        //     //log::info!("spawning joint on {:#?}", e);
+        //     let new_joint = JointFlag::from(&JointWrapper::from(joint.clone()));
 
-            commands
-                .entity(e)
-                .insert(new_joint)
-                .insert(RigidBodyFlag::Dynamic);
-        }
+        //     commands
+        //         .entity(e)
+        //         .insert(new_joint)
+        //         .insert(RigidBodyFlag::Dynamic);
+        // }
         //Ok(())
     }
 }

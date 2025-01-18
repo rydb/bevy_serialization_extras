@@ -1,4 +1,3 @@
-use bevy::gltf::GltfAssetLabel;
 use bevy_asset::{AssetServer, Assets, Handle};
 use log::warn;
 //use bevy::prelude::*;
@@ -34,7 +33,6 @@ pub enum MeshFlag3d {
     //TODO:
     Procedural(MeshWrapper),
     Prefab(MeshPrefab),
-    //GltfNode(GltfAssetLabel)
 }
 
 impl Default for MeshFlag3d {

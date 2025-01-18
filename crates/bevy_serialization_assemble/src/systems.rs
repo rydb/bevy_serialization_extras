@@ -1,56 +1,89 @@
 use crate::gltf::Request;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
-use crate::traits::{FromStructure, IntoHashMap, LazyDeserialize};
+use crate::traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize};
 use bevy_asset::prelude::*;
 use bevy_ecs::{prelude::*, query::QueryData};
+use bevy_hierarchy::BuildChildren;
 use bevy_log::prelude::*;
 use std::collections::VecDeque;
 use std::ops::{Deref, DerefMut};
 
 
-/// takes a spawn request component and attempt to split off the component inside:
-/// E.G: GltfMesh -> Handle<Mesh> -> Mesh3d(Handle<Mesh>)
-/// useful for splitting apart assets that are composed of sub-assets.
-pub fn split_open_spawn_request<Source, Target>(
-    mut requests: Query<(Entity, &mut Source)>,
-    assets: Res<Assets<Target>>,
-    asset_server: Res<AssetServer>,
+pub fn split_open_self_children<T>(
+    structures: Query<(Entity, &T)>, 
     mut commands: Commands,
 ) 
     where
-        Source: Component + DerefMut<Target = Request<Target>> + Clone,
-        Target: Asset + Clone + FromStructure,
+        T: Component + FromStructureChildren + Clone
 {
-    let x = World::new();
+    for (root, structure) in structures.iter() {
+        let children = FromStructureChildren::childrens_components(structure.clone());
+        for components in children {
+            let child = commands.spawn(components).id();
+            commands.entity(root).add_child(child);
 
-    for (e, mut source) in requests.iter_mut() {
-
-        let request = (**source).clone();
-        let handle = match request {
-            Request::Path(path) => {
-                let handle = asset_server.load(path);
-                println!("upgrading string path and skipping for {:#}.", e);
-                **source = Request::Handle(handle);
-                continue;
-            },
-            Request::Handle(handle) => {
-                println!("loaded {:#?}", handle);
-                handle
-            },
-        };
-        let Some(asset) = assets.get(&handle) else {
-            warn!("asset not loaded yet. Skipping");
-            continue
-        };
-        let components = FromStructure::components(asset.clone());
-        commands.entity(e).insert(components);
-        // remove source when its no longer nessecary/has been added
-        commands.entity(e).remove::<Source>();
-        // for bundle in components {
-        //     commands.entity(e).insert(bundle);
-        // }
+        }
+        commands.entity(root).remove::<T>();
     }
 }
+
+pub fn split_open_self<T>(
+    structures: Query<(Entity, &T)>, 
+    mut commands: Commands,
+)
+    where
+        T: Component + FromStructure + Clone
+{
+    for (root, structure) in structures.iter() {
+        commands.entity(root)
+        .insert(
+            FromStructure::components(structure.clone())
+        );
+    }
+}
+// /// takes a spawn request component and attempt to split off the component inside:
+// /// E.G: GltfMesh -> Handle<Mesh> -> Mesh3d(Handle<Mesh>)
+// /// useful for splitting apart assets that are composed of sub-assets.
+// pub fn split_open_spawn_request<Source, Target>(
+//     mut requests: Query<(Entity, &mut Source)>,
+//     assets: Res<Assets<Target>>,
+//     asset_server: Res<AssetServer>,
+//     mut commands: Commands,
+// ) 
+//     where
+//         Source: Component + DerefMut<Target = Request<Target>> + Clone,
+//         Target: Asset + Clone + FromStructure,
+// {
+//     let x = World::new();
+
+//     for (e, mut source) in requests.iter_mut() {
+
+//         let request = (**source).clone();
+//         let handle = match request {
+//             Request::Path(path) => {
+//                 let handle = asset_server.load(path);
+//                 println!("upgrading string path and skipping for {:#}.", e);
+//                 **source = Request::Handle(handle);
+//                 continue;
+//             },
+//             Request::Handle(handle) => {
+//                 println!("loaded {:#?}", handle);
+//                 handle
+//             },
+//         };
+//         let Some(asset) = assets.get(&handle) else {
+//             warn!("asset not loaded yet. Skipping");
+//             continue
+//         };
+//         let components = FromStructure::components(asset.clone());
+//         commands.entity(e).insert(components);
+//         // remove source when its no longer nessecary/has been added
+//         commands.entity(e).remove::<Source>();
+//         // for bundle in components {
+//         //     commands.entity(e).insert(bundle);
+//         // }
+//     }
+// }
 
 //FIXME: implement this properly. Once an asset builder that could use this exists.
 pub fn serialize_structures_as_assets<ThingSet, AssetType>(//thing_query: Query<ThingSet>,
