@@ -1,4 +1,3 @@
-use crate::gltf::Request;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize};
 use bevy_asset::prelude::*;
@@ -8,39 +7,6 @@ use bevy_log::prelude::*;
 use std::collections::VecDeque;
 use std::ops::{Deref, DerefMut};
 
-
-pub fn split_open_self_children<T>(
-    structures: Query<(Entity, &T)>, 
-    mut commands: Commands,
-) 
-    where
-        T: Component + FromStructureChildren + Clone
-{
-    for (root, structure) in structures.iter() {
-        let children = FromStructureChildren::childrens_components(structure.clone());
-        for components in children {
-            let child = commands.spawn(components).id();
-            commands.entity(root).add_child(child);
-
-        }
-        commands.entity(root).remove::<T>();
-    }
-}
-
-pub fn split_open_self<T>(
-    structures: Query<(Entity, &T)>, 
-    mut commands: Commands,
-)
-    where
-        T: Component + FromStructure + Clone
-{
-    for (root, structure) in structures.iter() {
-        commands.entity(root)
-        .insert(
-            FromStructure::components(structure.clone())
-        );
-    }
-}
 // /// takes a spawn request component and attempt to split off the component inside:
 // /// E.G: GltfMesh -> Handle<Mesh> -> Mesh3d(Handle<Mesh>)
 // /// useful for splitting apart assets that are composed of sub-assets.

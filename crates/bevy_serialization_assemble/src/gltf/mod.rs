@@ -5,7 +5,7 @@ use bevy_transform::prelude::*;
 use bevy_pbr::{MeshMaterial3d, StandardMaterial};
 use bevy_app::Plugin;
 use bevy_core::Name;
-use bevy_ecs::{component::{ComponentId, StorageType}, prelude::*, query::QueryData, world::DeferredWorld};
+use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, query::QueryData, world::DeferredWorld};
 use bevy_gltf::{Gltf, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_asset::prelude::*;
 use bevy_app::prelude::*;
@@ -17,13 +17,157 @@ use bevy_reflect::{Reflect, TypePath};
 use crate::{plugins::SerializeManyAsOneFor, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}};
 
 
-// /// flag for the root entity for a gltf node
+// /// A marker flag to request 
+// #[derive(Clone, Reflect)]
+// pub enum Request<T: Asset> {
+//     Path(String),
+//     Handle(Handle<T>)
+// }
+/// take inner new_type and and collect components of children and spawn children with those components to this component's entity.
+#[derive(Reflect)]
+pub struct RequestStructureChildren<T: FromStructureChildren>(pub T);
 
-#[derive(Component, Clone, Reflect)]
-pub enum Request<T: Asset> {
-    Path(String),
-    Handle(Handle<T>)
+impl<T: FromStructureChildren + Sync + Send + Clone + 'static> Component for RequestStructureChildren<T> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        _hooks.on_add(|mut world, e, _| {
+            let comp = {
+                let comp = match world.entity(e).get::<Self>() {
+                    Some(val) => val,
+                    None => {
+                        warn!("could not get FromStructureChildren on: {:#}", e);
+                        return
+                    },
+                };
+                comp.0.clone()
+            };
+            let children = FromStructureChildren::childrens_components(comp);
+            for components in children {
+                let child = world.commands().spawn(components).id();
+                world.commands().entity(e).add_child(child);
+    
+            }
+            world.commands().entity(e).remove::<Self>();
+        });
+    }
 }
+
+/// Take inner new_type and add components to this components entity from [`FromStructure`]
+pub struct RequestStructure<T: FromStructure>(pub T);
+
+impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStructure<T> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        _hooks.on_add(|mut world, e, comp| {
+            let comp = {
+                let comp = match world.entity(e).get::<Self>() {
+                    Some(val) => val,
+                    None => {
+                        warn!("could not get FromStructure on: {:#}", e);
+                        return
+                    },
+                };
+                comp.0.clone()
+            };
+            world.commands().entity(e)
+            .insert(
+                FromStructure::components(comp)
+            );
+            world.commands().entity(e).remove::<Self>();
+        });
+    }
+}
+
+
+#[derive(Clone)]
+pub struct RequestPath<T: Asset>{ 
+    pub path: String, 
+    phantom: PhantomData<T>,
+}
+
+impl<T: Asset> RequestPath<T> {
+    pub fn new(path: String) -> Self{
+        Self {
+            path: path,
+            phantom: PhantomData
+        }
+    }
+}
+
+// pub enum RequestAssetStructure<T: Asset> {
+//     Path(String),
+//     Handle(Handle<T>)
+// }
+
+
+
+impl<T: Asset> Component for RequestPath<T> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        _hooks.on_add(|mut world, e, _| {
+            let path = match world.entity(e).get::<Self>() {
+                Some(val) => val,
+                None => {
+                    warn!("could not get requestpath on: {:#}", e);
+                    return
+                },
+            };
+            let handle = world.load_asset(&path.path);
+            world.commands().entity(e).insert(RequestHandle::<T>(handle));
+            world.commands().entity(e).remove::<Self>();
+            //world.commands().spawn()
+        });
+    }
+}
+
+pub struct RequestHandle<T: Asset>(pub Handle<T>);
+
+impl <T: Asset> Component for RequestHandle<T> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        _hooks.on_add(|mut world, e, comp| {
+            let Some(assets) = world.get_resource::<Assets<T>>() else {
+                warn!("Assets<T> not found?");
+                return;
+            };
+            let handle = { 
+                let handle = match world.entity(e).get::<Self>() {
+                    Some(val) => val,
+                    None => {
+                        warn!("could not get requesthandle on: {:#}", e);
+                        return
+                    },
+                };
+                handle.0.clone()
+            };
+            let Some(asset) = assets.get(&handle) else {
+                warn!("Failed to get asset T for entity,{:#}", e);
+                
+                // not sure how to check for asset load every frame. This sidesteps that by just-respawning the handle
+                // to re-proc .on_add
+                world.commands().entity(e).remove::<Self>();
+                world.commands().entity(e).insert(Self(handle));
+
+                return;
+            };
+        
+            
+        });
+    }
+}
+
+// impl<T: Asset> Component for Request<T> {
+//     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+//     fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        
+//     }
+
+// }
 
 // impl<T> Component for Request<T> {
 //     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -78,7 +222,6 @@ impl<B: Component> Command for MaybeCommand<B> {
         };
 
         if let Some(component) = maybe_component.0 {
-            warn!("inserting component");
             entity_mut.insert(component);
         }
     }
@@ -95,12 +238,29 @@ impl<T: Component> Component for Maybe<T> {
 // #[derive(Component)]
 // pub struct NodeFlag(String);
 
-#[derive(Component, Reflect, Clone, Deref, DerefMut)]
-pub struct GltfNodeSpawnRequest(pub Handle<GltfNode>);
+// #[derive(Reflect, Clone, Deref, DerefMut)]
+// pub struct GltfNodeWrapper(pub Handle<GltfNode>);
+
+// impl Component for GltfNodeWrapper {
+//     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+//     fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        
+//     }
+// }
+
+
 
 #[derive(Component, Reflect, Clone, Deref, DerefMut)]
-pub struct GltfMeshSpawnRequest(pub Handle<GltfMesh>);
+pub struct GltfMeshWrapper(pub Handle<GltfMesh>);
 
+
+// impl FromStructure for GltfNodeWrapper {
+//     fn components(value: Self)
+//     -> impl Bundle {
+//         todo!()
+//     }
+// }
 
 
 // /// the collection of things that qualify as a "link", in the ROS 2 context.
@@ -157,12 +317,12 @@ impl FromStructureChildren for GltfMesh {
     }
 }
 
-impl FromStructure for GltfNode {
-    fn components(value: Self) -> impl Bundle {
-        let mesh = value.mesh.map(|n| GltfMeshSpawnRequest(n));
-        Maybe(mesh)
-    }
-}
+// impl FromStructure for GltfNode {
+//     fn components(value: Self) -> impl Bundle {
+//         let mesh = value.mesh.map(|n| GltfMeshSpawnRequest(n));
+//         Maybe(mesh)
+//     }
+// }
 
 // impl IntoHashMap<Query<'_, '_, GltfNodeQuery>> for GltfNodeWrapper {
 //     fn into_hashmap(value: Query<'_, '_, GltfNodeQuery>, world: &World) -> std::collections::HashMap<String, Self> {

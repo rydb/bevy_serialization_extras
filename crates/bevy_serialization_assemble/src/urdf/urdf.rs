@@ -25,7 +25,7 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::{
-    gltf::{GltfNodeSpawnRequest, Maybe}, resources::AssetSpawnRequest, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}
+    gltf::{Maybe, RequestStructure, RequestStructureChildren}, resources::AssetSpawnRequest, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}
 };
 
 use super::*;
@@ -56,7 +56,7 @@ pub struct LinkQuery {
 /// Links + Joints merged together.
 /// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
 /// so they are merged here.
-#[derive(Component, Clone)]
+#[derive(Clone)]
 pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
 
 #[derive(Component, Clone)]
@@ -83,24 +83,24 @@ impl FromStructure for UrdfJoint {
     }
 }
 
-impl FromStructureChildren for Visuals {
-    fn childrens_components(value: Self) -> Vec<impl Bundle> {
-        let mut children = Vec::new();
-        for visual in value.0 {
+// impl FromStructureChildren for Visuals {
+//     fn childrens_components(value: Self) -> Vec<impl Bundle> {
+//         let mut children = Vec::new();
+//         for visual in value.0 {
             
-            children.push((
-                // ColliderFlag::default(),
-                // SolverGroupsFlag {
-                //     memberships: GroupWrapper::GROUP_1,
-                //     filters: GroupWrapper::GROUP_2,
-                // },
-                // MassFlag {mass: 1.0},
-                FromStructure::components(visual),
-            ));
-        }
-        children
-    }
-}
+//             children.push((
+//                 // ColliderFlag::default(),
+//                 // SolverGroupsFlag {
+//                 //     memberships: GroupWrapper::GROUP_1,
+//                 //     filters: GroupWrapper::GROUP_2,
+//                 // },
+//                 // MassFlag {mass: 1.0},
+//                 FromStructure::components(visual),
+//             ));
+//         }
+//         children
+//     }
+// }
 
 impl FromStructureChildren for LinksNJoints {
     fn childrens_components(value: Self) -> Vec<impl Bundle> {
@@ -111,7 +111,7 @@ impl FromStructureChildren for LinksNJoints {
             children.push(
                 (
                     Name::new(link.name),
-                    Visuals(link.visual),
+                    RequestStructureChildren(VisualWrapper(link.visual)),
                     LinkColliders(link.collision),
                     Maybe(joint)
                 )
@@ -150,7 +150,7 @@ impl FromStructure for Urdf {
         }
         (
             Name::new(value.robot.name),
-            LinksNJoints(linkage),
+            RequestStructureChildren(LinksNJoints(linkage)),
         )
         //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
         // to account for this, this will need a proper fix later.

@@ -16,7 +16,7 @@ use urdf_rs::Visual;
 
 use bevy_math::prelude::*;
 
-use crate::{gltf::{GltfMeshSpawnRequest, GltfNodeSpawnRequest, Request}, traits::{FromStructure, FromStructureChildren}};
+use crate::{gltf::RequestPath, traits::{FromStructure, FromStructureChildren}};
 
 #[derive(Clone)]
 pub enum Resolve<T: Component + Clone, U: Component + Clone> {
@@ -42,19 +42,18 @@ impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
                 Resolve::One(one) => {world.commands().entity(e).insert(one);},
                 Resolve::Other(other) => {world.commands().entity(e).insert(other);},
             }
-            world.commands().entity(e).remove::<Self>();
         });
     }
 }
 
 #[derive(From, Clone)]
-pub struct VisualWrapper(pub Visual);
+pub struct VisualWrapper(pub Vec<Visual>);
 
-impl FromStructure for Visual {
-    fn components(value: Self) -> impl Bundle {
-        //let mut children = Vec::new();
+impl FromStructureChildren for VisualWrapper {
+    fn childrens_components(value: Self) -> Vec<impl Bundle> {
+        let mut children = Vec::new();
                 
-        //for visual in value {
+        for visual in value.0 {
         (
             // ColliderFlag::default(),
             // SolverGroupsFlag {
@@ -62,7 +61,7 @@ impl FromStructure for Visual {
             //     filters: GroupWrapper::GROUP_2,
             // },
             // MassFlag {mass: 1.0},
-            match value.geometry {
+            children.push( match visual.geometry {
                 urdf_rs::Geometry::Box { size } => {
                     let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
                     Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cuboid(Cuboid {
@@ -91,7 +90,9 @@ impl FromStructure for Visual {
                     radius: radius as f32,
                 }))),
                 urdf_rs::Geometry::Mesh { filename, .. } => {
-                    Resolve::Other(Request::<GltfNode>::Path(filename))
+                    Resolve::Other(
+                        RequestPath::<GltfNode>::new(filename)
+                    )
                     //Err(filename)
                     // commands.entity(child).insert(
                     //     GltfNodeSpawnRequest(filename)
@@ -100,7 +101,7 @@ impl FromStructure for Visual {
 
                 }
             }
-        )
+        ));
 
                                 
 
@@ -110,69 +111,69 @@ impl FromStructure for Visual {
             //     Err(file) => {commands.entity(root).insert(GltfNodeSpawnRequest(crate::gltf::Request::Path(file.to_owned())));},
             // }
             // commands.entity(root).add_child(child);
-        //}
-        //children
-    }
-}
-
-impl From<&VisualWrapper> for MaterialFlag3d {
-    fn from(value: &VisualWrapper) -> Self {
-        if let Some(material) = &value.0.material {
-            if let Some(color) = &material.color {
-                let rgba = color.rgba.0;
-                Self::Wrapper(MaterialWrapper {
-                    color: Color::LinearRgba(LinearRgba {
-                        red: rgba[0] as f32,
-                        green: rgba[1] as f32,
-                        blue: rgba[2] as f32,
-                        alpha: rgba[3] as f32,
-                    }),
-                })
-            } else {
-                Self::default()
-            }
-        } else {
-            Self::default()
         }
+        children
     }
 }
 
-impl From<&VisualWrapper> for MeshFlag3d {
-    fn from(value: &VisualWrapper) -> Self {
-        let visual = &value.0;
+// impl From<&VisualWrapper> for MaterialFlag3d {
+//     fn from(value: &VisualWrapper) -> Self {
+//         if let Some(material) = &value.0.material {
+//             if let Some(color) = &material.color {
+//                 let rgba = color.rgba.0;
+//                 Self::Wrapper(MaterialWrapper {
+//                     color: Color::LinearRgba(LinearRgba {
+//                         red: rgba[0] as f32,
+//                         green: rgba[1] as f32,
+//                         blue: rgba[2] as f32,
+//                         alpha: rgba[3] as f32,
+//                     }),
+//                 })
+//             } else {
+//                 Self::default()
+//             }
+//         } else {
+//             Self::default()
+//         }
+//     }
+// }
 
-        let urdf_geometry = &visual.geometry;
+// impl From<&VisualWrapper> for MeshFlag3d {
+//     fn from(value: &VisualWrapper) -> Self {
+//         let visual = &value.0;
 
-        let flag_geometry = match urdf_geometry {
-            urdf_rs::Geometry::Box { size } => {
-                let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
-                Self::Prefab(MeshPrefab::Cuboid(Cuboid {
-                    half_size: Vec3::new(
-                        bevy_size[0] as f32,
-                        bevy_size[1] as f32,
-                        bevy_size[2] as f32,
-                    ),
-                }))
-            }
-            urdf_rs::Geometry::Cylinder { radius, length } => {
-                //TODO: double check that this is correct
-                Self::Prefab(MeshPrefab::Cylinder(Cylinder {
-                    radius: *radius as f32,
-                    half_height: *length as f32,
-                }))
-            }
-            urdf_rs::Geometry::Capsule { radius, length } => {
-                //TODO: double check that this is correct
-                Self::Prefab(MeshPrefab::Capsule(Capsule3d {
-                    radius: *radius as f32,
-                    half_length: *length as f32,
-                }))
-            }
-            urdf_rs::Geometry::Sphere { radius } => Self::Prefab(MeshPrefab::Sphere(Sphere {
-                radius: *radius as f32,
-            })),
-            urdf_rs::Geometry::Mesh { filename, .. } => Self::AssetPath(filename.to_owned()),
-        };
-        flag_geometry
-    }
-}
+//         let urdf_geometry = &visual.geometry;
+
+//         let flag_geometry = match urdf_geometry {
+//             urdf_rs::Geometry::Box { size } => {
+//                 let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
+//                 Self::Prefab(MeshPrefab::Cuboid(Cuboid {
+//                     half_size: Vec3::new(
+//                         bevy_size[0] as f32,
+//                         bevy_size[1] as f32,
+//                         bevy_size[2] as f32,
+//                     ),
+//                 }))
+//             }
+//             urdf_rs::Geometry::Cylinder { radius, length } => {
+//                 //TODO: double check that this is correct
+//                 Self::Prefab(MeshPrefab::Cylinder(Cylinder {
+//                     radius: *radius as f32,
+//                     half_height: *length as f32,
+//                 }))
+//             }
+//             urdf_rs::Geometry::Capsule { radius, length } => {
+//                 //TODO: double check that this is correct
+//                 Self::Prefab(MeshPrefab::Capsule(Capsule3d {
+//                     radius: *radius as f32,
+//                     half_length: *length as f32,
+//                 }))
+//             }
+//             urdf_rs::Geometry::Sphere { radius } => Self::Prefab(MeshPrefab::Sphere(Sphere {
+//                 radius: *radius as f32,
+//             })),
+//             urdf_rs::Geometry::Mesh { filename, .. } => Self::AssetPath(filename.to_owned()),
+//         };
+//         flag_geometry
+//     }
+// }
