@@ -16,7 +16,7 @@ use urdf_rs::Visual;
 
 use bevy_math::prelude::*;
 
-use crate::{gltf::RequestPath, traits::{FromStructure, FromStructureChildren}};
+use crate::{gltf::{GltfNodeWrapper, RequestAssetStructure}, traits::{FromStructure, FromStructureChildren}};
 
 #[derive(Clone)]
 pub enum Resolve<T: Component + Clone, U: Component + Clone> {
@@ -42,6 +42,7 @@ impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
                 Resolve::One(one) => {world.commands().entity(e).insert(one);},
                 Resolve::Other(other) => {world.commands().entity(e).insert(other);},
             }
+            world.commands().entity(e).remove::<Self>();
         });
     }
 }
@@ -91,7 +92,7 @@ impl FromStructureChildren for VisualWrapper {
                 }))),
                 urdf_rs::Geometry::Mesh { filename, .. } => {
                     Resolve::Other(
-                        RequestPath::<GltfNode>::new(filename)
+                        RequestAssetStructure::<GltfNodeWrapper>::Path(filename)
                     )
                     //Err(filename)
                     // commands.entity(child).insert(

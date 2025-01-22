@@ -13,6 +13,7 @@ use bevy_render::prelude::*;
 use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::warn;
 use bevy_reflect::{Reflect, TypePath};
+use derive_more::derive::From;
 
 use crate::{plugins::SerializeManyAsOneFor, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}};
 
@@ -81,106 +82,294 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
 }
 
 
-#[derive(Clone)]
-pub struct RequestPath<T: Asset>{ 
-    pub path: String, 
-    phantom: PhantomData<T>,
-}
+// #[derive(Clone)]
+// pub struct RequestPath<T: Asset>{ 
+//     pub path: String, 
+//     phantom: PhantomData<T>,
+// }
 
-impl<T: Asset> RequestPath<T> {
-    pub fn new(path: String) -> Self{
-        Self {
-            path: path,
-            phantom: PhantomData
-        }
+// impl<T: Asset> RequestPath<T> {
+//     pub fn new(path: String) -> Self{
+//         Self {
+//             path: path,
+//             phantom: PhantomData
+//         }
+//     }
+// }
+#[derive(From, Clone)]
+pub struct GltfNodeWrapper(
+    GltfNode
+);
+
+impl Default for GltfNodeWrapper {
+    fn default() -> Self {
+        Self(
+            GltfNode {
+                index: 0,
+                name: "???".to_owned(),
+                children: Vec::default(),
+                mesh: None,
+                skin: None,
+                transform: Transform::default(),
+                is_animation_root: false,
+                extras: None,
+            }
+        )
     }
 }
 
-// pub enum RequestAssetStructure<T: Asset> {
+impl InnerTarget for GltfNodeWrapper {
+    type Inner = GltfNode;
+}
+
+// pub trait InnerTarget {
+//     pub type:
+// }
+// pub enum RequestAssetStructure<T, U> 
+//     where
+//         T: Clone + Deref<Target = U> + From<U> + FromStructure + Send + Sync + 'static,
+//         U: Asset + Clone
+// {
+//     //Mabye(Option<Handle<U>>),
 //     Path(String),
-//     Handle(Handle<T>)
+//     Handle(Handle<U>),
+//     Asset(PhantomData<T>),
 // }
 
+/// newtype around asset. 
+pub trait InnerTarget {
+    type Inner;
+}
 
+#[derive(Clone, Debug, Reflect)]
+#[reflect(Component)]
+// #[reflect(no_field_bounds)]
+pub enum RequestAssetStructure<T> 
+    where
+        T: Clone + From<T::Inner> + InnerTarget + FromStructure + Default + Send + Sync + 'static,
+        T::Inner: Asset + Clone
+{
+    
+    Path(
+        #[reflect(ignore)]
+        String
+    ),
+    Handle(
+        Handle<T::Inner>
+    ),
+    Asset(
+        #[reflect(ignore)]
+        T
+    )
+}
 
-impl<T: Asset> Component for RequestPath<T> {
+pub enum RequestAssetStructureChildren<T> 
+    where
+    T: Clone + From<T::Inner> + InnerTarget + FromStructureChildren + Send + Sync + 'static,
+    T::Inner: Asset + Clone
+{
+    Path(String),
+    Handle(Handle<T::Inner>),
+    Asset(T)
+}
+
+impl<T> Component for RequestAssetStructureChildren<T>
+    where
+        T: Clone + From<T::Inner> + InnerTarget + FromStructureChildren + Send + Sync + 'static,
+        T::Inner: Asset + Clone
+{
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
         _hooks.on_add(|mut world, e, _| {
-            let path = match world.entity(e).get::<Self>() {
-                Some(val) => val,
-                None => {
-                    warn!("could not get requestpath on: {:#}", e);
-                    return
-                },
-            };
-            let handle = world.load_asset(&path.path);
-            world.commands().entity(e).insert(RequestHandle::<T>(handle));
-            world.commands().entity(e).remove::<Self>();
-            //world.commands().spawn()
-        });
-    }
-}
-
-pub struct RequestHandle<T: Asset>(pub Handle<T>);
-
-impl <T: Asset> Component for RequestHandle<T> {
-    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-
-    fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, comp| {
-            let Some(assets) = world.get_resource::<Assets<T>>() else {
-                warn!("Assets<T> not found?");
-                return;
-            };
-            let handle = { 
-                let handle = match world.entity(e).get::<Self>() {
-                    Some(val) => val,
+            let asset = {
+                let path = match world.entity(e).get::<Self>() {
+                    Some(val) => val.clone(),
                     None => {
-                        warn!("could not get requesthandle on: {:#}", e);
+                        warn!("could not get RequestAssetStructure on: {:#}", e);
                         return
                     },
                 };
-                handle.0.clone()
+                let asset = match path {
+                    RequestAssetStructureChildren::Path(path) => {
+                        let handle = world.load_asset(path);
+                        //upgrade path to asset handle.
+                        world.commands().entity(e).remove::<Self>();
+                        world.commands().entity(e).insert(Self::Handle(handle));
+                        return;
+                    },
+                    RequestAssetStructureChildren::Handle(handle) => {
+                        //handle.clone()
+                        world.commands().entity(e).observe(initialize_asset_structure_children::<T>);
+                        //world.commands().entity(e).remove::<Self>();
+                        return;
+                    },
+                    RequestAssetStructureChildren::Asset(asset) => {
+                        asset
+                    }
+                };
+                asset
             };
-            let Some(asset) = assets.get(&handle) else {
-                warn!("Failed to get asset T for entity,{:#}", e);
-                
-                // not sure how to check for asset load every frame. This sidesteps that by just-respawning the handle
-                // to re-proc .on_add
-                world.commands().entity(e).remove::<Self>();
-                world.commands().entity(e).insert(Self(handle));
-
-                return;
-            };
-        
             
+            let children = FromStructureChildren::childrens_components(asset.clone());
+
+            for child in children {
+                let child = world.commands().spawn(
+                    child
+                ).id();
+                world.commands().entity(e).add_child(child);
+            }
+            world.commands().entity(e).remove::<Self>();
+        });
+    }
+
+}
+
+pub fn initialize_asset_structure_children<T>(
+    trigger: Trigger<AssetEvent<T::Inner>>,
+    requests: Query<&RequestAssetStructureChildren<T>>,
+    assets: Res<Assets<T::Inner>>,
+    mut commands: Commands,
+
+) 
+    where
+        T: Clone + From<T::Inner> + InnerTarget + FromStructureChildren + Send + Sync + 'static,
+        T::Inner: Asset + Clone
+{
+    println!("asset status: {:#?}", trigger.event());
+    let Ok(request) = requests.get(trigger.entity()) else {
+        warn!("could not get request from entity?");
+        return;
+    };
+    let handle = match request {
+        RequestAssetStructureChildren::Handle(handle) => {handle},
+        _ => {
+            warn!("no handle??");
+            return;
+        }
+    };
+    let Some(asset) = assets.get(handle) else {
+        warn!("asset reports loaded but cant be loaded?");
+        return;
+    };
+    println!("asset loaded");
+    commands.entity(trigger.entity()).insert(
+        RequestAssetStructureChildren::Asset(T::from(asset.clone()))
+    );
+}
+
+pub fn initialize_asset_structure<T>(
+    trigger: Trigger<AssetEvent<T::Inner>>,
+    requests: Query<&RequestAssetStructure<T>>,
+    assets: Res<Assets<T::Inner>>,
+    mut commands: Commands,
+
+) 
+    where
+        T: Clone + From<T::Inner> + InnerTarget + FromStructure + Send + Sync + Default + 'static,
+        T::Inner: Asset + Clone
+{
+    let Ok(request) = requests.get(trigger.entity()) else {
+        warn!("could not get request from entity?");
+        return;
+    };
+    let handle = match request {
+        RequestAssetStructure::Handle(handle) => {handle},
+        _ => {
+            warn!("no handle??");
+            return;
+        }
+    };
+    let Some(asset) = assets.get(handle) else {
+        warn!("asset reports loaded but cant be loaded?");
+        return;
+    };
+    commands.entity(trigger.entity()).insert(
+        RequestAssetStructure::Asset(T::from(asset.clone()))
+    );
+}
+
+impl<T> Component for RequestAssetStructure<T>
+    where
+        T: Clone + From<T::Inner> + InnerTarget + FromStructure + Default + Send + Sync + 'static,
+        T::Inner: Asset + Clone
+{
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        _hooks.on_add(|mut world, e, _| {
+            let asset = {
+                let path = match world.entity(e).get::<Self>() {
+                    Some(val) => val.clone(),
+                    None => {
+                        warn!("could not get RequestAssetStructure on: {:#}", e);
+                        return
+                    },
+                };
+                let asset = match path {
+                    RequestAssetStructure::Path(path) => {
+                        let handle = world.load_asset(path);
+                        //upgrade path to asset handle.
+                        world.commands().entity(e).remove::<Self>();
+                        world.commands().entity(e).insert(Self::Handle(handle));
+                        return;
+                    },
+                    RequestAssetStructure::Handle(handle) => {
+                        world.commands().entity(e).observe(initialize_asset_structure::<T>);
+                        return;
+                    },
+                    RequestAssetStructure::Asset(asset) => {
+                        //world.commands().entity(e)
+                        println!("got asset");
+                        asset
+                    }
+                };
+                asset
+            };
+            
+            world.commands().entity(e).insert(
+                FromStructure::components(asset)
+            );
+            world.commands().entity(e).remove::<Self>();
         });
     }
 }
 
-// impl<T: Asset> Component for Request<T> {
+// pub struct RequestHandle<T: Asset>(pub Handle<T>);
+
+// impl <T: Asset> Component for RequestHandle<T> {
 //     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
 //     fn register_component_hooks(_hooks: &mut ComponentHooks) {
+//         _hooks.on_add(|mut world, e, comp| {
+//             let Some(assets) = world.get_resource::<Assets<T>>() else {
+//                 warn!("Assets<T> not found?");
+//                 return;
+//             };
+//             let handle = { 
+//                 let handle = match world.entity(e).get::<Self>() {
+//                     Some(val) => val,
+//                     None => {
+//                         warn!("could not get requesthandle on: {:#}", e);
+//                         return
+//                     },
+//                 };
+//                 handle.0.clone()
+//             };
+//             let Some(asset) = assets.get(&handle) else {
+//                 //let asset_server = world.get_resource::<AssetServer>().unwrap();
+
+//                 warn!("Failed to get asset T for entity,{:#}", e);
+//                 // not sure how to check for asset load every frame. This sidesteps that by just-respawning the handle
+//                 // to re-proc .on_add
+//                 world.commands().entity(e).remove::<Self>();
+//                 world.commands().entity(e).insert(Self(handle));
+
+//                 return;
+//             };
         
-//     }
-
-// }
-
-// impl<T> Component for Request<T> {
-//     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-    
-//     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {}
-    
-//     fn register_required_components(
-//         _component_id: ComponentId,
-//         _components: &mut bevy_ecs::component::Components,
-//         _storages: &mut bevy_ecs::storage::Storages,
-//         _required_components: &mut bevy_ecs::component::RequiredComponents,
-//         _inheritance_depth: u16,
-//     ) {
+            
+//         });
 //     }
 // }
 
@@ -235,76 +424,18 @@ impl<T: Component> Component for Maybe<T> {
     }
 }
 
-// #[derive(Component)]
-// pub struct NodeFlag(String);
 
-// #[derive(Reflect, Clone, Deref, DerefMut)]
-// pub struct GltfNodeWrapper(pub Handle<GltfNode>);
+#[derive(Component, From, Clone, Deref, DerefMut)]
+pub struct GltfMeshWrapper(pub GltfMesh);
 
-// impl Component for GltfNodeWrapper {
-//     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+impl InnerTarget for GltfMeshWrapper {
+    type Inner = GltfMesh;
+}
 
-//     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        
-//     }
-// }
-
-
-
-#[derive(Component, Reflect, Clone, Deref, DerefMut)]
-pub struct GltfMeshWrapper(pub Handle<GltfMesh>);
-
-
-// impl FromStructure for GltfNodeWrapper {
-//     fn components(value: Self)
-//     -> impl Bundle {
-//         todo!()
-//     }
-// }
-
-
-// /// the collection of things that qualify as a "link", in the ROS 2 context.
-// #[derive(QueryData)]
-// pub struct GltfNodeQuery {
-//     pub node: &'static NodeFlag,
-//     pub children: &'static Children,
-// }
-
-
-// pub struct GltfMeshQuery {
-//     pub spawn_request: &'static GltfSpawnRequest
-// }
-
-// pub struct GltfSerializationPlugin;
-
-// impl Plugin for GltfSerializationPlugin {
-//     fn build(&self, app: &mut bevy_app::App) {
-//         app
-//         .register_type::<GltfNodeSpawnRequest>()
-//         .register_type::<GltfMeshSpawnRequest>()
-//         //.add_plugins(SerializeManyAsOneFor::<GltfMeshQuery, GltfSpawnRequest>::default())
-//         .add_systems(Update, split_open_spawn_request::<GltfNodeSpawnRequest, GltfNode>)
-//         .add_systems(Update, split_open_spawn_request::<GltfMeshSpawnRequest, GltfMesh>)
-//         //.add_plugins(SerializeManyAsOneFor::<GltfNodeQuery, GltfNodeWrapper>::default())
-//         ;
-//     }
-// }
-
-// impl LazyDeserialize for GltfNodeWrapper {
-//     fn deserialize(absolute_path: String, world: &World) -> Result<Self, crate::traits::LoadError> {
-//         let Some(asset_server) = world.get_resource::<AssetServer>() else {
-//             return Err(LoadError::Error("couldnt get asset server".to_string()));
-//         };
-//         let Ok(gltf) = asset_server.load::<Gltf>(absolute_path) else {
-
-//         };
-//     }
-// }
-
-impl FromStructureChildren for GltfMesh {
+impl FromStructureChildren for GltfMeshWrapper {
     fn childrens_components(value: Self) -> Vec<impl Bundle> {
         let mut children = Vec::new();
-        for primitive in value.primitives {
+        for primitive in value.0.primitives {
             let mat = primitive.material.map(|n| MeshMaterial3d(n));
             children.push(
                 (
@@ -317,12 +448,13 @@ impl FromStructureChildren for GltfMesh {
     }
 }
 
-// impl FromStructure for GltfNode {
-//     fn components(value: Self) -> impl Bundle {
-//         let mesh = value.mesh.map(|n| GltfMeshSpawnRequest(n));
-//         Maybe(mesh)
-//     }
-// }
+impl FromStructure for GltfNodeWrapper {
+    fn components(value: Self) -> impl Bundle {
+        let mesh = value.0.mesh.map(|n| RequestAssetStructureChildren::Handle::<GltfMeshWrapper>(n));
+        Maybe(mesh)
+        //RequestAssetStructure::Mabye::<GltfMeshWrapper, _>(value.0.mesh)
+    }
+}
 
 // impl IntoHashMap<Query<'_, '_, GltfNodeQuery>> for GltfNodeWrapper {
 //     fn into_hashmap(value: Query<'_, '_, GltfNodeQuery>, world: &World) -> std::collections::HashMap<String, Self> {
