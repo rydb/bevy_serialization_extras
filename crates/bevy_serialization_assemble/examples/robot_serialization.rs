@@ -12,7 +12,7 @@ use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     render::RapierDebugRenderPlugin,
 };
-use bevy_serialization_assemble::{gltf::{GltfNodeWrapper, RequestAssetStructure, RequestStructure}, prelude::*};
+use bevy_serialization_assemble::{gltf::{AssetCheckSchedule, GltfNodeWrapper, RegisteredAssetCheckers, RequestAssetStructure, RequestStructure}, prelude::*};
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
@@ -32,6 +32,8 @@ fn main() {
             //TODO: This should be unified under `ROOT`
             assets_folder_local_path: "../../assets".to_owned(),
         })
+        //.add_schedule(Schedule::new(AssetCheckSchedule))
+        .insert_resource(RegisteredAssetCheckers::default())
         .insert_resource(SetSaveFile {
             name: "blue".to_owned(),
         })
@@ -74,6 +76,7 @@ fn main() {
         .add_systems(Update, control_robot)
         // .add_systems(Update, make_robots_selectable)
         .add_systems(Update, bind_left_and_right_wheel)
+        
         //.add_systems(Update, freeze_spawned_robots)
         .run();
 }

@@ -1,11 +1,11 @@
-use std::{any::Any, collections::HashMap, marker::PhantomData, ops::Deref};
+use std::{any::Any, collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData, ops::Deref};
 use bevy_derive::{Deref, DerefMut};
 use bevy_serialization_core::prelude::SerializeAssetFor;
 use bevy_transform::prelude::*;
 use bevy_pbr::{MeshMaterial3d, StandardMaterial};
 use bevy_app::Plugin;
 use bevy_core::Name;
-use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, query::QueryData, world::DeferredWorld};
+use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, query::QueryData, schedule::ScheduleLabel, world::DeferredWorld};
 use bevy_gltf::{Gltf, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_asset::prelude::*;
 use bevy_app::prelude::*;
@@ -199,8 +199,13 @@ impl<T> Component for RequestAssetStructureChildren<T>
                         return;
                     },
                     RequestAssetStructureChildren::Handle(handle) => {
+                        warn!("UNIMPLEMENTED");
+                        
                         //handle.clone()
-                        world.commands().entity(e).observe(initialize_asset_structure_children::<T>);
+                        //world.commands()
+                       // let mut schedules = world.resource_mut::<Schedules>();
+                        //schedules.add_systems(Update, initialize_asset_structure_children::<T>);
+                        //world.commands().entity(e).observe(initialize_asset_structure_children::<T>);
                         //world.commands().entity(e).remove::<Self>();
                         return;
                     },
@@ -225,42 +230,58 @@ impl<T> Component for RequestAssetStructureChildren<T>
 
 }
 
-pub fn initialize_asset_structure_children<T>(
-    trigger: Trigger<AssetEvent<T::Inner>>,
-    requests: Query<&RequestAssetStructureChildren<T>>,
-    assets: Res<Assets<T::Inner>>,
-    mut commands: Commands,
+// pub fn initialize_asset_structure_children<T>(
+//     events: EventReader<AssetEvent<T::Inner>>,
+//     requests: Query<&RequestAssetStructureChildren<T>>,
+//     assets: Res<Assets<T::Inner>>,
+//     mut commands: Commands,
 
-) 
-    where
-        T: Clone + From<T::Inner> + InnerTarget + FromStructureChildren + Send + Sync + 'static,
-        T::Inner: Asset + Clone
-{
-    println!("asset status: {:#?}", trigger.event());
-    let Ok(request) = requests.get(trigger.entity()) else {
-        warn!("could not get request from entity?");
-        return;
-    };
-    let handle = match request {
-        RequestAssetStructureChildren::Handle(handle) => {handle},
-        _ => {
-            warn!("no handle??");
-            return;
-        }
-    };
-    let Some(asset) = assets.get(handle) else {
-        warn!("asset reports loaded but cant be loaded?");
-        return;
-    };
-    println!("asset loaded");
-    commands.entity(trigger.entity()).insert(
-        RequestAssetStructureChildren::Asset(T::from(asset.clone()))
-    );
+// ) 
+//     where
+//         T: Clone + From<T::Inner> + InnerTarget + FromStructureChildren + Send + Sync + 'static,
+//         T::Inner: Asset + Clone
+// {
+
+//     //println!("asset status: {:#?}", trigger.event());
+//     for event in events.read() {
+//         match event {
+//             AssetEvent::LoadedWithDependencies { id } => {
+
+//             },
+//             _ => {}
+//         }
+//     }    
+//     let Ok(request) = requests.get(trigger.entity()) else {
+//         warn!("could not get request from entity?");
+//         return;
+//     };
+//     let handle = match request {
+//         RequestAssetStructureChildren::Handle(handle) => {handle},
+//         _ => {
+//             warn!("no handle??");
+//             return;
+//         }
+//     };
+//     let Some(asset) = assets.get(handle) else {
+//         warn!("asset reports loaded but cant be loaded?");
+//         return;
+//     };
+//     println!("asset loaded");
+//     commands.entity(trigger.entity()).insert(
+//         RequestAssetStructureChildren::Asset(T::from(asset.clone()))
+//     );
+// }
+
+pub fn test_system() {
+    println!("success");
 }
+#[derive(Resource, Default)]
+pub struct RegisteredAssetCheckers(pub HashMap<String, String>);
 
 pub fn initialize_asset_structure<T>(
-    trigger: Trigger<AssetEvent<T::Inner>>,
-    requests: Query<&RequestAssetStructure<T>>,
+    //events: EventReader<AssetEvent<T::Inner>>,
+    asset_server: Res<AssetServer>,
+    requests: Query<(Entity, &RequestAssetStructure<T>)>,
     assets: Res<Assets<T::Inner>>,
     mut commands: Commands,
 
@@ -269,25 +290,30 @@ pub fn initialize_asset_structure<T>(
         T: Clone + From<T::Inner> + InnerTarget + FromStructure + Send + Sync + Default + 'static,
         T::Inner: Asset + Clone
 {
-    let Ok(request) = requests.get(trigger.entity()) else {
-        warn!("could not get request from entity?");
-        return;
-    };
-    let handle = match request {
-        RequestAssetStructure::Handle(handle) => {handle},
-        _ => {
-            warn!("no handle??");
-            return;
+    println!("checking initialize_asset structures...");
+    for (e, request) in &requests {
+        let handle = match request {
+            RequestAssetStructure::Handle(handle) => {handle},
+            _ => {
+                warn!("no handle??");
+                return;
+            }
+        };
+        if asset_server.is_loaded(handle) {
+            let Some(asset) = assets.get(handle) else {
+                warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
+                return;
+            };
+            // upgrading handle to asset
+            commands.entity(e).insert(RequestAssetStructure::Asset(T::from(asset.clone())));
         }
-    };
-    let Some(asset) = assets.get(handle) else {
-        warn!("asset reports loaded but cant be loaded?");
-        return;
-    };
-    commands.entity(trigger.entity()).insert(
-        RequestAssetStructure::Asset(T::from(asset.clone()))
-    );
+    }
 }
+// #[derive(ScheduleLabel)]
+// pub struct AssetCheckSchedule<T: Asset>(PhantomData<T>);
+
+#[derive(Hash, Debug, PartialEq, Eq, Clone, ScheduleLabel)]
+pub struct AssetCheckSchedule;
 
 impl<T> Component for RequestAssetStructure<T>
     where
@@ -315,7 +341,25 @@ impl<T> Component for RequestAssetStructure<T>
                         return;
                     },
                     RequestAssetStructure::Handle(handle) => {
-                        world.commands().entity(e).observe(initialize_asset_structure::<T>);
+                        
+                        let add_system = 
+                        {
+                            let mut asset_checkers = world.get_resource_mut::<RegisteredAssetCheckers>().unwrap();
+                            let type_path = T::Inner::type_path();
+
+                            if !asset_checkers.0.contains_key(type_path) {
+                                asset_checkers.0.insert(type_path.to_string(), type_path.to_string());
+                                true
+                            } else {
+                                false
+                            }
+                        };
+
+                        if add_system {
+                            //println!("check");
+                            let mut schedules = world.resource_mut::<Schedules>();
+                            schedules.add_systems(Update, test_system);
+                        }
                         return;
                     },
                     RequestAssetStructure::Asset(asset) => {
