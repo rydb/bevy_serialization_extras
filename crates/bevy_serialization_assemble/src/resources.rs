@@ -1,7 +1,7 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use bevy_asset::prelude::*;
-use bevy_ecs::prelude::*;
+use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
 
 #[derive(Clone)]
@@ -34,6 +34,9 @@ impl<T: Asset> Default for RequestFrom<T> {
 pub struct AssetSpawnRequestQueue<T: Asset> {
     pub requests: VecDeque<AssetSpawnRequest<T>>,
 }
+
+#[derive(Resource, Default)]
+pub struct AssetCheckers(pub HashMap<ComponentId, SystemId>);
 
 /// spawn request for assets that are "all-in-one" rather then composed
 /// of seperate components.

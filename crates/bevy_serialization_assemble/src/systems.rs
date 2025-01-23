@@ -1,55 +1,56 @@
+use crate::components::RequestAssetStructure;
+use crate::prelude::*;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
-use crate::traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize};
+use crate::traits::{FromStructure, InnerTarget, IntoHashMap};
 use bevy_asset::prelude::*;
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_hierarchy::BuildChildren;
 use bevy_log::prelude::*;
 use std::collections::VecDeque;
-use std::ops::{Deref, DerefMut};
 
-// /// takes a spawn request component and attempt to split off the component inside:
-// /// E.G: GltfMesh -> Handle<Mesh> -> Mesh3d(Handle<Mesh>)
-// /// useful for splitting apart assets that are composed of sub-assets.
-// pub fn split_open_spawn_request<Source, Target>(
-//     mut requests: Query<(Entity, &mut Source)>,
-//     assets: Res<Assets<Target>>,
-//     asset_server: Res<AssetServer>,
-//     mut commands: Commands,
-// ) 
-//     where
-//         Source: Component + DerefMut<Target = Request<Target>> + Clone,
-//         Target: Asset + Clone + FromStructure,
-// {
-//     let x = World::new();
+/// proxy system for checking load status of assets for component hooks.
+pub fn run_asset_status_checkers(
+    asset_systems: Res<AssetCheckers>, mut commands: Commands
+) {
+    for (_, system) in asset_systems.0.iter() {
+        // run systems for each asset type
+        commands.run_system(*system);
+    }
+}
 
-//     for (e, mut source) in requests.iter_mut() {
+pub fn initialize_asset_structure<T>(
+    //events: EventReader<AssetEvent<T::Inner>>,
+    asset_server: Res<AssetServer>,
+    requests: Query<(Entity, &RequestAssetStructure<T>)>,
+    assets: Res<Assets<T::Inner>>,
+    mut commands: Commands,
 
-//         let request = (**source).clone();
-//         let handle = match request {
-//             Request::Path(path) => {
-//                 let handle = asset_server.load(path);
-//                 println!("upgrading string path and skipping for {:#}.", e);
-//                 **source = Request::Handle(handle);
-//                 continue;
-//             },
-//             Request::Handle(handle) => {
-//                 println!("loaded {:#?}", handle);
-//                 handle
-//             },
-//         };
-//         let Some(asset) = assets.get(&handle) else {
-//             warn!("asset not loaded yet. Skipping");
-//             continue
-//         };
-//         let components = FromStructure::components(asset.clone());
-//         commands.entity(e).insert(components);
-//         // remove source when its no longer nessecary/has been added
-//         commands.entity(e).remove::<Source>();
-//         // for bundle in components {
-//         //     commands.entity(e).insert(bundle);
-//         // }
-//     }
-// }
+) 
+    where
+        T: Clone + From<T::Inner> + InnerTarget + FromStructure + Send + Sync + 'static,
+        T::Inner: Asset + Clone
+{
+    //println!("checking initialize_asset structures...");
+    for (e, request) in &requests {
+        let handle = match request {
+            RequestAssetStructure::Handle(handle) => {handle},
+            _ => {
+                //warn!("no handle??");
+                return;
+            }
+        };
+        if asset_server.is_loaded(handle) {
+            let Some(asset) = assets.get(handle) else {
+                warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
+                return;
+            };
+            println!("Asset loaded for {:#}", e);
+            // upgrading handle to asset
+            commands.entity(e).remove::<RequestAssetStructure<T>>();
+            commands.entity(e).insert(RequestAssetStructure::Asset(T::from(asset.clone())));
+        }
+    }
+}
 
 //FIXME: implement this properly. Once an asset builder that could use this exists.
 pub fn serialize_structures_as_assets<ThingSet, AssetType>(//thing_query: Query<ThingSet>,
@@ -95,9 +96,22 @@ pub fn deserialize_assets_as_structures<TargetAsset>(
                     trace!("failed load attempts: {:#?}", request.failed_load_attempts);
                     if let Some(asset) = thing_assets.get(&handle) {
                         let components = FromStructure::components(asset.clone());
-                        commands.spawn(
-                            components
-                        );   
+                        
+                        match components {
+                            crate::traits::Structure::Root(bundle) => {
+                                commands.spawn(
+                                    bundle
+                                );   
+                            },
+                            crate::traits::Structure::Children(children) => {
+                                let root = commands.spawn_empty().id();
+                                for bundle in children {
+                                    let child = commands.spawn(bundle).id();
+                                    commands.entity(root).add_child(child);
+                        
+                                }
+                            },
+                        }
                     } else {
                         let mut failed_request = request;
                         failed_request.failed_load_attempts += 1;

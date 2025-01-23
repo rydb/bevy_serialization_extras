@@ -25,7 +25,7 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::{
-    gltf::{Maybe, RequestStructure, RequestStructureChildren}, resources::AssetSpawnRequest, traits::{FromStructure, FromStructureChildren, IntoHashMap, LazyDeserialize, LoadError}
+    components::{Maybe, RequestStructure}, traits::{FromStructure, IntoHashMap, Structure}
 };
 
 use super::*;
@@ -60,13 +60,13 @@ pub struct LinkQuery {
 pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
 
 #[derive(Component, Clone)]
-pub struct Visuals(Vec<Visual>);
+pub struct Visuals(pub Vec<Visual>);
 
 #[derive(Component, Clone)]
 pub struct UrdfJoint(Joint);
 
 #[derive(Component)]
-pub struct LinkColliders(Vec<Collision>);
+pub struct LinkColliders(pub Vec<Collision>);
 
 // impl FromStructureChildren for Joints {
 //     fn childrens_components(value: Self) -> Vec<impl Bundle> {
@@ -76,8 +76,8 @@ pub struct LinkColliders(Vec<Collision>);
 
 impl FromStructure for UrdfJoint {
     fn components(value: Self)
-    -> impl Bundle {
-        (
+    -> Structure<impl Bundle> {
+        Structure::Root(
             JointFlag::from(&JointWrapper(value.0)),
         )
     }
@@ -102,8 +102,8 @@ impl FromStructure for UrdfJoint {
 //     }
 // }
 
-impl FromStructureChildren for LinksNJoints {
-    fn childrens_components(value: Self) -> Vec<impl Bundle> {
+impl FromStructure for LinksNJoints {
+    fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
         for (link, joint) in value.0 {
@@ -111,18 +111,18 @@ impl FromStructureChildren for LinksNJoints {
             children.push(
                 (
                     Name::new(link.name),
-                    RequestStructureChildren(VisualWrapper(link.visual)),
+                    RequestStructure(VisualWrapper(link.visual)),
                     LinkColliders(link.collision),
                     Maybe(joint)
                 )
             )
         }
-        children
+        Structure::Children(children)
     }
 }
 
 impl FromStructure for Urdf {
-    fn components(value: Self) -> impl Bundle {
+    fn components(value: Self) -> Structure<impl Bundle> {
         //let robot = value.robot;
 
         // let mut structured_link_map = HashMap::new();
@@ -148,9 +148,11 @@ impl FromStructure for Urdf {
                 .get_key_value(&link.name).map(|(_, joint)| joint.clone())
             ))
         }
-        (
-            Name::new(value.robot.name),
-            RequestStructureChildren(LinksNJoints(linkage)),
+        Structure::Root(
+            (
+                Name::new(value.robot.name),
+                RequestStructure(LinksNJoints(linkage)),
+            )
         )
         //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
         // to account for this, this will need a proper fix later.

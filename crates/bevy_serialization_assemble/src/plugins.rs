@@ -7,8 +7,8 @@ use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
 use crate::{
     resources::AssetSpawnRequestQueue,
-    systems::{deserialize_assets_as_structures, serialize_structures_as_assets},
-    traits::{FromStructure, IntoHashMap, LazyDeserialize},
+    systems::{deserialize_assets_as_structures, run_asset_status_checkers, serialize_structures_as_assets},
+    traits::{FromStructure, IntoHashMap},
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -71,5 +71,15 @@ where
             Update,
             (deserialize_assets_as_structures::<U>).after(LoadSystem::PostLoad),
         );
+    }
+}
+
+pub struct SerializationAssembleBasePlugin;
+
+impl Plugin for SerializationAssembleBasePlugin {
+    fn build(&self, app: &mut App) {
+        app
+        .add_systems(Update, run_asset_status_checkers)
+        ;
     }
 }

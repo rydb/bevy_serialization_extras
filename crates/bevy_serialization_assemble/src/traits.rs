@@ -1,4 +1,3 @@
-use bevy_asset::prelude::*;
 use bevy_ecs::prelude::*;
 use std::{collections::HashMap, fmt::Display};
 pub trait IntoHashMap<T>
@@ -8,34 +7,14 @@ where
     fn into_hashmap(value: T, world: &World ) -> HashMap<String, Self>;
 }
 
-///trait that denotes that the struct is likely paired with other structs to create a structure(E.G: urdf)
-pub trait Structure<T> {
-    /// returns the name of the structure this struct refers to.
-    fn structure(value: T) -> String;
+pub trait FromStructure {
+    fn components(value: Self) -> Structure<impl Bundle>;
 }
 
-// pub struct SubStructure<T: Component>(pub T);
-
-// pub enum ApplyTarget {
-//     Root(impl Bundle),
-//     Child,
-// }
-/// conversion from asset -> world entities with components
-
-/// components of the structure
-pub trait FromStructure{
-    fn components(value: Self)-> impl Bundle;
+pub enum Structure<T> {
+    Root(T),
+    Children(Vec<T>)
 }
-/// components of the children of this structure
-pub trait FromStructureChildren {
-    fn childrens_components(value: Self) -> Vec<impl Bundle>; 
-}
-
-// /// component of th entities that compose this structure
-// /// (distributed across unparented entities)
-// pub trait FromStructureDistributed {
-
-// }
 
 /// deserialize trait that works by offloading deserialization to desired format's deserializer
 pub trait LazyDeserialize
@@ -54,8 +33,6 @@ where
 
 use thiserror::Error;
 
-use crate::resources::AssetSpawnRequest;
-
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum LoadError {
@@ -70,3 +47,9 @@ impl Display for LoadError {
         res
     }
 }
+
+/// newtype around asset. 
+pub trait InnerTarget {
+    type Inner;
+}
+

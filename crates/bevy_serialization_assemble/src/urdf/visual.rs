@@ -16,10 +16,10 @@ use urdf_rs::Visual;
 
 use bevy_math::prelude::*;
 
-use crate::{gltf::{GltfNodeWrapper, RequestAssetStructure}, traits::{FromStructure, FromStructureChildren}};
+use crate::{components::RequestAssetStructure, gltf::GltfNodeWrapper, traits::{FromStructure, Structure}};
 
 #[derive(Clone)]
-pub enum Resolve<T: Component + Clone, U: Component + Clone> {
+pub enum Resolve<T, U> {
     One(T),
     Other(U)
 }
@@ -50,8 +50,8 @@ impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
 #[derive(From, Clone)]
 pub struct VisualWrapper(pub Vec<Visual>);
 
-impl FromStructureChildren for VisualWrapper {
-    fn childrens_components(value: Self) -> Vec<impl Bundle> {
+impl FromStructure for VisualWrapper {
+    fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
                 
         for visual in value.0 {
@@ -113,7 +113,7 @@ impl FromStructureChildren for VisualWrapper {
             // }
             // commands.entity(root).add_child(child);
         }
-        children
+        Structure::Children(children)
     }
 }
 

@@ -1,18 +1,11 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use std::sync::Arc;
-
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_asset::{io::{file::FileAssetReader, AssetSource}, StrongHandle};
+use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
 use bevy_egui::EguiContext;
-use bevy_gltf::GltfNode;
 use bevy_obj::ObjPlugin;
-use bevy_rapier3d::{
-    plugin::{NoUserData, RapierPhysicsPlugin},
-    render::RapierDebugRenderPlugin,
-};
-use bevy_serialization_assemble::{gltf::{run_asset_status_checkers, AssetCheckers, GltfNodeWrapper, RequestAssetStructure, RequestStructure}, prelude::*};
+use bevy_serialization_assemble::prelude::*;
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
@@ -34,7 +27,6 @@ fn main() {
         })
         //.add_schedule(Schedule::new(AssetCheckSchedule))
         .insert_resource(AssetCheckers::default())
-        .add_systems(Update, run_asset_status_checkers)
         .insert_resource(SetSaveFile {
             name: "blue".to_owned(),
         })
@@ -53,6 +45,7 @@ fn main() {
         .add_plugins(ObjPlugin)
         // serialization plugins
         .add_plugins(SerializationPlugin)
+        .add_plugins(SerializationAssembleBasePlugin)
         .add_plugins(SerializationPhysicsPlugin)
         .add_plugins(SerializationBasePlugin)
         .add_plugins(UrdfSerializationPlugin)
