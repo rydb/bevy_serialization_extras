@@ -12,7 +12,7 @@ use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     render::RapierDebugRenderPlugin,
 };
-use bevy_serialization_assemble::{gltf::{AssetCheckSchedule, GltfNodeWrapper, RegisteredAssetCheckers, RequestAssetStructure, RequestStructure}, prelude::*};
+use bevy_serialization_assemble::{gltf::{run_asset_status_checkers, AssetCheckers, GltfNodeWrapper, RequestAssetStructure, RequestStructure}, prelude::*};
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
@@ -33,7 +33,8 @@ fn main() {
             assets_folder_local_path: "../../assets".to_owned(),
         })
         //.add_schedule(Schedule::new(AssetCheckSchedule))
-        .insert_resource(RegisteredAssetCheckers::default())
+        .insert_resource(AssetCheckers::default())
+        .add_systems(Update, run_asset_status_checkers)
         .insert_resource(SetSaveFile {
             name: "blue".to_owned(),
         })

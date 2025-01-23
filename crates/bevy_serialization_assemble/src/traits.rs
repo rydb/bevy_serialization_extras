@@ -24,11 +24,7 @@ pub trait Structure<T> {
 
 /// components of the structure
 pub trait FromStructure{
-    
-    fn components(value: Self)
-    //TODO: re-attempt returning a bundle instead of adding components manually if optional components in bundle get stabalized(mabye 0.16?).
-    //that is only blocker of improving the correctness of this method.
-    -> impl Bundle;
+    fn components(value: Self)-> impl Bundle;
 }
 /// components of the children of this structure
 pub trait FromStructureChildren {

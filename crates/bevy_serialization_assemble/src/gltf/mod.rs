@@ -5,7 +5,7 @@ use bevy_transform::prelude::*;
 use bevy_pbr::{MeshMaterial3d, StandardMaterial};
 use bevy_app::Plugin;
 use bevy_core::Name;
-use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, query::QueryData, schedule::ScheduleLabel, world::DeferredWorld};
+use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, query::QueryData, schedule::ScheduleLabel, system::SystemId, world::DeferredWorld};
 use bevy_gltf::{Gltf, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_asset::prelude::*;
 use bevy_app::prelude::*;
@@ -181,7 +181,7 @@ impl<T> Component for RequestAssetStructureChildren<T>
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, _| {
+        _hooks.on_add(|mut world, e, id| {
             let asset = {
                 let path = match world.entity(e).get::<Self>() {
                     Some(val) => val.clone(),
@@ -199,14 +199,32 @@ impl<T> Component for RequestAssetStructureChildren<T>
                         return;
                     },
                     RequestAssetStructureChildren::Handle(handle) => {
-                        warn!("UNIMPLEMENTED");
-                        
-                        //handle.clone()
-                        //world.commands()
-                       // let mut schedules = world.resource_mut::<Schedules>();
-                        //schedules.add_systems(Update, initialize_asset_structure_children::<T>);
-                        //world.commands().entity(e).observe(initialize_asset_structure_children::<T>);
-                        //world.commands().entity(e).remove::<Self>();
+                        let add_system = 
+                        {
+                            let asset_checkers = world.get_resource_mut::<AssetCheckers>().unwrap();
+                            //let type_path = T::Inner::type_path();
+
+                            //let comp_id = T::
+                            if asset_checkers.0.contains_key(&id) {
+                                //asset_checkers.0.insert(id, type_path.to_string());
+                                false
+                            } else {
+                                true
+                            }
+                        };
+
+                        if add_system {
+                            let system_id = {
+                                world.commands().register_system(initialize_asset_structure_children::<T>)
+                            };
+                            let mut asset_checkers = world.get_resource_mut::<AssetCheckers>().unwrap();
+
+                            asset_checkers.0.insert(id, system_id);
+                            //println!("check");
+                            // let mut schedules = world.resource_mut::<Schedules>();
+                            // schedules.add_systems(Update, initialize_asset_structure::<T>);
+                        }
+                        return;
                         return;
                     },
                     RequestAssetStructureChildren::Asset(asset) => {
@@ -276,7 +294,42 @@ pub fn test_system() {
     println!("success");
 }
 #[derive(Resource, Default)]
-pub struct RegisteredAssetCheckers(pub HashMap<String, String>);
+pub struct AssetCheckers(pub HashMap<ComponentId, SystemId>);
+
+
+pub fn initialize_asset_structure_children<T>(
+    //events: EventReader<AssetEvent<T::Inner>>,
+    asset_server: Res<AssetServer>,
+    requests: Query<(Entity, &RequestAssetStructureChildren<T>)>,
+    assets: Res<Assets<T::Inner>>,
+    mut commands: Commands,
+
+) 
+    where
+        T: Clone + From<T::Inner> + InnerTarget + FromStructureChildren + Send + Sync + 'static,
+        T::Inner: Asset + Clone
+{
+    //println!("checking initialize_asset structures...");
+    for (e, request) in &requests {
+        let handle = match request {
+            RequestAssetStructureChildren::Handle(handle) => {handle},
+            _ => {
+                //warn!("no handle??");
+                return;
+            }
+        };
+        if asset_server.is_loaded(handle) {
+            let Some(asset) = assets.get(handle) else {
+                warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
+                return;
+            };
+            println!("Asset loaded for {:#}", e);
+            // upgrading handle to asset
+            commands.entity(e).remove::<RequestAssetStructureChildren<T>>();
+            commands.entity(e).insert(RequestAssetStructureChildren::Asset(T::from(asset.clone())));
+        }
+    }
+}
 
 pub fn initialize_asset_structure<T>(
     //events: EventReader<AssetEvent<T::Inner>>,
@@ -290,12 +343,12 @@ pub fn initialize_asset_structure<T>(
         T: Clone + From<T::Inner> + InnerTarget + FromStructure + Send + Sync + Default + 'static,
         T::Inner: Asset + Clone
 {
-    println!("checking initialize_asset structures...");
+    //println!("checking initialize_asset structures...");
     for (e, request) in &requests {
         let handle = match request {
             RequestAssetStructure::Handle(handle) => {handle},
             _ => {
-                warn!("no handle??");
+                //warn!("no handle??");
                 return;
             }
         };
@@ -304,7 +357,9 @@ pub fn initialize_asset_structure<T>(
                 warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
                 return;
             };
+            println!("Asset loaded for {:#}", e);
             // upgrading handle to asset
+            commands.entity(e).remove::<RequestAssetStructure<T>>();
             commands.entity(e).insert(RequestAssetStructure::Asset(T::from(asset.clone())));
         }
     }
@@ -312,8 +367,18 @@ pub fn initialize_asset_structure<T>(
 // #[derive(ScheduleLabel)]
 // pub struct AssetCheckSchedule<T: Asset>(PhantomData<T>);
 
-#[derive(Hash, Debug, PartialEq, Eq, Clone, ScheduleLabel)]
-pub struct AssetCheckSchedule;
+// #[derive(Hash, Debug, PartialEq, Eq, Clone, ScheduleLabel)]
+// pub struct AssetCheckSchedule;
+
+/// proxy system to run runtime added component hook systems.
+pub fn run_asset_status_checkers(
+    asset_systems: Res<AssetCheckers>, mut commands: Commands
+) {
+    for (_, system) in asset_systems.0.iter() {
+        // run systems for each asset type
+        commands.run_system(*system);
+    }
+}
 
 impl<T> Component for RequestAssetStructure<T>
     where
@@ -323,7 +388,7 @@ impl<T> Component for RequestAssetStructure<T>
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, _| {
+        _hooks.on_add(|mut world, e, id| {
             let asset = {
                 let path = match world.entity(e).get::<Self>() {
                     Some(val) => val.clone(),
@@ -344,21 +409,28 @@ impl<T> Component for RequestAssetStructure<T>
                         
                         let add_system = 
                         {
-                            let mut asset_checkers = world.get_resource_mut::<RegisteredAssetCheckers>().unwrap();
-                            let type_path = T::Inner::type_path();
+                            let asset_checkers = world.get_resource_mut::<AssetCheckers>().unwrap();
+                            //let type_path = T::Inner::type_path();
 
-                            if !asset_checkers.0.contains_key(type_path) {
-                                asset_checkers.0.insert(type_path.to_string(), type_path.to_string());
-                                true
-                            } else {
+                            //let comp_id = T::
+                            if asset_checkers.0.contains_key(&id) {
+                                //asset_checkers.0.insert(id, type_path.to_string());
                                 false
+                            } else {
+                                true
                             }
                         };
 
                         if add_system {
+                            let system_id = {
+                                world.commands().register_system(initialize_asset_structure::<T>)
+                            };
+                            let mut asset_checkers = world.get_resource_mut::<AssetCheckers>().unwrap();
+
+                            asset_checkers.0.insert(id, system_id);
                             //println!("check");
-                            let mut schedules = world.resource_mut::<Schedules>();
-                            schedules.add_systems(Update, test_system);
+                            // let mut schedules = world.resource_mut::<Schedules>();
+                            // schedules.add_systems(Update, initialize_asset_structure::<T>);
                         }
                         return;
                     },
@@ -370,7 +442,7 @@ impl<T> Component for RequestAssetStructure<T>
                 };
                 asset
             };
-            
+            println!("populating structure for {:#}", e);
             world.commands().entity(e).insert(
                 FromStructure::components(asset)
             );
@@ -496,7 +568,6 @@ impl FromStructure for GltfNodeWrapper {
     fn components(value: Self) -> impl Bundle {
         let mesh = value.0.mesh.map(|n| RequestAssetStructureChildren::Handle::<GltfMeshWrapper>(n));
         Maybe(mesh)
-        //RequestAssetStructure::Mabye::<GltfMeshWrapper, _>(value.0.mesh)
     }
 }
 
