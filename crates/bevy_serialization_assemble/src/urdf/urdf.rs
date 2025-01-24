@@ -25,7 +25,7 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::{
-    components::{Maybe, RequestStructure}, traits::{FromStructure, IntoHashMap, Structure}
+    components::{Maybe, RequestStructure, Resolve}, traits::{FromStructure, IntoHashMap, Structure}
 };
 
 use super::*;
@@ -59,20 +59,30 @@ pub struct LinkQuery {
 #[derive(Clone)]
 pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
 
-#[derive(Component, Clone)]
+#[derive(Clone)]
 pub struct Visuals(pub Vec<Visual>);
 
-#[derive(Component, Clone)]
+#[derive(Clone)]
 pub struct UrdfJoint(Joint);
 
-#[derive(Component)]
+#[derive(Clone)]
 pub struct LinkColliders(pub Vec<Collision>);
 
-// impl FromStructureChildren for Joints {
-//     fn childrens_components(value: Self) -> Vec<impl Bundle> {
-//         todo!()
-//     }
-// }
+impl FromStructure for LinkColliders {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        let mut children = Vec::new();
+        for collider in value.0 {
+            children.push(
+                (
+                    ColliderFlag::Convex,
+                    Resolve::from(collider.geometry),
+                    Name::new("collider")
+                )
+            );
+        }
+        Structure::Children(children)
+    }
+}
 
 impl FromStructure for UrdfJoint {
     fn components(value: Self)
@@ -83,36 +93,18 @@ impl FromStructure for UrdfJoint {
     }
 }
 
-// impl FromStructureChildren for Visuals {
-//     fn childrens_components(value: Self) -> Vec<impl Bundle> {
-//         let mut children = Vec::new();
-//         for visual in value.0 {
-            
-//             children.push((
-//                 // ColliderFlag::default(),
-//                 // SolverGroupsFlag {
-//                 //     memberships: GroupWrapper::GROUP_1,
-//                 //     filters: GroupWrapper::GROUP_2,
-//                 // },
-//                 // MassFlag {mass: 1.0},
-//                 FromStructure::components(visual),
-//             ));
-//         }
-//         children
-//     }
-// }
 
 impl FromStructure for LinksNJoints {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
         for (link, joint) in value.0 {
-            let joint = joint.map(|n| UrdfJoint(n));
+            let joint = joint.map(|n| RequestStructure(UrdfJoint(n)));
             children.push(
                 (
                     Name::new(link.name),
                     RequestStructure(VisualWrapper(link.visual)),
-                    LinkColliders(link.collision),
+                    RequestStructure(LinkColliders(link.collision)),
                     Maybe(joint)
                 )
             )

@@ -4,11 +4,11 @@
             <mass value="0.0055398003262668895"/>
             <inertia ixx="0.000044" ixy="-0.000000" ixz="-0.000000" iyy="0.000021" iyz="-0.000000" izz="0.000060"/>
         </inertial>
-        <visual>
+        <collision>
             <geometry>
                 <mesh filename="package://model_pkg/models/base.glb#Node0"/>
             </geometry>
-        </visual>
+        </collision>
     </link>
 
     <joint name="left_wheel_joint" type="continuous">
@@ -23,11 +23,11 @@
             <mass value="0.00037744371459065025"/>
             <inertia ixx="0.000001" ixy="0.000000" ixz="0.000000" iyy="0.000000" iyz="-0.000000" izz="0.000000"/>
         </inertial>
-        <visual>
+        <collision>
             <geometry>
                 <mesh filename="package://model_pkg/models/left_wheel_decimated.glb#Node0"/>
             </geometry>
-        </visual>
+        </collision>
     </link>
 
     <joint name="right_wheel_joint" type="continuous">
@@ -42,11 +42,11 @@
             <mass value="0.00037744376437338965"/>
             <inertia ixx="0.000001" ixy="0.000000" ixz="-0.000000" iyy="0.000000" iyz="0.000000" izz="0.000000"/>
         </inertial>
-        <visual>
+        <collision>
             <geometry>
                 <mesh filename="package://model_pkg/models/right_wheel_decimated.glb#Node0"/>
             </geometry>
-        </visual>
+        </collision>
     </link>
 
     <joint name="caster_wheel_joint" type="fixed">
@@ -61,11 +61,11 @@
             <mass value="1.1041741290746848e-05"/>
             <inertia ixx="0.000000" ixy="-0.000000" ixz="0.000000" iyy="0.000000" iyz="0.000000" izz="0.000000"/>
         </inertial>
-        <visual>
+        <collision>
             <geometry>
                 <mesh filename="package://model_pkg/models/caster_wheel_decimated.glb#Node0"/>
             </geometry>
-        </visual>
+        </collision>
     </link>
 
 </robot>

@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{prelude::AssetCheckers, systems::initialize_asset_structure, traits::{FromStructure, InnerTarget, Structure}};
 use bevy_asset::prelude::*;
@@ -8,7 +8,7 @@ use bevy_hierarchy::prelude::*;
 
 
 /// Take inner new_type and add components to this components entity from [`FromStructure`]
-pub struct RequestStructure<T>(pub T);
+pub struct RequestStructure<T: FromStructure + Sync + Send + Clone + 'static>(pub T);
 
 impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStructure<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -186,4 +186,49 @@ impl<T: Component> Component for Maybe<T> {
     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
         _hooks.on_add(maybe_hook::<T>);
     }
+}
+
+/// staging component for resolving one component from another.
+/// useful for bundles where the context for what something is has to be resolved later
+#[derive(Clone)]
+pub enum Resolve<T, U> {
+    One(T),
+    Other(U)
+}
+
+impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
+        _hooks.on_add(|mut world, e, id| {
+            let comp = {
+                match world.entity(e).get::<Self>() {
+                    Some(val) => val.clone(),
+                    None => {
+                        warn!("could not get resolve on: {:#}", e);
+                        return
+                    },
+                }
+            };
+            match comp {
+                Resolve::One(one) => {world.commands().entity(e).insert(one);},
+                Resolve::Other(other) => {world.commands().entity(e).insert(other);},
+            }
+            world.commands().entity(e).remove::<Self>();
+        });
+    }
+}
+/// registry of components to be rolled down onto children.
+pub struct RollDownRegistry(pub HashMap<Entity, Vec<ComponentId>>);
+
+/// staging component to roll down component to all children. 
+pub struct RollDown<T>(T);
+
+impl<T: Component + Clone> Component for RollDown<T> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+    
+    fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        todo!()
+    }
+
 }

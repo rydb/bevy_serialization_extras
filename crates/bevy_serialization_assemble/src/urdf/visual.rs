@@ -12,40 +12,13 @@ use bevy_serialization_physics::prelude::{ColliderFlag, GroupWrapper, MassFlag, 
 use derive_more::From;
 use glam::Vec3;
 use nalgebra::Vector3;
-use urdf_rs::Visual;
+use urdf_rs::{Geometry, Visual};
 
 use bevy_math::prelude::*;
 
-use crate::{components::RequestAssetStructure, gltf::GltfNodeWrapper, traits::{FromStructure, Structure}};
+use crate::{components::{RequestAssetStructure, Resolve}, gltf::GltfNodeWrapper, traits::{FromStructure, Structure}};
 
-#[derive(Clone)]
-pub enum Resolve<T, U> {
-    One(T),
-    Other(U)
-}
 
-impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
-    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-
-    fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
-        _hooks.on_add(|mut world, e, comp| {
-            let comp = {
-                match world.entity(e).get::<Self>() {
-                    Some(val) => val.clone(),
-                    None => {
-                        warn!("could not get resolve on: {:#}", e);
-                        return
-                    },
-                }
-            };
-            match comp {
-                Resolve::One(one) => {world.commands().entity(e).insert(one);},
-                Resolve::Other(other) => {world.commands().entity(e).insert(other);},
-            }
-            world.commands().entity(e).remove::<Self>();
-        });
-    }
-}
 
 #[derive(From, Clone)]
 pub struct VisualWrapper(pub Vec<Visual>);
@@ -62,47 +35,9 @@ impl FromStructure for VisualWrapper {
             //     filters: GroupWrapper::GROUP_2,
             // },
             // MassFlag {mass: 1.0},
-            children.push( match visual.geometry {
-                urdf_rs::Geometry::Box { size } => {
-                    let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
-                    Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cuboid(Cuboid {
-                        half_size: Vec3::new(
-                            bevy_size[0] as f32,
-                            bevy_size[1] as f32,
-                            bevy_size[2] as f32,
-                        ),
-                    })))
-                }
-                urdf_rs::Geometry::Cylinder { radius, length } => {
-                    //TODO: double check that this is correct
-                    Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cylinder(Cylinder {
-                        radius: radius as f32,
-                        half_height: length as f32,
-                    })))
-                }
-                urdf_rs::Geometry::Capsule { radius, length } => {
-                    //TODO: double check that this is correct
-                    Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Capsule(Capsule3d {
-                        radius: radius as f32,
-                        half_length: length as f32,
-                    })))
-                }
-                urdf_rs::Geometry::Sphere { radius } => Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Sphere(Sphere {
-                    radius: radius as f32,
-                }))),
-                urdf_rs::Geometry::Mesh { filename, .. } => {
-                    Resolve::Other(
-                        RequestAssetStructure::<GltfNodeWrapper>::Path(filename)
-                    )
-                    //Err(filename)
-                    // commands.entity(child).insert(
-                    //     GltfNodeSpawnRequest(filename)
-                    // );
-                    //Self::AssetPath(filename.to_owned()),
-
-                }
-            }
-        ));
+            children.push( 
+                Resolve::from(visual.geometry)
+            ));
 
                                 
 
@@ -114,6 +49,48 @@ impl FromStructure for VisualWrapper {
             // commands.entity(root).add_child(child);
         }
         Structure::Children(children)
+    }
+}
+
+
+
+impl From<Geometry> for Resolve<MeshFlag3d, RequestAssetStructure<GltfNodeWrapper>> {
+    fn from(value: Geometry) -> Self {
+        match value {
+            urdf_rs::Geometry::Box { size } => {
+                let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
+                Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cuboid(Cuboid {
+                    half_size: Vec3::new(
+                        bevy_size[0] as f32,
+                        bevy_size[1] as f32,
+                        bevy_size[2] as f32,
+                    ),
+                })))
+            }
+            urdf_rs::Geometry::Cylinder { radius, length } => {
+                //TODO: double check that this is correct
+                Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cylinder(Cylinder {
+                    radius: radius as f32,
+                    half_height: length as f32,
+                })))
+            }
+            urdf_rs::Geometry::Capsule { radius, length } => {
+                //TODO: double check that this is correct
+                Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Capsule(Capsule3d {
+                    radius: radius as f32,
+                    half_length: length as f32,
+                })))
+            }
+            urdf_rs::Geometry::Sphere { radius } => Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Sphere(Sphere {
+                radius: radius as f32,
+            }))),
+            urdf_rs::Geometry::Mesh { filename, .. } => {
+                Resolve::Other(
+                    RequestAssetStructure::<GltfNodeWrapper>::Path(filename)
+                )
+
+            }
+        }
     }
 }
 
