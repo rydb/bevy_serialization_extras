@@ -5,6 +5,7 @@ use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
 use bevy_egui::EguiContext;
 use bevy_obj::ObjPlugin;
+use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::prelude::*;
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -26,7 +27,6 @@ fn main() {
             assets_folder_local_path: "../../assets".to_owned(),
         })
         //.add_schedule(Schedule::new(AssetCheckSchedule))
-        .insert_resource(AssetCheckers::default())
         .insert_resource(SetSaveFile {
             name: "blue".to_owned(),
         })
@@ -42,6 +42,9 @@ fn main() {
                 ..Default::default()
             }), //.set(bevy_mod_raycast::low_latency_window_plugin())
         )
+        .add_plugins(RapierPhysicsPlugin::<()>::default())
+
+        .add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(ObjPlugin)
         // serialization plugins
         .add_plugins(SerializationPlugin)

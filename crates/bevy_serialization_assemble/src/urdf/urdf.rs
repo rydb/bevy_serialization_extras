@@ -1,4 +1,5 @@
 use bevy_core::Name;
+use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::{material::MaterialFlag3d, mesh::MeshFlag3d};
 use bevy_serialization_physics::prelude::{
@@ -18,14 +19,14 @@ use glam::{EulerRot, Quat, Vec3};
 use nalgebra::{Matrix3, Vector3};
 use std::collections::HashMap;
 use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
-use visual::VisualWrapper;
+use visual::{GeometryWrapper, VisualWrapper};
 
 use derive_more::From;
 
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::{
-    components::{Maybe, RequestStructure, Resolve}, traits::{FromStructure, IntoHashMap, Structure}
+    components::{Maybe, RequestStructure, Resolve, RollDown}, traits::{FromStructure, IntoHashMap, Structure}
 };
 
 use super::*;
@@ -74,9 +75,12 @@ impl FromStructure for LinkColliders {
         for collider in value.0 {
             children.push(
                 (
-                    ColliderFlag::Convex,
-                    Resolve::from(collider.geometry),
-                    Name::new("collider")
+                    RollDown(ColliderFlag::Convex),
+                    RollDown(RigidBodyFlag::Dynamic),
+                    Resolve::from(GeometryWrapper(collider.geometry)),
+                    Name::new("collider"),
+                    Transform::default(),
+                    Visibility::default(),
                 )
             );
         }
@@ -105,7 +109,9 @@ impl FromStructure for LinksNJoints {
                     Name::new(link.name),
                     RequestStructure(VisualWrapper(link.visual)),
                     RequestStructure(LinkColliders(link.collision)),
-                    Maybe(joint)
+                    Maybe(joint),
+                    Transform::default(),
+                    Visibility::default(),
                 )
             )
         }
@@ -144,6 +150,7 @@ impl FromStructure for Urdf {
             (
                 Name::new(value.robot.name),
                 RequestStructure(LinksNJoints(linkage)),
+                Transform::default()
             )
         )
         //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back

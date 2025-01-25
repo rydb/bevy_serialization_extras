@@ -1,4 +1,4 @@
-use crate::components::RequestAssetStructure;
+use crate::components::{RequestAssetStructure, RollDown};
 use crate::prelude::*;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{FromStructure, InnerTarget, IntoHashMap};
@@ -15,6 +15,32 @@ pub fn run_asset_status_checkers(
     for (_, system) in asset_systems.0.iter() {
         // run systems for each asset type
         commands.run_system(*system);
+    }
+}
+
+pub fn run_rolldown_checkers(
+    rolldown_systems: Res<RollDownCheckers>,
+    mut commands: Commands
+) {
+    for (_, system) in rolldown_systems.0.iter() {
+        // run systems for each asset type
+        commands.run_system(*system);
+    }
+}
+
+pub fn check_roll_down<T>(
+    initialized_children: Res<InitializedChildren>,
+    rolldowns: Query<(Entity, &RollDown<T>)>,
+    mut commands: Commands,
+)
+    where
+        T: Clone + Component
+{
+    for (e, rolldown) in &rolldowns {
+        if initialized_children.0.contains_key(&e) {
+            commands.entity(e).remove::<RollDown<T>>();
+            commands.entity(e).insert(rolldown.clone());
+        }
     }
 }
 

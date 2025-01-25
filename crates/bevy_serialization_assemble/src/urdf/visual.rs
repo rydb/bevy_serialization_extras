@@ -36,7 +36,7 @@ impl FromStructure for VisualWrapper {
             // },
             // MassFlag {mass: 1.0},
             children.push( 
-                Resolve::from(visual.geometry)
+                Resolve::from(GeometryWrapper(visual.geometry))
             ));
 
                                 
@@ -53,10 +53,11 @@ impl FromStructure for VisualWrapper {
 }
 
 
+pub struct GeometryWrapper(pub Geometry);
 
-impl From<Geometry> for Resolve<MeshFlag3d, RequestAssetStructure<GltfNodeWrapper>> {
-    fn from(value: Geometry) -> Self {
-        match value {
+impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfNodeWrapper>> {
+    fn from(value: GeometryWrapper) -> Self {
+        match value.0 {
             urdf_rs::Geometry::Box { size } => {
                 let bevy_size = /*urdf_rotation_flip * */ Vector3::new(size[0], size[1], size[2]);
                 Resolve::One(MeshFlag3d::Prefab(MeshPrefab::Cuboid(Cuboid {

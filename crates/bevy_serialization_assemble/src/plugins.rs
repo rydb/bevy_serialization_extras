@@ -1,14 +1,12 @@
 use std::marker::PhantomData;
 
 use bevy_app::prelude::*;
-use bevy_asset::Asset;
+use bevy_asset::{processor::InitializeError, Asset};
 use bevy_ecs::{prelude::*, query::QueryData};
 use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
 use crate::{
-    resources::AssetSpawnRequestQueue,
-    systems::{deserialize_assets_as_structures, run_asset_status_checkers, serialize_structures_as_assets},
-    traits::{FromStructure, IntoHashMap},
+    prelude::{AssetCheckers, InitializedChildren, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{deserialize_assets_as_structures, run_asset_status_checkers, run_rolldown_checkers, serialize_structures_as_assets}, traits::{FromStructure, IntoHashMap}
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -79,7 +77,11 @@ pub struct SerializationAssembleBasePlugin;
 impl Plugin for SerializationAssembleBasePlugin {
     fn build(&self, app: &mut App) {
         app
+        .insert_resource(AssetCheckers::default())
+        .insert_resource(InitializedChildren::default())
+        .insert_resource(RollDownCheckers::default())
         .add_systems(Update, run_asset_status_checkers)
+        .add_systems(PostUpdate, run_rolldown_checkers)
         ;
     }
 }

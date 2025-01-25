@@ -1,10 +1,12 @@
 use std::{collections::HashMap, marker::PhantomData};
 
-use crate::{prelude::AssetCheckers, systems::initialize_asset_structure, traits::{FromStructure, InnerTarget, Structure}};
+use crate::{prelude::{AssetCheckers, InitializedChildren, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, InnerTarget, Structure}};
 use bevy_asset::prelude::*;
 use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, world::DeferredWorld};
 use bevy_log::warn;
 use bevy_hierarchy::prelude::*;
+
+
 
 
 /// Take inner new_type and add components to this components entity from [`FromStructure`]
@@ -30,11 +32,18 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
                 Structure::Root(bundle) => {
                     world.commands().entity(e).insert(bundle);
                 },
-                Structure::Children(children) => {
-                    for bundle in children {
+                Structure::Children(bundles) => {
+                    let mut children = Vec::new();
+                    for bundle in bundles {
                         let child = world.commands().spawn(bundle).id();
                         world.commands().entity(e).add_child(child);
-            
+                        children.push(child);
+                    }
+                    {
+                        let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+                        if let Some(old_val) = initialized_children.0.insert(e, children) {
+                            warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                        }
                     }
                     world.commands().entity(e).remove::<Self>();
                 },
@@ -122,12 +131,21 @@ impl<T> Component for RequestAssetStructure<T>
                 Structure::Root(bundle) => {
                     world.commands().entity(e).insert(bundle);
                 },
-                Structure::Children(children) => {
-                    for bundle in children {
+                Structure::Children(bundles) => {
+                    let mut children = Vec::new();
+                    for bundle in bundles {
                         let child = world.commands().spawn(bundle).id();
                         world.commands().entity(e).add_child(child);
+                        children.push(child);
             
                     }
+                    {
+                        let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+                        if let Some(old_val) = initialized_children.0.insert(e, children) {
+                            warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                        }
+                    }
+
                     world.commands().entity(e).remove::<Self>();
                 },
             }
@@ -218,17 +236,50 @@ impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
         });
     }
 }
-/// registry of components to be rolled down onto children.
-pub struct RollDownRegistry(pub HashMap<Entity, Vec<ComponentId>>);
 
 /// staging component to roll down component to all children. 
-pub struct RollDown<T>(T);
+#[derive(Clone)]
+pub struct RollDown<T>(pub T);
 
 impl<T: Component + Clone> Component for RollDown<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
     
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        todo!()
-    }
+        _hooks.on_add(|mut world, e, id| {
+            let rolldown_checkers = world.get_resource_mut::<RollDownCheckers>().unwrap();
+            if !rolldown_checkers.0.contains_key(&id) {
+                warn!("Adding rolldown system for {:#?}", id);
+                let system_id = {
+                    world.commands().register_system(check_roll_down::<T>)
+                };
+                let mut asset_checkers = world.get_resource_mut::<RollDownCheckers>().unwrap();
 
+                asset_checkers.0.insert(id, system_id);
+                return
+            }
+            let comp = {
+                match world.entity(e).get::<Self>() {
+                    Some(val) => val.clone(),
+                    None => {
+                        warn!("could not get RollDown<T> on: {:#}", e);
+                        return
+                    },
+                }
+            };
+            let children = {
+                let Some(children) = world.entity(e).get::<Children>() else {
+                    warn!("No children for {:#}, skipping Rolldown<T>", e);
+                    return
+                };
+                children.to_vec()
+            };
+            for child in children.iter() {
+                warn!("rolling down to {:#}", child);
+                world.commands().entity(child.clone()).insert(comp.0.clone());
+            }
+
+            world.commands().entity(e).remove::<Self>();
+        });
+    }
 }
+

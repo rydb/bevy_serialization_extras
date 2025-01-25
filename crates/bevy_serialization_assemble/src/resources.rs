@@ -4,6 +4,10 @@ use bevy_asset::prelude::*;
 use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
 
+/// registry of initialized structures + their children.
+#[derive(Resource, Default)]
+pub struct InitializedChildren(pub HashMap<Entity, Vec<Entity>>);
+
 #[derive(Clone)]
 pub enum RequestFrom<T: Asset> {
     ///path of asset relative to main.rs of bevy project.
@@ -37,6 +41,12 @@ pub struct AssetSpawnRequestQueue<T: Asset> {
 
 #[derive(Resource, Default)]
 pub struct AssetCheckers(pub HashMap<ComponentId, SystemId>);
+
+
+/// registry of components to be rolled down onto children.
+#[derive(Resource, Default)]
+pub struct RollDownCheckers(pub HashMap<ComponentId, SystemId>);
+
 
 /// spawn request for assets that are "all-in-one" rather then composed
 /// of seperate components.
