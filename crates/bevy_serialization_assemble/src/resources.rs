@@ -4,9 +4,17 @@ use bevy_asset::prelude::*;
 use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
 
-/// registry of initialized structures + their children.
+// /// registry of initialized structures + their children.
+// #[derive(Resource, Default)]
+// pub struct InitializedChildren(pub HashMap<Entity, Vec<Entity>>);
+
+/// registry of entities that have initialized their staging componenets.
 #[derive(Resource, Default)]
-pub struct InitializedChildren(pub HashMap<Entity, Vec<Entity>>);
+pub struct InitializedStagers(pub HashMap<Entity, Vec<(ComponentId, Vec<Entity>)>>);
+
+
+// /// registry of staging 
+// pub struct InitializedStagersEntities(pub HashMap<ComponentId, Vec<Entity>>);
 
 #[derive(Clone)]
 pub enum RequestFrom<T: Asset> {

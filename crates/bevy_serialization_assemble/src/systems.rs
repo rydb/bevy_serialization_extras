@@ -29,7 +29,7 @@ pub fn run_rolldown_checkers(
 }
 
 pub fn check_roll_down<T>(
-    initialized_children: Res<InitializedChildren>,
+    initialized_children: Res<InitializedStagers>,
     rolldowns: Query<(Entity, &RollDown<T>)>,
     mut commands: Commands,
 )
@@ -37,6 +37,11 @@ pub fn check_roll_down<T>(
         T: Clone + Component
 {
     for (e, rolldown) in &rolldowns {
+        let Some(ids) = initialized_children.0.get(&e) else {
+            return
+        };
+        
+        
         if initialized_children.0.contains_key(&e) {
             commands.entity(e).remove::<RollDown<T>>();
             commands.entity(e).insert(rolldown.clone());
@@ -129,7 +134,8 @@ pub fn deserialize_assets_as_structures<TargetAsset>(
                                     bundle
                                 );   
                             },
-                            crate::traits::Structure::Children(children) => {
+                            crate::traits::Structure::Children(children, split) => {
+                                
                                 let root = commands.spawn_empty().id();
                                 for bundle in children {
                                     let child = commands.spawn(bundle).id();

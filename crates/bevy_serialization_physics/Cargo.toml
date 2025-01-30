@@ -31,7 +31,8 @@ strum = {workspace = true}
 strum_macros = {workspace = true}
 bitflags = {workspace = true}
 derive_more = {workspace = true}
-log = {workspace = true}
+bevy_log = {workspace = true}
+bevy_hierarchy = {workspace = true}
 
 
 

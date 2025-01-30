@@ -1,3 +1,4 @@
+use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
@@ -5,7 +6,7 @@ use bevy_gltf::{GltfMesh, GltfNode};
 use bevy_render::prelude::*;
 use derive_more::derive::From;
 
-use crate::{components::{Maybe, RequestAssetStructure}, traits::{FromStructure, InnerTarget, Structure}};
+use crate::{components::{Maybe, RequestAssetStructure}, traits::{FromStructure, InnerTarget, Split, Structure}};
 
 
 #[derive(From, Clone)]
@@ -34,17 +35,24 @@ impl FromStructure for GltfMeshWrapper {
                 (
                     Mesh3d(primitive.mesh.clone()),
                     Maybe(mat),
+                    Name::new(primitive.name),
                 )
             )
         }
-        Structure::Children(children)
+        Structure::Children(children, Split(false))
     }
 }
 
 impl FromStructure for GltfNodeWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mesh = value.0.mesh.map(|n| RequestAssetStructure::Handle::<GltfMeshWrapper>(n));
-        Structure::Root(Maybe(mesh))
+        
+        Structure::Root(
+            (
+                Maybe(mesh),
+                //Name::new("NODE ROOT"),
+            ),
+        )
     }
 }
 

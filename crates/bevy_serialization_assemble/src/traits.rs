@@ -11,9 +11,13 @@ pub trait FromStructure {
     fn components(value: Self) -> Structure<impl Bundle>;
 }
 
+
+/// Weather to split children off into seperate entities or have them as children to a parent.
+pub struct Split(pub bool);
+
 pub enum Structure<T> {
     Root(T),
-    Children(Vec<T>)
+    Children(Vec<T>, Split)
 }
 
 /// deserialize trait that works by offloading deserialization to desired format's deserializer

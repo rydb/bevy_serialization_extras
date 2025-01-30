@@ -1,22 +1,26 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::{any::{Any, TypeId}, collections::HashMap, marker::PhantomData};
 
-use crate::{prelude::{AssetCheckers, InitializedChildren, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, InnerTarget, Structure}};
+use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, InnerTarget, Structure}};
 use bevy_asset::prelude::*;
 use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, world::DeferredWorld};
 use bevy_log::warn;
 use bevy_hierarchy::prelude::*;
+use bevy_reflect::DynamicTypePath;
+use bevy_serialization_core::prelude::mesh::{MeshFlag3d, MeshWrapper};
+use bevy_state::commands;
 
 
 
 
 /// Take inner new_type and add components to this components entity from [`FromStructure`]
+#[derive(Clone)]
 pub struct RequestStructure<T: FromStructure + Sync + Send + Clone + 'static>(pub T);
 
 impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStructure<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, _| {
+        _hooks.on_add(|mut world, e, id| {
             let comp = {
                 let comp = match world.entity(e).get::<Self>() {
                     Some(val) => val,
@@ -32,18 +36,33 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
                 Structure::Root(bundle) => {
                     world.commands().entity(e).insert(bundle);
                 },
-                Structure::Children(bundles) => {
+                Structure::Children(bundles, split) => {
                     let mut children = Vec::new();
                     for bundle in bundles {
+                        
                         let child = world.commands().spawn(bundle).id();
-                        world.commands().entity(e).add_child(child);
+                        if !split.0 {
+                            world.commands().entity(e).add_child(child);
+
+                        }
                         children.push(child);
                     }
                     {
-                        let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
-                        if let Some(old_val) = initialized_children.0.insert(e, children) {
-                            warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                        let mut initialized_stagers = world.get_resource_mut::<InitializedStagers>().unwrap();
+
+                        let previous_result = initialized_stagers.0.get_mut(&e);
+
+                        match previous_result {
+                            Some(res) => res.push((id, children)),
+                            None => {
+                                initialized_stagers.0.insert(e, vec![(id, children)]);
+                            },
                         }
+                        //initialized_stagers.0.insert(e, v)
+                        // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+                        // if let Some(old_val) = initialized_children.0.insert(e, children) {
+                        //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                        // }
                     }
                     world.commands().entity(e).remove::<Self>();
                 },
@@ -131,19 +150,32 @@ impl<T> Component for RequestAssetStructure<T>
                 Structure::Root(bundle) => {
                     world.commands().entity(e).insert(bundle);
                 },
-                Structure::Children(bundles) => {
+                Structure::Children(bundles, split) => {
                     let mut children = Vec::new();
                     for bundle in bundles {
                         let child = world.commands().spawn(bundle).id();
-                        world.commands().entity(e).add_child(child);
+                        if !split.0 {
+                            world.commands().entity(e).add_child(child);
+
+                        }
                         children.push(child);
             
                     }
                     {
-                        let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
-                        if let Some(old_val) = initialized_children.0.insert(e, children) {
-                            warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                        let mut initialized_stagers = world.get_resource_mut::<InitializedStagers>().unwrap();
+
+                        let previous_result = initialized_stagers.0.get_mut(&e);
+
+                        match previous_result {
+                            Some(res) => res.push((id, children)),
+                            None => {
+                                initialized_stagers.0.insert(e, vec![(id, children)]);
+                            },
                         }
+                        // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+                        // if let Some(old_val) = initialized_children.0.insert(e, children) {
+                        //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                        // }
                     }
 
                     world.commands().entity(e).remove::<Self>();
@@ -239,7 +271,10 @@ impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
 
 /// staging component to roll down component to all children. 
 #[derive(Clone)]
-pub struct RollDown<T>(pub T);
+pub struct RollDown<T: Component>(
+    pub T
+    //, TypeId
+);
 
 impl<T: Component + Clone> Component for RollDown<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -274,7 +309,8 @@ impl<T: Component + Clone> Component for RollDown<T> {
                 children.to_vec()
             };
             for child in children.iter() {
-                warn!("rolling down to {:#}", child);
+                //let ids = world.register_component()
+                //warn!("rolling down to {:#}", child);
                 world.commands().entity(child.clone()).insert(comp.0.clone());
             }
 
@@ -283,3 +319,29 @@ impl<T: Component + Clone> Component for RollDown<T> {
     }
 }
 
+/// staging component to split off given component from its parent. 
+pub struct SplitOff<T: Component + Clone>(pub T);
+
+impl<T: Component + Clone> Component for SplitOff<T> {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(_hooks: &mut ComponentHooks) {
+        _hooks.on_add(|mut world, e, id| {
+            let comp = {
+                match world.entity(e).get::<Self>() {
+                    Some(val) => val.0.clone(),
+                    None => {
+                        warn!("could not get RollDown<T> on: {:#}", e);
+                        return
+                    },
+                    
+                }
+            };
+
+            world.commands().spawn(
+                comp
+            );
+            world.commands().entity(e).remove::<Self>();
+        });
+    }
+}

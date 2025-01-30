@@ -17,6 +17,7 @@ use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
 use nalgebra::{Matrix3, Vector3};
+use std::any::TypeId;
 use std::collections::HashMap;
 use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
 use visual::{GeometryWrapper, VisualWrapper};
@@ -25,6 +26,8 @@ use derive_more::From;
 
 use bevy_ecs::{prelude::*, query::QueryData};
 
+use crate::components::SplitOff;
+use crate::traits::Split;
 use crate::{
     components::{Maybe, RequestStructure, Resolve, RollDown}, traits::{FromStructure, IntoHashMap, Structure}
 };
@@ -66,6 +69,15 @@ pub struct Visuals(pub Vec<Visual>);
 #[derive(Clone)]
 pub struct UrdfJoint(Joint);
 
+impl FromStructure for UrdfJoint {
+    fn components(value: Self)
+    -> Structure<impl Bundle> {
+        Structure::Root(
+            JointFlag::from(&JointWrapper(value.0)),
+        )    
+    }
+}
+
 #[derive(Clone)]
 pub struct LinkColliders(pub Vec<Collision>);
 
@@ -75,8 +87,10 @@ impl FromStructure for LinkColliders {
         for collider in value.0 {
             children.push(
                 (
-                    RollDown(ColliderFlag::Convex),
-                    RollDown(RigidBodyFlag::Dynamic),
+                    RollDown(ColliderFlag::Convex
+                        //, TypeId::<Mesh3d>::of()
+                    ),
+                    RigidBodyFlag::Dynamic,
                     Resolve::from(GeometryWrapper(collider.geometry)),
                     Name::new("collider"),
                     Transform::default(),
@@ -84,18 +98,11 @@ impl FromStructure for LinkColliders {
                 )
             );
         }
-        Structure::Children(children)
+        Structure::Children(children, Split(false))
     }
 }
 
-impl FromStructure for UrdfJoint {
-    fn components(value: Self)
-    -> Structure<impl Bundle> {
-        Structure::Root(
-            JointFlag::from(&JointWrapper(value.0)),
-        )
-    }
-}
+
 
 
 impl FromStructure for LinksNJoints {
@@ -103,7 +110,7 @@ impl FromStructure for LinksNJoints {
         let mut children = Vec::new();
 
         for (link, joint) in value.0 {
-            let joint = joint.map(|n| RequestStructure(UrdfJoint(n)));
+            let joint = joint.map(|n| RollDown(RequestStructure(UrdfJoint(n))));
             children.push(
                 (
                     Name::new(link.name),
@@ -115,7 +122,7 @@ impl FromStructure for LinksNJoints {
                 )
             )
         }
-        Structure::Children(children)
+        Structure::Children(children, Split(true))
     }
 }
 
@@ -151,7 +158,7 @@ impl FromStructure for Urdf {
                 Name::new(value.robot.name),
                 RequestStructure(LinksNJoints(linkage)),
                 Transform::default()
-            )
+            ),
         )
         //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
         // to account for this, this will need a proper fix later.

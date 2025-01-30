@@ -16,7 +16,7 @@ use urdf_rs::{Geometry, Visual};
 
 use bevy_math::prelude::*;
 
-use crate::{components::{RequestAssetStructure, Resolve}, gltf::GltfNodeWrapper, traits::{FromStructure, Structure}};
+use crate::{components::{RequestAssetStructure, Resolve}, gltf::GltfNodeWrapper, traits::{FromStructure, Split, Structure}};
 
 
 
@@ -48,7 +48,7 @@ impl FromStructure for VisualWrapper {
             // }
             // commands.entity(root).add_child(child);
         }
-        Structure::Children(children)
+        Structure::Children(children, Split(false))
     }
 }
 

@@ -74,7 +74,8 @@ fn main() {
         // .add_systems(Update, make_robots_selectable)
         .add_systems(Update, bind_left_and_right_wheel)
         
-        //.add_systems(Update, freeze_spawned_robots)
+        .add_systems(Update, freeze_spawned_robots)
+        .register_type::<WasFrozen>()
         .run();
 }
 
@@ -100,6 +101,23 @@ pub fn bind_left_and_right_wheel(
         if split_up.contains(&Wheel::Right.to_string().to_lowercase().as_str()) {
             commands.entity(e).insert(Wheel::Right);
         }
+    }
+}
+
+#[derive(Component, Reflect)]
+pub struct WasFrozen;
+
+//FIXME: physics bodies fly out of control when spawned, this freezes them for the user to unpause until thats fixed.
+pub fn freeze_spawned_robots(
+    mut robots: Query<
+        (Entity, &mut RigidBodyFlag),
+        Without<WasFrozen>,
+    >,
+    mut commands: Commands,
+) {
+    for (e, mut body) in robots.iter_mut() {
+        *body = RigidBodyFlag::Fixed;
+        commands.entity(e).insert(WasFrozen);
     }
 }
 
