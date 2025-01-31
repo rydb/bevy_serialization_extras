@@ -9,7 +9,7 @@ use super::{
     solvergroupfilter::SolverGroupsFlag,
 };
 
-#[derive(Component, EnumIter, Reflect, Clone, Default)]
+#[derive(Component, EnumIter, Reflect, Clone, Default, Debug)]
 #[reflect(Component)]
 #[require(CcdFlag, CollisionGroupsFlag, SolverGroupsFlag)]
 pub enum ColliderFlag {

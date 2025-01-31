@@ -1,4 +1,7 @@
+
+
 use bevy_core::Name;
+use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::{material::MaterialFlag3d, mesh::MeshFlag3d};
@@ -17,6 +20,7 @@ use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
 use nalgebra::{Matrix3, Vector3};
+use std::any::Any;
 use std::any::TypeId;
 use std::collections::HashMap;
 use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
@@ -26,6 +30,7 @@ use derive_more::From;
 
 use bevy_ecs::{prelude::*, query::QueryData};
 
+use crate::components::Ids;
 use crate::components::SplitOff;
 use crate::traits::Split;
 use crate::{
@@ -78,6 +83,11 @@ impl FromStructure for UrdfJoint {
     }
 }
 
+// const MESHKINDS = [
+//     TypeId::of::<MeshFlag3d>(),
+    
+//     ]
+
 #[derive(Clone)]
 pub struct LinkColliders(pub Vec<Collision>);
 
@@ -87,9 +97,12 @@ impl FromStructure for LinkColliders {
         for collider in value.0 {
             children.push(
                 (
-                    RollDown(ColliderFlag::Convex
-                        //, TypeId::<Mesh3d>::of()
-                    ),
+                    // RollDown(ColliderFlag::Convex,
+                    //     vec![
+                    //         TypeId::of::<Mesh3d>(),
+                    //         //TypeId::of
+                    //     ]
+                    // ),
                     RigidBodyFlag::Dynamic,
                     Resolve::from(GeometryWrapper(collider.geometry)),
                     Name::new("collider"),
@@ -110,7 +123,13 @@ impl FromStructure for LinksNJoints {
         let mut children = Vec::new();
 
         for (link, joint) in value.0 {
-            let joint = joint.map(|n| RollDown(RequestStructure(UrdfJoint(n))));
+            let joint = joint
+            .map(|n| 
+                RollDown(
+                    RequestStructure(UrdfJoint(n)),
+                    vec![TypeId::of::<RigidBodyFlag>()]
+                )
+            );
             children.push(
                 (
                     Name::new(link.name),

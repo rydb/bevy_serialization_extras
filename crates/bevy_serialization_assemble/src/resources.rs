@@ -10,7 +10,7 @@ use bevy_transform::prelude::*;
 
 /// registry of entities that have initialized their staging componenets.
 #[derive(Resource, Default)]
-pub struct InitializedStagers(pub HashMap<Entity, Vec<(ComponentId, Vec<Entity>)>>);
+pub struct InitializedStagers(pub HashMap<Entity, Vec<Entity>>);
 
 
 // /// registry of staging 

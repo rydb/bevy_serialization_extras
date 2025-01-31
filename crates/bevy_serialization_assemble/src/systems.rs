@@ -1,12 +1,15 @@
-use crate::components::{RequestAssetStructure, RollDown};
+use crate::components::{RequestAssetStructure, RollDown, RollDownIded};
 use crate::prelude::*;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{FromStructure, InnerTarget, IntoHashMap};
 use bevy_asset::prelude::*;
+use bevy_core::Name;
+use bevy_ecs::component::{ComponentId, Components};
 use bevy_ecs::{prelude::*, query::QueryData};
-use bevy_hierarchy::BuildChildren;
+use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::prelude::*;
 use std::collections::VecDeque;
+use std::fmt::Debug;
 
 /// proxy system for checking load status of assets for component hooks.
 pub fn run_asset_status_checkers(
@@ -28,25 +31,52 @@ pub fn run_rolldown_checkers(
     }
 }
 
-pub fn check_roll_down<T>(
+pub fn check_roll_down<T: Clone + Component>(
     initialized_children: Res<InitializedStagers>,
-    rolldowns: Query<(Entity, &RollDown<T>)>,
+    rolldowns: Query<(Entity, &Name, &RollDownIded<T>)>,
+    test: Query<EntityRef>,
+    decendents: Query<&Children>,
     mut commands: Commands,
-)
-    where
-        T: Clone + Component
-{
-    for (e, rolldown) in &rolldowns {
+){
+    for (e, name, rolldown) in &rolldowns {
         let Some(ids) = initialized_children.0.get(&e) else {
             return
         };
-        
-        
-        if initialized_children.0.contains_key(&e) {
-            commands.entity(e).remove::<RollDown<T>>();
-            commands.entity(e).insert(rolldown.clone());
+        let Ok(children) = decendents.get(e) else {
+            return
+        };
+        // for child in children {
+            
+        // }
+
+        for child in ids {
+            let Ok(e_ref) = test.get(e) else {
+                return
+            };
+            let components = e_ref.archetype().components().collect::<Vec<_>>();
+            println!("Name: {:#}, Filter ids: {:#?} registered: {:#?}", name, components, rolldown.1);
+
+            //if components.any(|n| rolldown.1.contains(n));
+            if rolldown.1.iter().any(|n| components.contains(n)) {
+                commands.entity(*child).insert(rolldown.0.clone());
+                commands.entity(e).remove::<RollDownIded<T>>();
+                println!("finished rolling down");
+            }
         }
+        // println!("Filter ids: {:#?} registered: {:#?}", ids, rolldown.1);
+        // // for (child, components) in ids.iter()
+        // // .filter(|(id, components)| rolldown.1
+        // // .iter()
+        // // .any(|n| components.contains(n))) {
+        // //     for child in children {
+        // //         println!("rolling down");
+        // //         commands.entity(*child).insert(rolldown.0.clone());
+        // //     }
+        // //     println!("finished rolling down");
+        // //     commands.entity(e).remove::<RollDown<T>>();
+        // }
     }
+    
 }
 
 pub fn initialize_asset_structure<T>(

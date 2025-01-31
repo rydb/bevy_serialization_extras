@@ -1,4 +1,4 @@
-use std::{any::{Any, TypeId}, collections::HashMap, marker::PhantomData};
+use std::{any::{Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData};
 
 use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, InnerTarget, Structure}};
 use bevy_asset::prelude::*;
@@ -41,11 +41,12 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
                     for bundle in bundles {
                         
                         let child = world.commands().spawn(bundle).id();
+                        //let components = world.entity(child).archetype().components().collect::<Vec<_>>();
                         if !split.0 {
                             world.commands().entity(e).add_child(child);
 
                         }
-                        children.push(child);
+                        children.push((child));
                     }
                     {
                         let mut initialized_stagers = world.get_resource_mut::<InitializedStagers>().unwrap();
@@ -53,9 +54,13 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
                         let previous_result = initialized_stagers.0.get_mut(&e);
 
                         match previous_result {
-                            Some(res) => res.push((id, children)),
+                            Some(res) => {
+                                for child in children {
+                                    res.push(child);
+                                }
+                            },
                             None => {
-                                initialized_stagers.0.insert(e, vec![(id, children)]);
+                                initialized_stagers.0.insert(e, children.clone());
                             },
                         }
                         //initialized_stagers.0.insert(e, v)
@@ -156,9 +161,9 @@ impl<T> Component for RequestAssetStructure<T>
                         let child = world.commands().spawn(bundle).id();
                         if !split.0 {
                             world.commands().entity(e).add_child(child);
-
                         }
-                        children.push(child);
+                        //let components = world.entity(child).archetype().components().collect::<Vec<_>>();
+                        children.push((child));
             
                     }
                     {
@@ -167,9 +172,17 @@ impl<T> Component for RequestAssetStructure<T>
                         let previous_result = initialized_stagers.0.get_mut(&e);
 
                         match previous_result {
-                            Some(res) => res.push((id, children)),
+                            Some(res) => {
+                                for child in children {
+                                    res.push(child);
+                                }
+                            },
                             None => {
-                                initialized_stagers.0.insert(e, vec![(id, children)]);
+                                
+                                for child in &children {
+                                    initialized_stagers.0.insert(e, children.clone());
+                                }    
+                            
                             },
                         }
                         // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
@@ -269,11 +282,24 @@ impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
     }
 }
 
+#[derive(Clone)]
+pub enum Ids {
+    TypeId(Vec<TypeId>),
+    ComponentId(Vec<ComponentId>)
+}
+
 /// staging component to roll down component to all children. 
 #[derive(Clone)]
 pub struct RollDown<T: Component>(
-    pub T
-    //, TypeId
+    pub T,
+    pub Vec<TypeId>,
+);
+
+/// Rolldown post [`ComponentId`] assignment.
+#[derive(Component)]
+pub struct RollDownIded<T: Component>(
+    pub T,
+    pub Vec<ComponentId>
 );
 
 impl<T: Component + Clone> Component for RollDown<T> {
@@ -290,31 +316,48 @@ impl<T: Component + Clone> Component for RollDown<T> {
                 let mut asset_checkers = world.get_resource_mut::<RollDownCheckers>().unwrap();
 
                 asset_checkers.0.insert(id, system_id);
-                return
             }
-            let comp = {
-                match world.entity(e).get::<Self>() {
-                    Some(val) => val.clone(),
-                    None => {
-                        warn!("could not get RollDown<T> on: {:#}", e);
-                        return
-                    },
-                }
-            };
-            let children = {
-                let Some(children) = world.entity(e).get::<Children>() else {
-                    warn!("No children for {:#}, skipping Rolldown<T>", e);
-                    return
-                };
-                children.to_vec()
-            };
-            for child in children.iter() {
-                //let ids = world.register_component()
-                //warn!("rolling down to {:#}", child);
-                world.commands().entity(child.clone()).insert(comp.0.clone());
-            }
+            let mut valid_ids = Vec::new();
 
+            let inner = match world.entity(e).get::<Self>() {
+                Some(val) => {
+                    let components = world.components();
+                    for id in &val.1 {
+                        if let Some(id) = components.get_id(*id) {
+                            valid_ids.push(id);
+                        }
+                    }
+                    //let x = world.get_by_id(entity, component_id)
+                    val.0.clone()
+                },
+                None => {
+                    warn!("could not get RollDown<T> on: {:#}", e);
+                    return
+                },
+            };
             world.commands().entity(e).remove::<Self>();
+            world.commands().entity(e).insert(
+                RollDownIded (
+                    inner,
+                    valid_ids
+                )
+            );
+            
+
+            // let children = {
+            //     let Some(children) = world.entity(e).get::<Children>() else {
+            //         warn!("No children for {:#}, skipping Rolldown<T>", e);
+            //         return
+            //     };
+            //     children.to_vec()
+            // };
+            // for child in children.iter() {
+            //     //let ids = world.register_component()
+            //     //warn!("rolling down to {:#}", child);
+            //     world.commands().entity(child.clone()).insert(comp.0.clone());
+            // }
+
+            //world.commands().entity(e).remove::<Self>();
         });
     }
 }
