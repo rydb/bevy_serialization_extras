@@ -66,7 +66,7 @@ pub fn bind_joints_to_entities(
                             return
                         };
                         let Ok(model_children) = decendents.get(model) else {
-                            warn!("no model children");
+                            //warn!("no model children");
                             return;
                         };
                         let Some(primitive) = model_children.first().map(|n| n.clone()) else {

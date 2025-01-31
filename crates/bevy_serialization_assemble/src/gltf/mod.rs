@@ -2,11 +2,11 @@ use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
-use bevy_gltf::{GltfMesh, GltfNode};
+use bevy_gltf::{GltfMesh, GltfNode, GltfPrimitive};
 use bevy_render::prelude::*;
 use derive_more::derive::From;
 
-use crate::{components::{Maybe, RequestAssetStructure}, traits::{FromStructure, InnerTarget, Split, Structure}};
+use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{FromStructure, InnerTarget, Split, Structure}};
 
 
 #[derive(From, Clone)]
@@ -18,8 +18,26 @@ pub struct GltfNodeWrapper(
 impl InnerTarget for GltfNodeWrapper {
     type Inner = GltfNode;
 }
+#[derive(From, Clone, Deref, DerefMut)]
+pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
 
-#[derive(Component, From, Clone, Deref, DerefMut)]
+impl InnerTarget for GltfPrimitiveWrapper {
+    type Inner = GltfPrimitive;
+}
+
+impl FromStructure for GltfPrimitiveWrapper {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        let mat = value.material.clone().map(|n| MeshMaterial3d(n));
+        Structure::Root(
+            (
+                Mesh3d(value.mesh.clone()),
+                Maybe(mat),
+            ),
+        )
+    }
+}
+
+#[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfMeshWrapper(pub GltfMesh);
 
 impl InnerTarget for GltfMeshWrapper {
@@ -30,13 +48,8 @@ impl FromStructure for GltfMeshWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for primitive in value.0.primitives {
-            let mat = primitive.material.map(|n| MeshMaterial3d(n));
             children.push(
-                (
-                    Mesh3d(primitive.mesh.clone()),
-                    Maybe(mat),
-                    Name::new(primitive.name),
-                )
+                RequestStructure(GltfPrimitiveWrapper(primitive))
             )
         }
         Structure::Children(children, Split(false))

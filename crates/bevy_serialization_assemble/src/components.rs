@@ -77,8 +77,10 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
     }
 }
 
+/// Staging component for deserializing [`FromStructure`] implemented asset wrappers. 
+/// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
+/// until [`FromStructure`] can be ran
 #[derive(Clone, Debug)]
-// #[reflect(no_field_bounds)]
 pub enum RequestAssetStructure<T> 
     where
         T: From<T::Inner> + InnerTarget,
@@ -142,13 +144,13 @@ impl<T> Component for RequestAssetStructure<T>
                     },
                     RequestAssetStructure::Asset(asset) => {
                         //world.commands().entity(e)
-                        println!("got asset");
+                        //println!("got asset");
                         asset
                     }
                 };
                 asset
             };
-            println!("populating structure for {:#}", e);
+            //println!("populating structure for {:#}", e);
             
             
             match FromStructure::components(asset) {
@@ -292,6 +294,8 @@ pub enum Ids {
 #[derive(Clone)]
 pub struct RollDown<T: Component>(
     pub T,
+    /// components to check for roll down.
+    /// no world access so this is a [`TypeId`] instead of [`ComponentId`]
     pub Vec<TypeId>,
 );
 
@@ -335,7 +339,7 @@ impl<T: Component + Clone> Component for RollDown<T> {
                     return
                 },
             };
-            world.commands().entity(e).remove::<Self>();
+            //world.commands().entity(e).remove::<Self>();
             world.commands().entity(e).insert(
                 RollDownIded (
                     inner,

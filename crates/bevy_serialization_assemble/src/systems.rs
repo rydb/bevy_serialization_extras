@@ -37,11 +37,12 @@ pub fn check_roll_down<T: Clone + Component>(
     test: Query<EntityRef>,
     decendents: Query<&Children>,
     mut commands: Commands,
+    components: &Components,
 ){
     for (e, name, rolldown) in &rolldowns {
-        let Some(ids) = initialized_children.0.get(&e) else {
-            return
-        };
+        // let Some(ids) = initialized_children.0.get(&e) else {
+        //     return
+        // };
         let Ok(children) = decendents.get(e) else {
             return
         };
@@ -49,15 +50,19 @@ pub fn check_roll_down<T: Clone + Component>(
             
         // }
 
-        for child in ids {
-            let Ok(e_ref) = test.get(e) else {
+        for child in children {
+            let Ok(e_ref) = test.get(*child) else {
                 return
             };
-            let components = e_ref.archetype().components().collect::<Vec<_>>();
-            println!("Name: {:#}, Filter ids: {:#?} registered: {:#?}", name, components, rolldown.1);
+            let check_list = e_ref.archetype().components().collect::<Vec<_>>();
+            // println!("Name: {:#}, Filter ids: {:#?} registered: {:#?}", 
+            //     name, 
+            //     check_list.iter().map(|n| components.get_name(*n).unwrap_or("???")).collect::<Vec<_>>(), 
+            //     rolldown.1
+            // );
 
             //if components.any(|n| rolldown.1.contains(n));
-            if rolldown.1.iter().any(|n| components.contains(n)) {
+            if rolldown.1.iter().any(|n| check_list.contains(n)) {
                 commands.entity(*child).insert(rolldown.0.clone());
                 commands.entity(e).remove::<RollDownIded<T>>();
                 println!("finished rolling down");
@@ -93,10 +98,11 @@ pub fn initialize_asset_structure<T>(
 {
     //println!("checking initialize_asset structures...");
     for (e, request) in &requests {
+        //println!("checking load status for... {:#}", e);
         let handle = match request {
             RequestAssetStructure::Handle(handle) => {handle},
             _ => {
-                //warn!("no handle??");
+                warn!("no handle??");
                 return;
             }
         };
@@ -109,6 +115,9 @@ pub fn initialize_asset_structure<T>(
             // upgrading handle to asset
             commands.entity(e).remove::<RequestAssetStructure<T>>();
             commands.entity(e).insert(RequestAssetStructure::Asset(T::from(asset.clone())));
+        } else {
+            let status = asset_server.load_state(handle);
+            println!("Asset unloaded: REASON: {:#?}", status);
         }
     }
 }

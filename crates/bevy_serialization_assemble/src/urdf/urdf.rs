@@ -68,6 +68,33 @@ pub struct LinkQuery {
 #[derive(Clone)]
 pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
 
+impl FromStructure for LinksNJoints {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        let mut children = Vec::new();
+
+        for (link, joint) in value.0 {
+            let joint = joint
+            .map(|n| 
+                RollDown(
+                    RequestStructure(UrdfJoint(n)),
+                    vec![TypeId::of::<RigidBodyFlag>()]
+                )
+            );
+            children.push(
+                (
+                    Name::new(link.name),
+                    RequestStructure(VisualWrapper(link.visual)),
+                    RequestStructure(LinkColliders(link.collision)),
+                    Maybe(joint),
+                    Transform::default(),
+                    Visibility::default(),
+                )
+            )
+        }
+        Structure::Children(children, Split(true))
+    }
+}
+
 #[derive(Clone)]
 pub struct Visuals(pub Vec<Visual>);
 
@@ -103,6 +130,7 @@ impl FromStructure for LinkColliders {
                     //         //TypeId::of
                     //     ]
                     // ),
+                    ColliderFlag::Convex,
                     RigidBodyFlag::Dynamic,
                     Resolve::from(GeometryWrapper(collider.geometry)),
                     Name::new("collider"),
@@ -118,32 +146,7 @@ impl FromStructure for LinkColliders {
 
 
 
-impl FromStructure for LinksNJoints {
-    fn components(value: Self) -> Structure<impl Bundle> {
-        let mut children = Vec::new();
 
-        for (link, joint) in value.0 {
-            let joint = joint
-            .map(|n| 
-                RollDown(
-                    RequestStructure(UrdfJoint(n)),
-                    vec![TypeId::of::<RigidBodyFlag>()]
-                )
-            );
-            children.push(
-                (
-                    Name::new(link.name),
-                    RequestStructure(VisualWrapper(link.visual)),
-                    RequestStructure(LinkColliders(link.collision)),
-                    Maybe(joint),
-                    Transform::default(),
-                    Visibility::default(),
-                )
-            )
-        }
-        Structure::Children(children, Split(true))
-    }
-}
 
 impl FromStructure for Urdf {
     fn components(value: Self) -> Structure<impl Bundle> {

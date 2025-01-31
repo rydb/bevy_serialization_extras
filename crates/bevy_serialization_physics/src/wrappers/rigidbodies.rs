@@ -8,7 +8,7 @@ use super::{colliders::ColliderFlag, friction::FrictionFlag, mass::MassFlag};
 
 #[derive(Component, Reflect, Clone, Default, EnumIter)]
 #[reflect(Component)]
-#[require(ColliderFlag, FrictionFlag, MassFlag)]
+#[require(MassFlag)]
 pub enum RigidBodyFlag {
     #[default]
     Fixed,
