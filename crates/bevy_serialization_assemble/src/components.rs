@@ -1,16 +1,18 @@
-use std::{any::{Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData};
+use std::{any::{Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData, ops::Deref};
 
-use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, InnerTarget, Structure}};
+use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, Structure}};
 use bevy_asset::prelude::*;
 use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, world::DeferredWorld};
 use bevy_log::warn;
 use bevy_hierarchy::prelude::*;
-use bevy_reflect::DynamicTypePath;
+use bevy_reflect::{DynamicTypePath, Reflect};
 use bevy_serialization_core::prelude::mesh::{MeshFlag3d, MeshWrapper};
 use bevy_state::commands;
 
-
-
+// /// The structure this entity belongs to 
+// #[derive(Component, Reflect)]
+// #[reflect(Component)]
+// pub struct StructureFlag(pub String);
 
 /// Take inner new_type and add components to this components entity from [`FromStructure`]
 #[derive(Clone)]
@@ -46,7 +48,7 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
                             world.commands().entity(e).add_child(child);
 
                         }
-                        children.push((child));
+                        children.push(child);
                     }
                     {
                         let mut initialized_stagers = world.get_resource_mut::<InitializedStagers>().unwrap();
@@ -83,18 +85,18 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
 #[derive(Clone, Debug)]
 pub enum RequestAssetStructure<T> 
     where
-        T: From<T::Inner> + InnerTarget,
-        T::Inner: Asset
+        T: From<T::Target> + Deref,
+        T::Target: Asset + Sized
 {
     Path(String),
-    Handle(Handle<T::Inner>),
+    Handle(Handle<T::Target>),
     Asset(T)
 }
 
 impl<T> Component for RequestAssetStructure<T>
     where
-        T: Clone + From<T::Inner> + InnerTarget + FromStructure+ Send + Sync + 'static,
-        T::Inner: Asset + Clone
+        T: Clone + From<T::Target> + Deref + FromStructure+ Send + Sync + 'static,
+        T::Target: Asset + Clone
 {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 

@@ -1,6 +1,7 @@
 
 
 use bevy_core::Name;
+use bevy_log::warn;
 use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
@@ -83,7 +84,8 @@ impl FromStructure for LinksNJoints {
             children.push(
                 (
                     Name::new(link.name),
-                    RequestStructure(VisualWrapper(link.visual)),
+                    //TODO: for sanity, refactor will not include this on initial release.
+                    //RequestStructure(VisualWrapper(link.visual)),
                     RequestStructure(LinkColliders(link.collision)),
                     Maybe(joint),
                     Transform::default(),
@@ -120,27 +122,44 @@ pub struct LinkColliders(pub Vec<Collision>);
 
 impl FromStructure for LinkColliders {
     fn components(value: Self) -> Structure<impl Bundle> {
-        let mut children = Vec::new();
-        for collider in value.0 {
-            children.push(
-                (
-                    // RollDown(ColliderFlag::Convex,
-                    //     vec![
-                    //         TypeId::of::<Mesh3d>(),
-                    //         //TypeId::of
-                    //     ]
-                    // ),
-                    ColliderFlag::Convex,
-                    RigidBodyFlag::Dynamic,
-                    Resolve::from(GeometryWrapper(collider.geometry)),
-                    Name::new("collider"),
-                    Transform::default(),
-                    Visibility::default(),
-                )
-            );
-        }
-        Structure::Children(children, Split(false))
+        let geometry =  {
+            if value.0.len() > 1 {
+                warn!("multi-collider robots not supported as multi-primitive physics joints not supported(as of this version) in either Rapier or Avian");
+                None
+            } else {
+                value.0.first()
+                .map(|n| n.geometry.clone())
+                .map(|n| Resolve::from(GeometryWrapper(n)))
+            }
+        };
+
+
+        Structure::Root(
+            (
+                ColliderFlag::Convex,
+                RigidBodyFlag::Dynamic,
+                Maybe(geometry),
+                Transform::default(),
+                Visibility::default()
+            )
+        )
     }
+    // fn components(value: Self) -> Structure<impl Bundle> {
+    //     let mut children = Vec::new();
+    //     for collider in value.0 {
+    //         children.push(
+    //             (
+    //                 ColliderFlag::Convex,
+    //                 RigidBodyFlag::Dynamic,
+    //                 Resolve::from(GeometryWrapper(collider.geometry)),
+    //                 Name::new("collider"),
+    //                 Transform::default(),
+    //                 Visibility::default(),
+    //             )
+    //         );
+    //     }
+    //     Structure::Children(children, Split(false))
+    // }
 }
 
 

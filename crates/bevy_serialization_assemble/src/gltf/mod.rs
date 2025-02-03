@@ -1,29 +1,22 @@
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
+use bevy_log::warn;
 use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
 use bevy_gltf::{GltfMesh, GltfNode, GltfPrimitive};
 use bevy_render::prelude::*;
 use derive_more::derive::From;
 
-use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{FromStructure, InnerTarget, Split, Structure}};
+use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{FromStructure, Split, Structure}};
 
 
-#[derive(From, Clone)]
+#[derive(From, Clone, Deref)]
 pub struct GltfNodeWrapper(
     GltfNode
 );
 
-
-impl InnerTarget for GltfNodeWrapper {
-    type Inner = GltfNode;
-}
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
-
-impl InnerTarget for GltfPrimitiveWrapper {
-    type Inner = GltfPrimitive;
-}
 
 impl FromStructure for GltfPrimitiveWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
@@ -37,12 +30,45 @@ impl FromStructure for GltfPrimitiveWrapper {
     }
 }
 
+/// [`GltfMesh`] that will throw a warning and not initialize if there is more then 1/no primitive
+/// 
+/// Tempory hot-fix for spawning singular primitives. 
+/// Necessary due to physics with child primitives being unsupported in rapier and avain.
+/// https://github.com/bevyengine/bevy/issues/17661
+#[derive(From, Deref, Clone)]
+pub struct GltfMeshPrimitiveOne(pub GltfMesh);
+
+
+impl FromStructure for GltfMeshPrimitiveOne {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        let mesh = {
+            if value.0.primitives.len() > 1 {
+                //TODO: maybe replace this with some kind of mesh condenser system?
+                warn!("Multiple primitives found for: {:#}. GltfMeshPrimtiveOne only supports one. Current count: {:#}", value.0.name, value.0.primitives.len());
+                None
+            } else {
+                value.0.primitives.first()
+            }
+        };
+        
+        let material = mesh
+        .map(|n| n.material.clone())
+        .and_then(|n|n)
+        .and_then(|n| Some(MeshMaterial3d(n)));
+
+        let primitive = mesh
+        .map(|n| Mesh3d(n.mesh.clone()));
+        Structure::Root(
+            (
+                Maybe(material),
+                Maybe(primitive)
+            )
+        )
+    }
+}
+
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfMeshWrapper(pub GltfMesh);
-
-impl InnerTarget for GltfMeshWrapper {
-    type Inner = GltfMesh;
-}
 
 impl FromStructure for GltfMeshWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {

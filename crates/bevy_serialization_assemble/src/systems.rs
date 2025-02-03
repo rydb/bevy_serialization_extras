@@ -1,7 +1,7 @@
 use crate::components::{RequestAssetStructure, RollDown, RollDownIded};
 use crate::prelude::*;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
-use crate::traits::{FromStructure, InnerTarget, IntoHashMap};
+use crate::traits::{FromStructure, IntoHashMap};
 use bevy_asset::prelude::*;
 use bevy_core::Name;
 use bevy_ecs::component::{ComponentId, Components};
@@ -10,6 +10,7 @@ use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::prelude::*;
 use std::collections::VecDeque;
 use std::fmt::Debug;
+use std::ops::Deref;
 
 /// proxy system for checking load status of assets for component hooks.
 pub fn run_asset_status_checkers(
@@ -88,13 +89,13 @@ pub fn initialize_asset_structure<T>(
     //events: EventReader<AssetEvent<T::Inner>>,
     asset_server: Res<AssetServer>,
     requests: Query<(Entity, &RequestAssetStructure<T>)>,
-    assets: Res<Assets<T::Inner>>,
+    assets: Res<Assets<T::Target>>,
     mut commands: Commands,
 
 ) 
     where
-        T: Clone + From<T::Inner> + InnerTarget + FromStructure + Send + Sync + 'static,
-        T::Inner: Asset + Clone
+        T: Clone + From<T::Target> + Deref + FromStructure + Send + Sync + 'static,
+        T::Target: Asset + Clone
 {
     //println!("checking initialize_asset structures...");
     for (e, request) in &requests {
@@ -115,10 +116,11 @@ pub fn initialize_asset_structure<T>(
             // upgrading handle to asset
             commands.entity(e).remove::<RequestAssetStructure<T>>();
             commands.entity(e).insert(RequestAssetStructure::Asset(T::from(asset.clone())));
-        } else {
-            let status = asset_server.load_state(handle);
-            println!("Asset unloaded: REASON: {:#?}", status);
-        }
+        } 
+        // else {
+        //     let status = asset_server.load_state(handle);
+        //     println!("Asset unloaded: REASON: {:#?}", status);
+        // }
     }
 }
 

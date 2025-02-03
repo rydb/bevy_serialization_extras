@@ -52,8 +52,8 @@ impl Display for LoadError {
     }
 }
 
-/// newtype around asset. 
-pub trait InnerTarget {
-    type Inner;
-}
+// /// newtype around asset. 
+// pub trait InnerTarget {
+//     type Inner;
+// }
 
