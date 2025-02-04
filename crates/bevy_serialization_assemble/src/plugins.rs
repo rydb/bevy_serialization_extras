@@ -6,7 +6,7 @@ use bevy_ecs::{prelude::*, query::QueryData};
 use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
 use crate::{
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{deserialize_assets_as_structures, run_asset_status_checkers, run_rolldown_checkers, serialize_structures_as_assets}, traits::{FromStructure, IntoHashMap}
+    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{run_asset_status_checkers, run_rolldown_checkers, serialize_structures_as_assets}, traits::{FromStructure, IntoHashMap}
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -65,10 +65,12 @@ where
             PreUpdate,
             (serialize_structures_as_assets::<T, U>,).before(SaveSystem::Save),
         )
-        .add_systems(
-            Update,
-            (deserialize_assets_as_structures::<U>).after(LoadSystem::PostLoad),
-        );
+        
+        // .add_systems(
+        //     Update,
+        //     (deserialize_assets_as_structures::<U>).after(LoadSystem::PostLoad),
+        // );
+        ;
     }
 }
 

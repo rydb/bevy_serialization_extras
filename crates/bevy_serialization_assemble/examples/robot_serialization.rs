@@ -6,13 +6,14 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_egui::EguiContext;
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
-use bevy_serialization_assemble::prelude::*;
+use bevy_serialization_assemble::{components::RequestAssetStructure, prelude::*};
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
 use egui::{
     text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat,
 };
+use glam::{Affine3A, Mat3A, Vec3A};
 use moonshine_save::save::Save;
 
 use resources::CachedUrdf;
@@ -69,7 +70,7 @@ fn main() {
         // Demo systems
         .register_type::<Wheel>()
         .add_systems(Startup, setup)
-        .add_systems(Startup, queue_urdf_load_requests)
+        //.add_systems(Startup, queue_urdf_load_requests)
         .add_systems(Update, control_robot)
         // .add_systems(Update, make_robots_selectable)
         .add_systems(Update, bind_left_and_right_wheel)
@@ -127,7 +128,7 @@ pub struct UrdfHandles {
 }
 
 pub fn control_robot(
-    mut rigid_body_flag: Query<&mut RigidBodyFlag, (Without<JointFlag>, With<StructureFlag>)>,
+    mut rigid_body_flag: Query<&mut RigidBodyFlag, With<Name>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
     mut wheels: Query<(&mut JointFlag, &Wheel)>,
@@ -199,22 +200,22 @@ pub fn control_robot(
     }
 }
 
-pub fn queue_urdf_load_requests(
-    mut urdf_load_requests: ResMut<AssetSpawnRequestQueue<Urdf>>,
-    mut cached_urdf: ResMut<CachedUrdf>,
-    asset_server: Res<AssetServer>,
-) {
-    // set load_urdf_path to the urdf you want to load.
+// pub fn queue_urdf_load_requests(
+//     mut urdf_load_requests: ResMut<AssetSpawnRequestQueue<Urdf>>,
+//     mut cached_urdf: ResMut<CachedUrdf>,
+//     asset_server: Res<AssetServer>,
+// ) {
+//     // set load_urdf_path to the urdf you want to load.
 
-    let load_urdf_path = "root://model_pkg/urdf/diff_bot.xml";
-    cached_urdf.urdf = asset_server.load(load_urdf_path);
+//     let load_urdf_path = "root://model_pkg/urdf/diff_bot.xml";
+//     cached_urdf.urdf = asset_server.load(load_urdf_path);
 
-    urdf_load_requests.requests.push_front(AssetSpawnRequest {
-        source: load_urdf_path.to_owned().into(),
-        position: Transform::from_xyz(0.0, 2.0, 0.0),
-        ..Default::default()
-    });
-}
+//     urdf_load_requests.requests.push_front(AssetSpawnRequest {
+//         source: load_urdf_path.to_owned().into(),
+//         position: Transform::from_xyz(0.0, 2.0, 0.0),
+//         ..Default::default()
+//     });
+// }
 
 /// set up a simple 3D scene
 fn setup(
@@ -230,8 +231,17 @@ fn setup(
         ))),
         MeshMaterial3d(materials.add(Color::LinearRgba(LinearRgba::new(0.3, 0.5, 0.3, 1.0)))),
         Transform::from_xyz(0.0, -1.0, 0.0),
-        RigidBodyFlag::Fixed,
+        // RigidBodyFlag::Fixed,
+        // ColliderFlag::Convex,
+        Name::new("plane"),
     ));
+
+    // Robot
+    commands.spawn(
+        (
+            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned())
+        )
+    );
 
     // light
     commands.spawn((
@@ -319,7 +329,7 @@ pub fn urdf_widgets_ui(
                 match utility_selection.selected {
                     UtilityType::UrdfInfo => {
                         if let Some(urdf) = urdfs.get(&cached_urdf.urdf) {
-                            let urdf_as_string = format!("{:#?}", urdf.robot);
+                            let urdf_as_string = format!("{:#?}", urdf.0);
 
                             if ui.button("Copy to clipboard").clicked() {
                                 ui.output_mut(|o| o.copied_text = urdf_as_string.to_string());

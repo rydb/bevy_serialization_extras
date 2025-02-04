@@ -68,7 +68,7 @@ pub fn load_urdf<'a>(bytes: &'a [u8]) -> Result<Urdf, UrdfLoaderError> {
     let res = std::str::from_utf8(bytes);
     match res {
         Ok(res) => match urdf_rs::read_from_string(res) {
-            Ok(urdf) => Ok(Urdf { robot: urdf }),
+            Ok(urdf) => Ok(Urdf(urdf)),
             Err(err) => Err(UrdfLoaderError::ParsingError(err.to_string())),
         },
         Err(err) => Err(UrdfLoaderError::ParsingError(err.to_string())),

@@ -12,28 +12,35 @@ use bevy_asset::io::file::FileAssetReader;
 use bevy_asset::io::AssetSource;
 use bevy_asset::prelude::*;
 use bevy_asset::AssetApp;
+use bevy_derive::Deref;
 use bevy_reflect::TypePath;
+use derive_more::derive::From;
 use resources::CachedUrdf;
 use urdf::LinkQuery;
 use urdf_rs::Robot;
 
 pub const PACKAGE: &str = "package";
 
-#[derive(Asset, TypePath, Debug, Clone)]
-pub struct Urdf {
-    pub robot: Robot,
-}
+// #[derive(Asset, TypePath, Debug, Clone)]
+// pub struct Urdf {
+//     pub robot: Robot,
+// }
+
+#[derive(Asset, TypePath, From, Deref, Debug, Clone, Default)]
+pub struct UrdfWrapper(pub Urdf);
+
+#[derive(Asset, TypePath, From, Deref, Debug, Clone)]
+pub struct Urdf(pub Robot);
 
 impl Default for Urdf {
     fn default() -> Self {
-        Self {
-            robot: Robot {
+        Self(Robot {
                 name: "DEFAULT_IN_CASE_OF_ERROR".to_owned(),
                 links: Vec::new(),
                 joints: Vec::new(),
                 materials: Vec::new(),
             },
-        }
+        )
     }
 }
 
@@ -62,14 +69,15 @@ pub struct UrdfSerializationPlugin;
 
 impl Plugin for UrdfSerializationPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<CachedUrdf>()
-            .add_plugins(UrdfLoaderPlugin)
-            .insert_resource(CachedUrdf::default())
-            .add_plugins(SerializeManyAsOneFor::<LinkQuery, Urdf>::default())
-            // .add_systems(Update, split_open_self_children::<LinksNJoints>)
-            // .add_systems(Update, split_open_self::<UrdfJoint>)
-            // .add_systems(Update, split_open_self_children::<Visuals>)
-            //.add_systems(Update, split_open_self::<GltfNodeWrapper>)
-            ;
+        app
+        // .register_type::<CachedUrdf>()
+        .add_plugins(UrdfLoaderPlugin)
+        .insert_resource(CachedUrdf::default())
+        .add_plugins(SerializeManyAsOneFor::<LinkQuery, UrdfWrapper>::default())
+        // .add_systems(Update, split_open_self_children::<LinksNJoints>)
+        // .add_systems(Update, split_open_self::<UrdfJoint>)
+        // .add_systems(Update, split_open_self_children::<Visuals>)
+        //.add_systems(Update, split_open_self::<GltfNodeWrapper>)
+        ;
     }
 }

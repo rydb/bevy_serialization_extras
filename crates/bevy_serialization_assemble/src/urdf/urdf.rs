@@ -2,6 +2,7 @@
 
 use bevy_core::Name;
 use bevy_log::warn;
+use bevy_math::Dir3;
 use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
@@ -19,11 +20,16 @@ use bevy_serialization_physics::prelude::{
 };
 use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
+use glam::Mat3A;
+use glam::Vec3A;
 use glam::{EulerRot, Quat, Vec3};
-use nalgebra::{Matrix3, Vector3};
+use nalgebra::Matrix3;
+use nalgebra::Vector3;
+// use nalgebra::{Matrix3, Vector3};
 use std::any::Any;
 use std::any::TypeId;
 use std::collections::HashMap;
+use std::f32::consts::PI;
 use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
 use visual::{GeometryWrapper, VisualWrapper};
 
@@ -39,6 +45,19 @@ use crate::{
 };
 
 use super::*;
+
+// pub trait CordinateSystem {
+//     type Handedness = Handed
+// }
+
+// pub enum Handed {
+//     LEFT,
+//     RIGHT,
+// }
+
+// pub enum CordUp {
+
+// }
 
 /// the collection of things that qualify as a "link", in the ROS 2 context.
 #[derive(QueryData)]
@@ -76,10 +95,10 @@ impl FromStructure for LinksNJoints {
         for (link, joint) in value.0 {
             let joint = joint
             .map(|n| 
-                RollDown(
+                //RollDown(
                     RequestStructure(UrdfJoint(n)),
-                    vec![TypeId::of::<RigidBodyFlag>()]
-                )
+                    //vec![TypeId::of::<RigidBodyFlag>()]
+                //)
             );
             children.push(
                 (
@@ -88,7 +107,7 @@ impl FromStructure for LinksNJoints {
                     //RequestStructure(VisualWrapper(link.visual)),
                     RequestStructure(LinkColliders(link.collision)),
                     Maybe(joint),
-                    Transform::default(),
+                    //Transform::default(),
                     Visibility::default(),
                 )
             )
@@ -106,8 +125,45 @@ pub struct UrdfJoint(Joint);
 impl FromStructure for UrdfJoint {
     fn components(value: Self)
     -> Structure<impl Bundle> {
+        let axis = value.0.axis.xyz.0.map(|n| n as f32 );
+        let axis = Vec3A::new(axis[0], axis[1], axis[2]);
+
+        let rotation_matrix = Mat3A {
+            x_axis: Vec3A::new(0.0, 0.0, 1.0),
+            y_axis: Vec3A::new(0.0, 1.0, 0.0),
+            z_axis: Vec3A::new(1.0, 0.0, 0.0),
+        };
+
+        // not sure how to do vec3 * matrix3 in glam, soooo doing it like this instead. 
+        let rot_partx = Vec3A::new(rotation_matrix.x_axis.x, rotation_matrix.y_axis.x, rotation_matrix.z_axis.x);
+        let rot_party = Vec3A::new(rotation_matrix.x_axis.y, rotation_matrix.y_axis.y, rotation_matrix.z_axis.y);
+        let rot_partz = Vec3A::new(rotation_matrix.x_axis.z, rotation_matrix.y_axis.z, rotation_matrix.z_axis.z);
+
+        let rotx = axis * rot_partx;
+        let roty = axis * rot_party;
+        let rotz = axis * rot_partz;
+        let rot = rotx + roty + rotz;
+        // let urdf_axis_matrix = Mat3A {
+        //     x_axis: Vec3A::new(axis[0], 0.0, 0.0),
+        //     y_axis: Vec3A::new(0.0, axis[1], 0.0),
+        //     z_axis: Vec3A::new(0.0, 0.0, axis[2]),
+        // };
+        
+        //println!("urdf axis matrix is {:#?}", urdf_axis_matrix);
+
+
+        //let new_transform_matrix = urdf_axis_matrix * rotation_matrix;
+        println!("new rot is: {:#?}", rot);
+        let new_axis = Dir3::new_unchecked(rot.into());
         Structure::Root(
-            JointFlag::from(&JointWrapper(value.0)),
+
+            (
+                JointFlag::from(&JointWrapper(value.0.clone())),
+                // Transform::from(UrdfTransform(value.0.origin))
+                // .rotate_axis(new_axis, PI)
+                // ,
+                //Transform::from_rotation(Quat::from_axis_angle(rot.into(), PI/2.0))
+            )
         )    
     }
 }
@@ -122,24 +178,27 @@ pub struct LinkColliders(pub Vec<Collision>);
 
 impl FromStructure for LinkColliders {
     fn components(value: Self) -> Structure<impl Bundle> {
+        let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry =  {
             if value.0.len() > 1 {
                 warn!("multi-collider robots not supported as multi-primitive physics joints not supported(as of this version) in either Rapier or Avian");
                 None
             } else {
                 value.0.first()
-                .map(|n| n.geometry.clone())
+                .map(|n| 
+                    {
+                        println!("transform for {:#?} is {:#?}", n.name, trans);
+                        n.geometry.clone()
+                    }
+                )
                 .map(|n| Resolve::from(GeometryWrapper(n)))
             }
         };
-
-
         Structure::Root(
             (
-                ColliderFlag::Convex,
+                //ColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
-                Transform::default(),
                 Visibility::default()
             )
         )
@@ -167,7 +226,7 @@ impl FromStructure for LinkColliders {
 
 
 
-impl FromStructure for Urdf {
+impl FromStructure for UrdfWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         //let robot = value.robot;
 
@@ -175,7 +234,7 @@ impl FromStructure for Urdf {
         let mut structured_joint_map = HashMap::new();
         // let mut structured_material_map = HashMap::new();
 
-        for joint in &value.robot.joints {
+        for joint in &value.0.joints {
             structured_joint_map.insert(joint.child.link.clone(), joint.clone());
         }
         // for material in &robot.materials {
@@ -187,7 +246,7 @@ impl FromStructure for Urdf {
 
         // let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
         let mut linkage = Vec::new();
-        for link in value.robot.links {
+        for link in value.0.0.links {
             linkage.push((
                 link.clone(),
                 structured_joint_map
@@ -196,9 +255,9 @@ impl FromStructure for Urdf {
         }
         Structure::Root(
             (
-                Name::new(value.robot.name),
+                Name::new(value.0.0.name),
                 RequestStructure(LinksNJoints(linkage)),
-                Transform::default()
+                //Transform::default()
             ),
         )
         //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
@@ -265,30 +324,30 @@ impl FromStructure for Urdf {
     }
 }
 
-impl IntoHashMap<Query<'_, '_, LinkQuery>> for Urdf {
+impl IntoHashMap<Query<'_, '_, LinkQuery>> for UrdfWrapper {
     fn into_hashmap(value: Query<'_, '_, LinkQuery>, _world: &World) -> HashMap<String, Self> {
         let mut urdf_map = HashMap::new();
         for link in value.iter() {
             let structure_name = link.structure.name.clone();
-            let entry = urdf_map.entry(structure_name.clone()).or_insert(Urdf {
-                robot: Robot {
+            let entry = urdf_map.entry(structure_name.clone()).or_insert(UrdfWrapper (
+                Urdf(Robot {
                     name: link.structure.name.clone(),
                     links: Vec::new(),
                     joints: Vec::new(),
                     materials: Vec::new(),
-                },
-            });
+                }),
+            ));
 
             match link.joint {
                 Some(joint) => {
                     let link_name = link
                         .name
-                        .unwrap_or(&Name::new(entry.robot.joints.len().to_string()))
+                        .unwrap_or(&Name::new(entry.0.joints.len().to_string()))
                         .to_string();
                     let joint_name = link_name.clone() + "_joint";
                     let joint_parent = joint.parent_name.clone().unwrap_or_default();
                     //let urdf_link_name = link_name + "_link";
-                    entry.robot.joints.push(Joint {
+                    entry.0.0.joints.push(Joint {
                         name: joint_name,
                         //FIXME:  implement this properly have this be a consequence of joint data via a function. This is a placeholder.
                         joint_type: urdf_rs::JointType::Continuous,
@@ -371,10 +430,18 @@ impl From<UrdfTransform> for Transform {
     fn from(value: UrdfTransform) -> Self {
         // based on this explanation
         //https://towardsdatascience.com/change-of-basis-3909ef4bed43
-        let urdf_cord_flip = Matrix3::new(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0);
+        let urdf_cord_flip = Matrix3::new(
+            1.0, 0.0, 0.0, 
+            0.0, 0.0, 1.0, 
+            0.0, 1.0, 0.0
+        );
         // based on this explanation
         //https://stackoverflow.com/questions/31191752/right-handed-euler-angles-xyz-to-left-handed-euler-angles-xyz
-        let urdf_rotation_flip = Matrix3::new(-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0);
+        let urdf_rotation_flip = Matrix3::new(
+            -1.0, 0.0, 0.0, 
+            0.0, -1.0, 0.0, 
+            0.0, 0.0, 1.0
+        );
         let pos = value.0;
 
         let compliant_trans =

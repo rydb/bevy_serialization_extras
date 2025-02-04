@@ -42,7 +42,7 @@ impl Plugin for SerializationPhysicsPlugin {
             .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
             .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
             // post processing
-            .add_systems(Update, local_frame2_shift)
+            //.add_systems(Update, local_frame2_shift)
             .add_systems(PostUpdate, bind_joints_to_entities);
     }
 }

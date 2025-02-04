@@ -1,3 +1,5 @@
+use std::any::type_name;
+
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_log::warn;
@@ -5,7 +7,9 @@ use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
 use bevy_gltf::{GltfMesh, GltfNode, GltfPrimitive};
 use bevy_render::prelude::*;
+use bevy_transform::components::{GlobalTransform, Transform};
 use derive_more::derive::From;
+use glam::{Affine3A, Mat3A, Mat4, Vec3, Vec3A, Vec4};
 
 use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{FromStructure, Split, Structure}};
 
@@ -29,6 +33,42 @@ impl FromStructure for GltfPrimitiveWrapper {
         )
     }
 }
+
+// #[derive(From, Clone, Deref)]
+// pub struct GltfNodeMeshOne(pub GltfNode);
+
+// impl FromStructure for GltfNodeMeshOne {
+//     fn components(value: Self) -> Structure<impl Bundle> {
+//         //let mut children = Vec::new();
+
+        
+//         let mesh = {
+//             if value.0.children.len() > 0 {
+//                 warn!("{:#?}: Contains {:#} children but {:#} does not support initialziing with children. Skipping", value.0.name, value.0.children.len(), type_name::<Self>());
+//                 None
+//             } else {
+//                 value.0.mesh.map(|n| RequestAssetStructure::<GltfMeshPrimitiveOne>::Handle(n))
+//             }
+//         };
+
+//         Structure::Root(
+//             (
+//                 GlobalTransform::from(
+//                     Affine3A {
+//                         matrix3: Mat3A {
+//                             x_axis: Vec3A::new(1.0, 0.0, 0.0),
+//                             y_axis: Vec3A::new(0.0, 0.0, 1.0),
+//                             z_axis: Vec3A::new(0.0, -1.0, 0.0),
+//                         },
+//                         translation: Vec3A::new(0.0, 0.0, 0.0),
+//                     }
+//                 ),
+//                 Maybe(mesh)
+//             )
+//         )
+//     }
+// }
+
 
 /// [`GltfMesh`] that will throw a warning and not initialize if there is more then 1/no primitive
 /// 
@@ -58,10 +98,22 @@ impl FromStructure for GltfMeshPrimitiveOne {
 
         let primitive = mesh
         .map(|n| Mesh3d(n.mesh.clone()));
+
+        //let global_transform = GlobalTransform::from
         Structure::Root(
             (
+                // GlobalTransform::from(
+                //     Affine3A {
+                //         matrix3: Mat3A {
+                //             x_axis: Vec3A::new(1.0, 0.0, 0.0),
+                //             y_axis: Vec3A::new(0.0, 0.0, 1.0),
+                //             z_axis: Vec3A::new(0.0, -1.0, 0.0),
+                //         },
+                //         translation: Vec3A::new(0.0, 0.0, 0.0),
+                //     }
+                // ),
                 Maybe(material),
-                Maybe(primitive)
+                Maybe(primitive),
             )
         )
     }
