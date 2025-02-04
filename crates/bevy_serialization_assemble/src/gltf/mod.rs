@@ -34,41 +34,29 @@ impl FromStructure for GltfPrimitiveWrapper {
     }
 }
 
-// #[derive(From, Clone, Deref)]
-// pub struct GltfNodeMeshOne(pub GltfNode);
+#[derive(Deref, From, Clone)]
+pub struct GltfNodePrimitiveOne(pub GltfNode);
 
-// impl FromStructure for GltfNodeMeshOne {
-//     fn components(value: Self) -> Structure<impl Bundle> {
-//         //let mut children = Vec::new();
+impl FromStructure for GltfNodePrimitiveOne {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        let node = value.0;
 
-        
-//         let mesh = {
-//             if value.0.children.len() > 0 {
-//                 warn!("{:#?}: Contains {:#} children but {:#} does not support initialziing with children. Skipping", value.0.name, value.0.children.len(), type_name::<Self>());
-//                 None
-//             } else {
-//                 value.0.mesh.map(|n| RequestAssetStructure::<GltfMeshPrimitiveOne>::Handle(n))
-//             }
-//         };
+        let mut mesh = None;
+        if node.children.len() > 0 {
+            warn!("{:#?} does not support multi-node. Skipping {:#}", type_name::<Self>(), node.name);
+        } else {
+            mesh = node.mesh.map(|n| RequestAssetStructure::<GltfMeshPrimitiveOne>::Handle(n))
+        }
 
-//         Structure::Root(
-//             (
-//                 GlobalTransform::from(
-//                     Affine3A {
-//                         matrix3: Mat3A {
-//                             x_axis: Vec3A::new(1.0, 0.0, 0.0),
-//                             y_axis: Vec3A::new(0.0, 0.0, 1.0),
-//                             z_axis: Vec3A::new(0.0, -1.0, 0.0),
-//                         },
-//                         translation: Vec3A::new(0.0, 0.0, 0.0),
-//                     }
-//                 ),
-//                 Maybe(mesh)
-//             )
-//         )
-//     }
-// }
+        Structure::Root(
+            (
+                Maybe(mesh),
+                node.transform
+            )
 
+        )
+    }
+}
 
 /// [`GltfMesh`] that will throw a warning and not initialize if there is more then 1/no primitive
 /// 

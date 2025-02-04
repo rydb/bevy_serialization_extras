@@ -178,7 +178,7 @@ pub struct LinkColliders(pub Vec<Collision>);
 
 impl FromStructure for LinkColliders {
     fn components(value: Self) -> Structure<impl Bundle> {
-        let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
+        //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry =  {
             if value.0.len() > 1 {
                 warn!("multi-collider robots not supported as multi-primitive physics joints not supported(as of this version) in either Rapier or Avian");
@@ -187,7 +187,7 @@ impl FromStructure for LinkColliders {
                 value.0.first()
                 .map(|n| 
                     {
-                        println!("transform for {:#?} is {:#?}", n.name, trans);
+                        //println!("transform for {:#?} is {:#?}", n.name, trans);
                         n.geometry.clone()
                     }
                 )
@@ -196,7 +196,8 @@ impl FromStructure for LinkColliders {
         };
         Structure::Root(
             (
-                //ColliderFlag::Convex,
+                //trans,
+                ColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
                 Visibility::default()
@@ -505,7 +506,7 @@ impl From<&JointWrapper> for JointFlag {
                 }
             },
             local_frame1: UrdfTransform::from(value.0.origin.clone()).into(),
-            local_frame2: None,
+            local_frame2: Transform::default(),
             locked_axes: {
                 //clamp axis to between 0-1 for simplicity and for bitmask flipping
                 let default_locked_axes = JointAxesMaskWrapper::LOCKED_FIXED_AXES;

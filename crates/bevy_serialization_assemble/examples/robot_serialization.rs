@@ -3,16 +3,13 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
-use bevy_egui::EguiContext;
+use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat}};
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{components::RequestAssetStructure, prelude::*};
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
-use egui::{
-    text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat,
-};
 use glam::{Affine3A, Mat3A, Vec3A};
 use moonshine_save::save::Save;
 

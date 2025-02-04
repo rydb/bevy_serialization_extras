@@ -2,7 +2,7 @@ use bevy::{
     picking::pointer::{PointerInteraction, PointerPress},
     prelude::*,
 };
-use bevy_egui::EguiContext;
+use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, ScrollArea, TextFormat, Ui}};
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -11,7 +11,7 @@ use bevy::prelude::Vec3;
 use bevy_ui_extras::{systems::visualize_components_for, UiExtrasDebug};
 use bevy_window::PrimaryWindow;
 use bitvec::{field::BitField, order::Msb0, view::BitView};
-use egui::{text::LayoutJob, ScrollArea, TextFormat, Ui};
+// use egui::{text::LayoutJob, ScrollArea, TextFormat, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
@@ -23,6 +23,8 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default(),
         ))
+        .register_type::<Selectable>()
+        .register_type::<Selected>()
         .add_plugins(UiExtrasDebug::default())
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationPhysicsPlugin)
@@ -43,7 +45,7 @@ fn main() {
         .run();
 }
 
-pub fn setup_graphics(mut commands: Commands) {
+fn setup_graphics(mut commands: Commands) {
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(ORIGIN.x - 5.0, ORIGIN.y, ORIGIN.z)
@@ -64,6 +66,7 @@ pub struct SelectedMotorAxis {
 }
 
 #[derive(Component, Default, Reflect)]
+#[reflect(Component)]
 pub struct Selected;
 
 #[derive(Default, EnumIter, Clone, Copy, Display, PartialEq)]
@@ -102,6 +105,7 @@ fn create_revolute_joints(
             Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
             Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
             MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
+            ColliderFlag::Convex,
         ))
         .id();
 
@@ -123,6 +127,7 @@ fn create_revolute_joints(
                     Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
                     Transform::from_translation(positions[k]),
                     MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
+                    ColliderFlag::Convex,
                 ))
                 .id();
         }

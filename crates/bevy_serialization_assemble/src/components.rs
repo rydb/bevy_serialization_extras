@@ -394,27 +394,3 @@ impl<T: Component + Clone> Component for SplitOff<T> {
         });
     }
 }
-
-
-// /// marker component to spawn the given asset on the given entity
-// pub struct SpawnAsset<T: FromStructure>(pub T);
-
-// impl<T: FromStructure + Send + Sync + Clone + 'static> Component for SpawnAsset<T> {
-//     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-    
-//     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-//         _hooks.on_add(|mut world, e, id| {
-//             let comp = {
-//                 match world.entity(e).get::<Self>() {
-//                     Some(val) => val.0.clone(),
-//                     None => {
-//                         warn!("could not get RollDown<T> on: {:#}", e);
-//                         return
-//                     },
-                    
-//                 }
-//             };
-//             world.entity
-//         });
-//     }
-// }

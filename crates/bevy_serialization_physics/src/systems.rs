@@ -40,49 +40,50 @@ pub fn bind_joints_to_entities(
                     //    |- primitive
                     //       |- Mesh3d
                     
-                    let mut bind_target = Some(e);
+                    let bind_target = Some(e);
                     if let Ok(mesh) = meshes.get(e) {
                         if joint.parent_id != Some(e) {
                             joint.parent_id = bind_target;
                             commands.entity(joint_e).insert(JointBounded::default());
                         }
-                    } else {
-                        let Ok(children) = decendents.get(e) else {
-                            warn!("Joint bounding target: {:#?} {:#?}:  ->  {:#} has no mesh, but has no children? Nothing to bound to? Binding anyway.", 
-                                &joint_parent_name,
-                                bind_target,
-                                e
-                            );
-                            joint.parent_id = bind_target;
-                            commands.entity(joint_e).insert(JointBounded::default());
-                            return
-                        };
-                        if children.len() > 1 {
-                            warn!("Joint bounding is implemented for multi-primitive joints, not multi model joints. Exiting");
-                            return
-                        }
-                        let Some(model) = children.first().map(|n| n.clone()) else {
-                            warn!("children > 1 but no first child???");
-                            return
-                        };
-                        let Ok(model_children) = decendents.get(model) else {
-                            //warn!("no model children");
-                            return;
-                        };
-                        let Some(primitive) = model_children.first().map(|n| n.clone()) else {
-                            warn!("no primitive on model");
-                            return;
-                        };
-                        // println!("Joint bounding: {:#?} {:#?}: -> {:#}",
-                        //     &joint_parent_name,
-                        //     bind_target,
-                        //     e
+                    } 
+                    // else {
+                    //     let Ok(children) = decendents.get(e) else {
+                    //         warn!("Joint bounding target: {:#?} {:#?}:  ->  {:#} has no mesh, but has no children? Nothing to bound to? Binding anyway.", 
+                    //             &joint_parent_name,
+                    //             bind_target,
+                    //             e
+                    //         );
+                    //         joint.parent_id = bind_target;
+                    //         commands.entity(joint_e).insert(JointBounded::default());
+                    //         return
+                    //     };
+                    //     if children.len() > 1 {
+                    //         warn!("Joint bounding is implemented for multi-primitive joints, not multi model joints. Exiting");
+                    //         return
+                    //     }
+                    //     // let Some(model) = children.first().map(|n| n.clone()) else {
+                    //     //     warn!("children > 1 but no first child???");
+                    //     //     return
+                    //     // };
+                    //     // let Ok(model_children) = decendents.get(model) else {
+                    //     //     //warn!("no model children");
+                    //     //     return;
+                    //     // };
+                    //     // let Some(primitive) = model_children.first().map(|n| n.clone()) else {
+                    //     //     warn!("no primitive on model");
+                    //     //     return;
+                    //     };
+                    //     // println!("Joint bounding: {:#?} {:#?}: -> {:#}",
+                    //     //     &joint_parent_name,
+                    //     //     bind_target,
+                    //     //     e
                     
-                        // );
-                        joint.parent_id = Some(primitive);
-                        commands.entity(joint_e).insert(JointBounded);
+                    //     // );
+                    //     joint.parent_id = Some(primitive);
+                    //     commands.entity(joint_e).insert(JointBounded);
                         
-                    }
+                    // }
                     
 
                 }
@@ -109,7 +110,7 @@ pub fn local_frame2_shift(
         //     }
         // }
         //joint_flag.local_frame1.translation += link_flag.geom_offset;
-        joint_flag.local_frame2 = Some(Transform::from_translation(-link_flag.geom_offset));
+        joint_flag.local_frame2 = Transform::from_translation(-link_flag.geom_offset);
         commands.entity(e).insert(GeometryShifted::default());
     }
 }

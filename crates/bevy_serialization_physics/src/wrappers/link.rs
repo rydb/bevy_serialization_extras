@@ -107,8 +107,8 @@ impl From<&JointFlag> for GenericJoint {
                 rotation: value.local_frame1.rotation.into(),
             },
             local_frame2: Isometry3 {
-                translation: value.local_frame2.unwrap_or_default().translation.into(),
-                rotation: value.local_frame2.unwrap_or_default().rotation.into(),
+                translation: value.local_frame2.translation.into(),
+                rotation: value.local_frame2.rotation.into(),
             },
             locked_axes: JointAxesMask::from_bits_truncate(value.locked_axes.bits()),
             limit_axes: JointAxesMask::from_bits_truncate(value.limit_axes.bits()),
@@ -206,12 +206,12 @@ impl From<&ImpulseJoint> for JointFlag {
                 //FIXME: implement this properly
                 scale: default(),
             },
-            local_frame2: Some(Transform {
+            local_frame2: Transform {
                 translation: joint.local_frame2.translation.into(),
                 rotation: joint.local_frame2.rotation.into(),
                 //FIXME: implement this properly
                 scale: default(),
-            }),
+            },
             locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
             limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
 
@@ -291,7 +291,7 @@ pub struct JointFlag {
     /// The joint’s frame, expressed in the first rigid-body’s local-space.
     pub local_frame1: Transform,
     /// The joint’s frame, expressed in the second rigid-body’s local-space.
-    pub local_frame2: Option<Transform>,
+    pub local_frame2: Transform,
     /// The degrees-of-freedoms locked by this joint.
     pub locked_axes: JointAxesMaskWrapper,
     /// The degrees-of-freedoms limited by this joint.

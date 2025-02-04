@@ -16,7 +16,7 @@ use urdf_rs::{Geometry, Visual};
 
 use bevy_math::prelude::*;
 
-use crate::{components::{RequestAssetStructure, Resolve}, gltf::{GltfMeshPrimitiveOne, GltfMeshWrapper, GltfNodeWrapper, GltfPrimitiveWrapper}, traits::{FromStructure, Split, Structure}};
+use crate::{components::{RequestAssetStructure, Resolve}, gltf::{GltfMeshPrimitiveOne, GltfMeshWrapper, GltfNodePrimitiveOne, GltfNodeWrapper, GltfPrimitiveWrapper}, traits::{FromStructure, Split, Structure}};
 
 
 
@@ -39,7 +39,7 @@ impl FromStructure for VisualWrapper {
 
 pub struct GeometryWrapper(pub Geometry);
 
-impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfMeshPrimitiveOne>> {
+impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfNodePrimitiveOne>> {
     fn from(value: GeometryWrapper) -> Self {
         match value.0 {
             urdf_rs::Geometry::Box { size } => {
@@ -71,7 +71,7 @@ impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfMes
             }))),
             urdf_rs::Geometry::Mesh { filename, .. } => {
                 Resolve::Other(
-                    RequestAssetStructure::<GltfMeshPrimitiveOne>::Path(filename)
+                    RequestAssetStructure::<GltfNodePrimitiveOne>::Path(filename)
                 )
 
             }
