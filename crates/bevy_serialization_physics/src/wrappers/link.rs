@@ -1,3 +1,6 @@
+use std::any::type_name;
+
+use bevy_log::warn;
 // use bevy::{
 //     ecs::query::QueryData,
 //     prelude::{Component, Transform},
@@ -12,7 +15,7 @@ use rapier3d::{
     na::Isometry3,
 };
 
-use bevy_ecs::{prelude::*, query::QueryData};
+use bevy_ecs::{component::StorageType, prelude::*, query::QueryData};
 use bevy_math::Vec3;
 use bevy_reflect::prelude::*;
 use bevy_transform::prelude::*;
@@ -91,29 +94,33 @@ pub struct LinkFlag {
     pub geom_offset: Vec3,
 }
 
+// /// Request a joint by name
+// #[derive(Component)]
+// pub struct JointRequest(pub String);
+
 impl From<&JointFlag> for GenericJoint {
     fn from(value: &JointFlag) -> Self {
         //GenericJoint::(locked_axes)
         let joint_limit = JointLimits {
-            max: value.limit.upper as f32,
-            min: value.limit.lower as f32,
-            impulse: value.limit.velocity as f32,
+            max: value.joint.limit.upper as f32,
+            min: value.joint.limit.lower as f32,
+            impulse: value.joint.limit.velocity as f32,
         };
         //FIXME: this is probably wrong...
-        let joint_motors = &value.motors;
+        let joint_motors = &value.joint.motors;
         Self {
             local_frame1: Isometry3 {
-                translation: value.local_frame1.translation.into(),
-                rotation: value.local_frame1.rotation.into(),
+                translation: value.joint.local_frame1.translation.into(),
+                rotation: value.joint.local_frame1.rotation.into(),
             },
             local_frame2: Isometry3 {
-                translation: value.local_frame2.translation.into(),
-                rotation: value.local_frame2.rotation.into(),
+                translation: value.joint.local_frame2.translation.into(),
+                rotation: value.joint.local_frame2.rotation.into(),
             },
-            locked_axes: JointAxesMask::from_bits_truncate(value.locked_axes.bits()),
-            limit_axes: JointAxesMask::from_bits_truncate(value.limit_axes.bits()),
-            motor_axes: JointAxesMask::from_bits_truncate(value.motor_axes.bits()),
-            coupled_axes: JointAxesMask::from_bits_truncate(value.coupled_axes.bits()),
+            locked_axes: JointAxesMask::from_bits_truncate(value.joint.locked_axes.bits()),
+            limit_axes: JointAxesMask::from_bits_truncate(value.joint.limit_axes.bits()),
+            motor_axes: JointAxesMask::from_bits_truncate(value.joint.motor_axes.bits()),
+            coupled_axes: JointAxesMask::from_bits_truncate(value.joint.coupled_axes.bits()),
             //FIXME: this is probably wrong...
             limits: [
                 joint_limit,
@@ -132,7 +139,7 @@ impl From<&JointFlag> for GenericJoint {
                 (&joint_motors[4]).into(),
                 (&joint_motors[5]).into(),
             ],
-            contacts_enabled: value.contacts_enabled,
+            contacts_enabled: value.joint.contacts_enabled,
             //FIXME: fix jointflag to have a proper enum for this later
             enabled: rapier3d::dynamics::JointEnabled::Enabled,
             //FIXME: figure out what this is for?
@@ -146,10 +153,7 @@ impl From<&LinkageItem<'_>> for ImpulseJoint {
         let joint = GenericJoint::from(value.joint);
         let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
         Self {
-            parent: match value.joint.parent_id {
-                Some(e) => e,
-                None => value.entity,
-            },
+            parent: value.joint.parent,
             data: bevy_rapier3d::prelude::TypedJoint::GenericJoint(bevy_rapier_joint),
         }
     }
@@ -190,44 +194,41 @@ impl From<&ImpulseJoint> for JointFlag {
             effort: Default::default(),
             velocity: joint_limit_rapier.impulse as f64,
         };
-
         Self {
-            //FIXME: this is probably wrong...
-            //offset: Transform::from_xyz(0.0, 0.0, 0.0),
-            parent_name: None,
-            parent_id: Some(value.parent), //format!("{:#?}", value.parent),
-            //FIXME: this is probably wrong...
-            limit: joint_limit,
-            //FIXME: implement this properly
-            dynamics: Default::default(),
-            local_frame1: Transform {
-                translation: joint.local_frame1.translation.into(),
-                rotation: joint.local_frame1.rotation.into(),
+            parent: value.parent,
+            joint: JointInfo {
+                limit: joint_limit,
                 //FIXME: implement this properly
-                scale: default(),
-            },
-            local_frame2: Transform {
-                translation: joint.local_frame2.translation.into(),
-                rotation: joint.local_frame2.rotation.into(),
-                //FIXME: implement this properly
-                scale: default(),
-            },
-            locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
-            limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
-
-            motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
-            motors: [
-                (&joint.motors[0]).into(),
-                (&joint.motors[1]).into(),
-                (&joint.motors[2]).into(),
-                (&joint.motors[3]).into(),
-                (&joint.motors[4]).into(),
-                (&joint.motors[5]).into(),
-            ],
-
-            coupled_axes: JointAxesMaskWrapper::from_bits_truncate(joint.coupled_axes.bits()),
-            contacts_enabled: joint.contacts_enabled,
-            enabled: joint.is_enabled(),
+                dynamics: Default::default(),
+                local_frame1: Transform {
+                    translation: joint.local_frame1.translation.into(),
+                    rotation: joint.local_frame1.rotation.into(),
+                    //FIXME: implement this properly
+                    scale: default(),
+                },
+                local_frame2: Transform {
+                    translation: joint.local_frame2.translation.into(),
+                    rotation: joint.local_frame2.rotation.into(),
+                    //FIXME: implement this properly
+                    scale: default(),
+                },
+                locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
+                limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
+    
+                motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
+                motors: [
+                    (&joint.motors[0]).into(),
+                    (&joint.motors[1]).into(),
+                    (&joint.motors[2]).into(),
+                    (&joint.motors[3]).into(),
+                    (&joint.motors[4]).into(),
+                    (&joint.motors[5]).into(),
+                ],
+    
+                coupled_axes: JointAxesMaskWrapper::from_bits_truncate(joint.coupled_axes.bits()),
+                contacts_enabled: joint.contacts_enabled,
+                enabled: joint.is_enabled(),
+            }
         }
     }
 }
@@ -272,18 +273,39 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Component, Debug, Default, Reflect, Clone)]
+/// serializable wrapper for physics joints.
+#[derive(Debug, Reflect, Clone)]
 #[reflect(Component)]
 pub struct JointFlag {
     // removed. local_frame1 serves the same purpose.
     //pub offset: Transform,
 
-    //name of the parent "link" of the joint. Some joints may not have named parents, so this is optional
-    pub parent_name: Option<String>,
+    // //name of the parent "link" of the joint. Some joints may not have named parents, so this is optional
+    // pub parent_name: Option<String>,
     //the parent entity of this joint. Some joint parents may be referenced by name only, so this has have to be populated later down
     //the deserialization pipeline.
-    pub parent_id: Option<Entity>,
+    
+    pub parent: Entity,
 
+    pub joint: JointInfo,
+}
+/// current stage of request for joint from increasing context. 
+#[derive(Debug, Reflect, Clone)]
+pub enum JointRequestStage {
+    Name(String),
+    Entity(Entity)
+}
+
+/// Request for a joint. Split into stages depending on available info on joint at time of initialization. Eventually elevated to [`JointFlag`]
+#[derive(Component, Debug, Reflect, Clone)]
+pub struct JointRequest {
+    pub stage: JointRequestStage,
+    pub joint: JointInfo
+}
+
+
+#[derive(Debug, Reflect, Clone)]
+pub struct JointInfo {
     pub limit: JointLimitWrapper,
     pub dynamics: Dynamics,
     //pub mimic: Option<Mimic>
@@ -311,6 +333,46 @@ pub struct JointFlag {
     /// Whether or not the joint is enabled.
     pub enabled: bool,
 }
+
+impl Component for JointFlag {
+    const STORAGE_TYPE: StorageType = StorageType::Table;
+
+    fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
+        // keeps joint and Transform consistent with eachother to stop parts from flying off
+        _hooks.on_add(|mut world, e, id| {
+            
+            // rapier joint positions affect transform, but do not affect transformation unless they're part of an active rigidbody.
+            // to prevent rebound from joint being snapped on by joint, add transform onto this entity to automatically snap it to where its supposed to be
+            let new_trans = {
+                let comp = match world.entity(e).get::<Self>() {
+                    Some(val) => val,
+                    None => {
+                        warn!("could not get {:#?} on: {:#}", type_name::<Self>(), e);
+                        return
+                    },
+                };
+                let Some(parent_trans) = world.get::<Transform>(comp.parent) else {
+                    warn!("parent {:#?} has no trans?", comp.parent);
+                    return
+                };
+                
+                let new_translation = parent_trans.translation + comp.joint.local_frame1.translation - comp.joint.local_frame2.translation;
+                
+                let new_result = Transform::from_translation(new_translation).with_rotation(parent_trans.rotation);
+                println!("new result: {:#?}", new_result);
+                new_result
+                //parent_trans.translation + comp.joint.local_frame1.translation
+            };
+
+            world.commands().entity(e).insert(new_trans);
+
+            // let Some(parent) = 
+            // let Some(parent_trans) = world.entity(comp.parent_id).get::<Tran
+            //world.commands().entity(e).insert()            
+        });
+    }
+}
+
 #[derive(Reflect, Clone, Debug)]
 pub struct JointMotorWrapper {
     /// The target velocity of the motor.

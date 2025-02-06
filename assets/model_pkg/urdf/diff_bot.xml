@@ -12,7 +12,7 @@
     </link>
 
     <joint name="left_wheel_joint" type="continuous">
-        <origin xyz="1.0 0.825 0.35"/>
+        <origin xyz="1.0 0.825 0.0"/>
         <parent link="base_link"/>
         <child link="left_wheel_link"/>
         <axis xyz="1 0 0"/>
@@ -31,7 +31,7 @@
     </link>
 
     <joint name="right_wheel_joint" type="continuous">
-        <origin xyz="-1 0.825 0.35"/>
+        <origin xyz="-1 0.825 0.0"/>
         <parent link="base_link"/>
         <child link="right_wheel_link"/>
         <axis xyz="1 0 0"/>
@@ -50,7 +50,7 @@
     </link>
 
     <joint name="caster_wheel_joint" type="fixed">
-        <origin xyz="-0.3 -1.31 0.0"/>
+        <origin xyz="-0.0 -1.31 -0.35"/>
         <parent link="base_link"/>
         <child link="caster_wheel_link"/>
         <axis xyz="0 0 1"/>

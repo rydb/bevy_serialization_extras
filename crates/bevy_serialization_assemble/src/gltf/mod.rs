@@ -47,11 +47,12 @@ impl FromStructure for GltfNodePrimitiveOne {
         } else {
             mesh = node.mesh.map(|n| RequestAssetStructure::<GltfMeshPrimitiveOne>::Handle(n))
         }
-
+        //println!("node transform: {:#?}", node.transform);
+        let rotationless_trans = Transform::from_translation(node.transform.translation);
         Structure::Root(
             (
                 Maybe(mesh),
-                node.transform
+                rotationless_trans
             )
 
         )

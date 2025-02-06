@@ -9,7 +9,7 @@ use crate::{
         collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag,
         friction::FrictionFlag, link::JointRecieverFlag,
     },
-    systems::{bind_joints_to_entities, local_frame2_shift},
+    systems::bind_joint_request_to_parent,
     wrappers::{
         colliders::ColliderFlag,
         link::{JointFlag, LinkFlag, Linkage, StructureFlag},
@@ -43,6 +43,6 @@ impl Plugin for SerializationPhysicsPlugin {
             .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
             // post processing
             //.add_systems(Update, local_frame2_shift)
-            .add_systems(PostUpdate, bind_joints_to_entities);
+            .add_systems(PreUpdate, bind_joint_request_to_parent);
     }
 }

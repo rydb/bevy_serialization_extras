@@ -1,4 +1,4 @@
-use std::{any::{Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData, ops::Deref};
+use std::{any::{type_name, Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData, ops::Deref};
 
 use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, Structure}};
 use bevy_asset::prelude::*;
@@ -272,7 +272,7 @@ impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
                 match world.entity(e).get::<Self>() {
                     Some(val) => val.clone(),
                     None => {
-                        warn!("could not get resolve on: {:#}", e);
+                        warn!("could not get {:#?} on: {:#}", type_name::<Self>(), e);
                         return
                     },
                 }
@@ -368,29 +368,3 @@ impl<T: Component + Clone> Component for RollDown<T> {
     }
 }
 
-/// staging component to split off given component from its parent. 
-pub struct SplitOff<T: Component + Clone>(pub T);
-
-impl<T: Component + Clone> Component for SplitOff<T> {
-    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-
-    fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, id| {
-            let comp = {
-                match world.entity(e).get::<Self>() {
-                    Some(val) => val.0.clone(),
-                    None => {
-                        warn!("could not get RollDown<T> on: {:#}", e);
-                        return
-                    },
-                    
-                }
-            };
-
-            world.commands().spawn(
-                comp
-            );
-            world.commands().entity(e).remove::<Self>();
-        });
-    }
-}

@@ -7,6 +7,9 @@ use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::{material::MaterialFlag3d, mesh::MeshFlag3d};
+use bevy_serialization_physics::prelude::JointInfo;
+use bevy_serialization_physics::prelude::JointRequest;
+use bevy_serialization_physics::prelude::JointRequestStage;
 use bevy_serialization_physics::prelude::{
     colliders::ColliderFlag,
     continous_collision::CcdFlag,
@@ -38,7 +41,6 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::components::Ids;
-use crate::components::SplitOff;
 use crate::traits::Split;
 use crate::{
     components::{Maybe, RequestStructure, Resolve, RollDown}, traits::{FromStructure, IntoHashMap, Structure}
@@ -62,9 +64,11 @@ use super::*;
 /// the collection of things that qualify as a "link", in the ROS 2 context.
 #[derive(QueryData)]
 pub struct LinkQuery {
+    pub entity: Entity,
     pub name: Option<&'static Name>,
     pub structure: &'static StructureFlag,
     pub inertial: Option<&'static MassFlag>,
+    //pub joint_target: 
     //pub visual: FileCheck<GeometryFlag, GeometryFile>,
     pub visual: &'static MeshFlag3d,
     pub collision: Option<&'static ColliderFlag>,
@@ -107,7 +111,6 @@ impl FromStructure for LinksNJoints {
                     //RequestStructure(VisualWrapper(link.visual)),
                     RequestStructure(LinkColliders(link.collision)),
                     Maybe(joint),
-                    //Transform::default(),
                     Visibility::default(),
                 )
             )
@@ -119,47 +122,51 @@ impl FromStructure for LinksNJoints {
 #[derive(Clone)]
 pub struct Visuals(pub Vec<Visual>);
 
+
+
+
 #[derive(Clone)]
 pub struct UrdfJoint(Joint);
 
 impl FromStructure for UrdfJoint {
     fn components(value: Self)
     -> Structure<impl Bundle> {
-        let axis = value.0.axis.xyz.0.map(|n| n as f32 );
-        let axis = Vec3A::new(axis[0], axis[1], axis[2]);
+        // let axis = value.0.axis.xyz.0.map(|n| n as f32 );
+        // let axis = Vec3A::new(axis[0], axis[1], axis[2]);
 
-        let rotation_matrix = Mat3A {
-            x_axis: Vec3A::new(0.0, 0.0, 1.0),
-            y_axis: Vec3A::new(0.0, 1.0, 0.0),
-            z_axis: Vec3A::new(1.0, 0.0, 0.0),
-        };
-
-        // not sure how to do vec3 * matrix3 in glam, soooo doing it like this instead. 
-        let rot_partx = Vec3A::new(rotation_matrix.x_axis.x, rotation_matrix.y_axis.x, rotation_matrix.z_axis.x);
-        let rot_party = Vec3A::new(rotation_matrix.x_axis.y, rotation_matrix.y_axis.y, rotation_matrix.z_axis.y);
-        let rot_partz = Vec3A::new(rotation_matrix.x_axis.z, rotation_matrix.y_axis.z, rotation_matrix.z_axis.z);
-
-        let rotx = axis * rot_partx;
-        let roty = axis * rot_party;
-        let rotz = axis * rot_partz;
-        let rot = rotx + roty + rotz;
-        // let urdf_axis_matrix = Mat3A {
-        //     x_axis: Vec3A::new(axis[0], 0.0, 0.0),
-        //     y_axis: Vec3A::new(0.0, axis[1], 0.0),
-        //     z_axis: Vec3A::new(0.0, 0.0, axis[2]),
+        // let rotation_matrix = Mat3A {
+        //     x_axis: Vec3A::new(0.0, 0.0, 1.0),
+        //     y_axis: Vec3A::new(0.0, 1.0, 0.0),
+        //     z_axis: Vec3A::new(1.0, 0.0, 0.0),
         // };
+
+        // // not sure how to do vec3 * matrix3 in glam, soooo doing it like this instead. 
+        // let rot_partx = Vec3A::new(rotation_matrix.x_axis.x, rotation_matrix.y_axis.x, rotation_matrix.z_axis.x);
+        // let rot_party = Vec3A::new(rotation_matrix.x_axis.y, rotation_matrix.y_axis.y, rotation_matrix.z_axis.y);
+        // let rot_partz = Vec3A::new(rotation_matrix.x_axis.z, rotation_matrix.y_axis.z, rotation_matrix.z_axis.z);
+
+        // let rotx = axis * rot_partx;
+        // let roty = axis * rot_party;
+        // let rotz = axis * rot_partz;
+        // let rot = rotx + roty + rotz;
+        // // let urdf_axis_matrix = Mat3A {
+        // //     x_axis: Vec3A::new(axis[0], 0.0, 0.0),
+        // //     y_axis: Vec3A::new(0.0, axis[1], 0.0),
+        // //     z_axis: Vec3A::new(0.0, 0.0, axis[2]),
+        // // };
         
-        //println!("urdf axis matrix is {:#?}", urdf_axis_matrix);
+        // //println!("urdf axis matrix is {:#?}", urdf_axis_matrix);
 
 
-        //let new_transform_matrix = urdf_axis_matrix * rotation_matrix;
-        println!("new rot is: {:#?}", rot);
-        let new_axis = Dir3::new_unchecked(rot.into());
+        // //let new_transform_matrix = urdf_axis_matrix * rotation_matrix;
+        // println!("new rot is: {:#?}", rot);
+        // let new_axis = Dir3::new_unchecked(rot.into());
         Structure::Root(
 
             (
-                JointFlag::from(&JointWrapper(value.0.clone())),
-                // Transform::from(UrdfTransform(value.0.origin))
+                JointRequest::from(&value),
+                //JointFlag::from(&JointWrapper(value.0.clone())),
+                //Transform::from(UrdfTransform(value.0.origin))
                 // .rotate_axis(new_axis, PI)
                 // ,
                 //Transform::from_rotation(Quat::from_axis_angle(rot.into(), PI/2.0))
@@ -196,7 +203,10 @@ impl FromStructure for LinkColliders {
         };
         Structure::Root(
             (
-                //trans,
+                SolverGroupsFlag {
+                    memberships: GroupWrapper::all(),
+                    filters: GroupWrapper::all(),
+                },
                 ColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
@@ -346,7 +356,15 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for UrdfWrapper {
                         .unwrap_or(&Name::new(entry.0.joints.len().to_string()))
                         .to_string();
                     let joint_name = link_name.clone() + "_joint";
-                    let joint_parent = joint.parent_name.clone().unwrap_or_default();
+                    //let joint_parent = joint.parent_name.clone().unwrap_or_default();
+                    let Ok(joint_parent) = value.get(joint.parent) else {
+                        warn!("{:#} connects to {:#} but it cannot be found. Skipping", link.entity, joint.parent);
+                        continue
+                    };
+                    let Some(joint_parent_name) = joint_parent.name else {
+                        warn!("joint parent {:#?} has no name. joints must have a name to be valid in urdf. Skipping", joint.parent);
+                        continue
+                    };
                     //let urdf_link_name = link_name + "_link";
                     entry.0.0.joints.push(Joint {
                         name: joint_name,
@@ -354,35 +372,35 @@ impl IntoHashMap<Query<'_, '_, LinkQuery>> for UrdfWrapper {
                         joint_type: urdf_rs::JointType::Continuous,
                         origin: Pose {
                             xyz: urdf_rs::Vec3([
-                                joint.local_frame1.translation.x.into(),
-                                joint.local_frame1.translation.y.into(),
-                                joint.local_frame1.translation.z.into(),
+                                joint.joint.local_frame1.translation.x.into(),
+                                joint.joint.local_frame1.translation.y.into(),
+                                joint.joint.local_frame1.translation.z.into(),
                             ]),
                             rpy: {
-                                let rot = joint.local_frame1.rotation.to_euler(EulerRot::XYZ);
+                                let rot = joint.joint.local_frame1.rotation.to_euler(EulerRot::XYZ);
                                 urdf_rs::Vec3([rot.0.into(), rot.1.into(), rot.2.into()])
                             },
                         },
                         parent: urdf_rs::LinkName {
-                            link: joint_parent.clone(),
+                            link: joint_parent_name.to_string(),
                         },
                         child: urdf_rs::LinkName {
                             link: link_name.clone(),
                         },
                         axis: urdf_rs::Axis {
                             xyz: {
-                                let x = joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X)
+                                let x = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X)
                                     as u32 as f64;
-                                let y = joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Y)
+                                let y = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Y)
                                     as u32 as f64;
-                                let z = joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Z)
+                                let z = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Z)
                                     as u32 as f64;
                                 urdf_rs::Vec3([x, y, z])
                             },
                         },
                         limit: urdf_rs::JointLimit {
-                            lower: joint.limit.lower,
-                            upper: joint.limit.upper,
+                            lower: joint.joint.limit.lower,
+                            upper: joint.joint.limit.upper,
                             //FIXME: implement this properly
                             effort: f64::MAX,
                             //FIXME: implement this properly
@@ -467,12 +485,12 @@ impl From<UrdfTransform> for Transform {
     }
 }
 
-#[derive(From)]
-pub struct JointWrapper(Joint);
+// #[derive(From)]
+// pub struct JointWrapper(Joint);
 
 //FIXME: get rid of defaults as needed
-impl From<&JointWrapper> for JointFlag {
-    fn from(value: &JointWrapper) -> Self {
+impl From<&UrdfJoint> for JointRequest {
+    fn from(value: &UrdfJoint) -> Self {
         //let joint_offset = Transform::from(UrdfTransform::from(value.0.origin.clone()));
         //let axis = value.0.axis.xyz.0.clone();
 
@@ -484,67 +502,67 @@ impl From<&JointWrapper> for JointFlag {
             damping: 20.0,
             ..default()
         };
-
         Self {
-            parent_name: Some(value.0.parent.link.clone()),
-            parent_id: None,
-            limit: JointLimitWrapper {
-                //FIXME: Workaround for urdfs defaulting to un-movable joints
-                //https://github.com/openrr/urdf-rs/issues/99
-                lower: -999999999999999.0, //f64::MIN, //value.0.limit.lower,
-                upper: 999999999999999.0,  //f64::MAX, //value.0.limit.upper,
-                effort: value.0.limit.effort,
-                velocity: value.0.limit.velocity,
-            },
-            dynamics: {
-                match value.0.dynamics.clone() {
-                    Some(dynamics) => Dynamics {
-                        damping: dynamics.damping,
-                        friction: dynamics.friction,
-                    },
-                    None => Dynamics::default(),
-                }
-            },
-            local_frame1: UrdfTransform::from(value.0.origin.clone()).into(),
-            local_frame2: Transform::default(),
-            locked_axes: {
-                //clamp axis to between 0-1 for simplicity and for bitmask flipping
-                let default_locked_axes = JointAxesMaskWrapper::LOCKED_FIXED_AXES;
-                if value.0.joint_type != urdf_rs::JointType::Fixed {
-                    let unit_axis = value
-                        .0
-                        .axis
-                        .xyz
-                        .0
-                        .map(|n| n.abs().clamp(0.0, 1.0))
-                        .map(|n| n as u8);
-
-                    //println!("unit axis is !!! {:#?}", unit_axis);
-                    let mut x = default_locked_axes.bits();
-                    x ^= unit_axis[0] << 3;
-                    x ^= unit_axis[1] << 4;
-                    x ^= unit_axis[2] << 5;
-                    JointAxesMaskWrapper::from_bits(x).unwrap()
-                } else {
-                    default_locked_axes
-                }
-
-                //FIXME: Replace with proper "axis-alignment" metod for converting from urdf -> bevy
-                //JointAxesMaskWrapper::LOCKED_FIXED_AXES.difference(JointAxesMaskWrapper::ANG_Y)
-            },
-            limit_axes: JointAxesMaskWrapper::empty(),
-            motor_axes: JointAxesMaskWrapper::all(),
-            coupled_axes: JointAxesMaskWrapper::empty(),
-            contacts_enabled: true,
-            enabled: true,
-            motors: [
-                motor_settings.clone(),
-                motor_settings.clone(),
-                motor_settings.clone(),
-                motor_settings.clone(),
-                motor_settings.clone(),
-                motor_settings.clone(),
-            ],
+            stage: JointRequestStage::Name(value.0.parent.link.clone()),
+            joint: JointInfo {
+                limit: JointLimitWrapper {
+                    //FIXME: Workaround for urdfs defaulting to un-movable joints
+                    //https://github.com/openrr/urdf-rs/issues/99
+                    lower: -999999999999999.0, //f64::MIN, //value.0.limit.lower,
+                    upper: 999999999999999.0,  //f64::MAX, //value.0.limit.upper,
+                    effort: value.0.limit.effort,
+                    velocity: value.0.limit.velocity,
+                },
+                dynamics: {
+                    match value.0.dynamics.clone() {
+                        Some(dynamics) => Dynamics {
+                            damping: dynamics.damping,
+                            friction: dynamics.friction,
+                        },
+                        None => Dynamics::default(),
+                    }
+                },
+                local_frame1: UrdfTransform::from(value.0.origin.clone()).into(),
+                local_frame2: Transform::default(),
+                locked_axes: {
+                    //clamp axis to between 0-1 for simplicity and for bitmask flipping
+                    let default_locked_axes = JointAxesMaskWrapper::LOCKED_FIXED_AXES;
+                    if value.0.joint_type != urdf_rs::JointType::Fixed {
+                        let unit_axis = value
+                            .0
+                            .axis
+                            .xyz
+                            .0
+                            .map(|n| n.abs().clamp(0.0, 1.0))
+                            .map(|n| n as u8);
+    
+                        //println!("unit axis is !!! {:#?}", unit_axis);
+                        let mut x = default_locked_axes.bits();
+                        x ^= unit_axis[0] << 3;
+                        x ^= unit_axis[1] << 4;
+                        x ^= unit_axis[2] << 5;
+                        JointAxesMaskWrapper::from_bits(x).unwrap()
+                    } else {
+                        default_locked_axes
+                    }
+    
+                    //FIXME: Replace with proper "axis-alignment" metod for converting from urdf -> bevy
+                    //JointAxesMaskWrapper::LOCKED_FIXED_AXES.difference(JointAxesMaskWrapper::ANG_Y)
+                },
+                limit_axes: JointAxesMaskWrapper::empty(),
+                motor_axes: JointAxesMaskWrapper::all(),
+                coupled_axes: JointAxesMaskWrapper::empty(),
+                contacts_enabled: true,
+                enabled: true,
+                motors: [
+                    motor_settings.clone(),
+                    motor_settings.clone(),
+                    motor_settings.clone(),
+                    motor_settings.clone(),
+                    motor_settings.clone(),
+                    motor_settings.clone(),
+                ],
+            }
         }
     }
 }

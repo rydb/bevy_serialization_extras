@@ -112,7 +112,7 @@ pub fn initialize_asset_structure<T>(
                 warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
                 return;
             };
-            println!("Asset loaded for {:#}", e);
+            //println!("Asset loaded for {:#}", e);
             // upgrading handle to asset
             commands.entity(e).remove::<RequestAssetStructure<T>>();
             commands.entity(e).insert(RequestAssetStructure::Asset(T::from(asset.clone())));

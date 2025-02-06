@@ -244,7 +244,7 @@ pub fn motor_controller_ui(
 
                 for (e, joint) in selected_joints.iter() {
                     //ui.label("-".repeat(DASHES));
-                    ui.label(format!("{:#?}, to {:#?} info", e, joint.parent_id));
+                    ui.label(format!("{:#?}, to {:#?} info", e, joint.parent));
 
                     ui.label("motor info:");
                     //ui.selectable_value(&mut motor_index.index, curent_value, motor_index_text);
@@ -254,7 +254,7 @@ pub fn motor_controller_ui(
                             ui.selectable_value(&mut motor_axis.axis, axis, axis.to_string());
                         }
                     });
-                    ui.label(format!("{:#?}", joint.motors[motor_index]));
+                    ui.label(format!("{:#?}", joint.joint.motors[motor_index]));
                     // for motor in joint.motors.iter() {
                     //     ui.label(format!("{:#?}",motor));
                     // }
@@ -264,23 +264,23 @@ pub fn motor_controller_ui(
     }
     if keyboard.pressed(negative_accel_key) {
         for (_, mut joint) in selected_joints.iter_mut() {
-            joint.motors[motor_index].target_vel += -1.0;
+            joint.joint.motors[motor_index].target_vel += -1.0;
         }
     }
     if keyboard.pressed(positive_accel_key) {
         for (_, mut joint) in selected_joints.iter_mut() {
-            joint.motors[motor_index].target_vel += 1.0;
+            joint.joint.motors[motor_index].target_vel += 1.0;
         }
     }
 
     if keyboard.pressed(negative_damping_key) {
         for (_, mut joint) in selected_joints.iter_mut() {
-            joint.motors[motor_index].damping += -1.0;
+            joint.joint.motors[motor_index].damping += -1.0;
         }
     }
     if keyboard.pressed(positive_damping_key) {
         for (_, mut joint) in selected_joints.iter_mut() {
-            joint.motors[motor_index].damping += 1.0;
+            joint.joint.motors[motor_index].damping += 1.0;
         }
     }
 }
@@ -309,14 +309,14 @@ pub fn physics_utilities_ui(
                 match utility_selection.selected {
                     PhysicsUtilityType::Joints => {
                         for (e, mut joint) in selected_joints.iter_mut() {
-                            ui.label(format!("{:#?}, to {:#?} info", e, joint.parent_id));
+                            ui.label(format!("{:#?}, to {:#?} info", e, joint.parent));
                             ui.label("-".repeat(DASHES));
                             //ui.label()
 
                             ui.label("limit axis bits");
 
                             ui.horizontal(|ui: &mut Ui| {
-                                let mut limit_axis_bits = joint.limit_axes.bits().clone();
+                                let mut limit_axis_bits = joint.joint.limit_axes.bits().clone();
                                 let limit_axis_bitvec = limit_axis_bits.view_bits_mut::<Msb0>();
 
                                 for mut bit in limit_axis_bitvec.iter_mut() {
@@ -328,14 +328,14 @@ pub fn physics_utilities_ui(
                                     limit_axis_bitvec.load_le(),
                                 );
                                 // stops component from being registered as changed if nothing is happening to it
-                                if joint.limit_axes != new_joint_mask {
-                                    joint.limit_axes = new_joint_mask;
+                                if joint.joint.limit_axes != new_joint_mask {
+                                    joint.joint.limit_axes = new_joint_mask;
                                 }
                             });
 
                             ui.label("locked axis bits");
                             ui.horizontal(|ui| {
-                                let mut locked_axis_bits = joint.locked_axes.bits().clone();
+                                let mut locked_axis_bits = joint.joint.locked_axes.bits().clone();
                                 let limit_axis_bitvec = locked_axis_bits.view_bits_mut::<Msb0>();
 
                                 for mut bit in limit_axis_bitvec.iter_mut() {
@@ -347,8 +347,8 @@ pub fn physics_utilities_ui(
                                     limit_axis_bitvec.load_le(),
                                 );
 
-                                if joint.locked_axes != new_joint_mask {
-                                    joint.locked_axes = new_joint_mask;
+                                if joint.joint.locked_axes != new_joint_mask {
+                                    joint.joint.locked_axes = new_joint_mask;
                                 }
                             });
                             ui.label("-".repeat(DASHES));

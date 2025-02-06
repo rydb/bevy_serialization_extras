@@ -152,7 +152,7 @@ pub fn control_robot(
             });
     }
     for (mut joint, wheel) in wheels.iter_mut() {
-        for axis in joint.motors.iter_mut() {
+        for axis in joint.joint.motors.iter_mut() {
             if keys.pressed(forward_key) {
                 axis.target_vel = target_speed
             } else if keys.pressed(backward_key) {
@@ -163,7 +163,7 @@ pub fn control_robot(
         }
         match wheel {
             Wheel::Left => {
-                for axis in joint.motors.iter_mut() {
+                for axis in joint.joint.motors.iter_mut() {
                     if keys.pressed(leftward_key) {
                         axis.target_vel = -target_speed
                     }
@@ -173,7 +173,7 @@ pub fn control_robot(
                 }
             }
             Wheel::Right => {
-                for axis in joint.motors.iter_mut() {
+                for axis in joint.joint.motors.iter_mut() {
                     if keys.pressed(leftward_key) {
                         axis.target_vel = target_speed
                     }
@@ -229,7 +229,7 @@ fn setup(
         MeshMaterial3d(materials.add(Color::LinearRgba(LinearRgba::new(0.3, 0.5, 0.3, 1.0)))),
         Transform::from_xyz(0.0, -1.0, 0.0),
         // RigidBodyFlag::Fixed,
-        // ColliderFlag::Convex,
+        ColliderFlag::Convex,
         Name::new("plane"),
     ));
 
