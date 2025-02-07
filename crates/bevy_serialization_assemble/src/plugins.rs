@@ -6,70 +6,60 @@ use bevy_ecs::{prelude::*, query::QueryData};
 use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
 use crate::{
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{run_asset_status_checkers, run_rolldown_checkers, serialize_structures_as_assets}, traits::{FromStructure, IntoHashMap}
+    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{run_asset_status_checkers, run_rolldown_checkers, save_asset}, traits::{Assemble, Disassemble}
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
-pub struct SerializeManyAsOneFor<T, U> 
+pub struct SerializeManyAsOneFor<U> 
 where
-    T: 'static + QueryData,
     U: 'static
         + Asset
         + Default
         + Clone
-        + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
-        + FromStructure
+        + Assemble
+        + Disassemble
         //+ LazyDeserialize, //+ LazySerialize,
 {
-    things_query: PhantomData<fn() -> T>,
     composed_things_resource: PhantomData<fn() -> U>,
 }
 
-impl<T, U> Default for SerializeManyAsOneFor<T, U> 
+impl<U> Default for SerializeManyAsOneFor<U> 
 where
-    T: 'static + QueryData,
     U: 'static
         + Asset
         + Default
         + Clone
-        + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
-        + FromStructure
+        + Assemble
+        + Disassemble
         //+ LazyDeserialize, //+ LazySerialize,
 {
     fn default() -> Self {
         Self {
-            things_query: PhantomData,
             composed_things_resource: PhantomData,
         }
     }
 }
 
-impl<'v, T, U> Plugin for SerializeManyAsOneFor<T, U>
+impl<'v, T> Plugin for SerializeManyAsOneFor<T>
 where
-    T: 'static + QueryData,
-    U: 'static
+    T: 'static
         + Asset
         + Default
         + Clone
-        + for<'w, 's> IntoHashMap<Query<'w, 's, T>>
-        + FromStructure,
+        + Assemble
+        + Disassemble,
     
         //+ LazyDeserialize, //+ LazySerialize,
 {
     fn build(&self, app: &mut App) {
-        app.world_mut()
-            .get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(|| {
-                AssetSpawnRequestQueue::<U>::default()
-            });
+        // app.world_mut()
+        //     .get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(|| {
+        //         AssetSpawnRequestQueue::<U>::default()
+        //     });
         app.add_systems(
             PreUpdate,
-            (serialize_structures_as_assets::<T, U>,).before(SaveSystem::Save),
+            (save_asset::<T>,).before(SaveSystem::Save),
         )
-        
-        // .add_systems(
-        //     Update,
-        //     (deserialize_assets_as_structures::<U>).after(LoadSystem::PostLoad),
-        // );
         ;
     }
 }

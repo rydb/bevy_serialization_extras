@@ -11,7 +11,7 @@ use bevy_transform::components::{GlobalTransform, Transform};
 use derive_more::derive::From;
 use glam::{Affine3A, Mat3A, Mat4, Vec3, Vec3A, Vec4};
 
-use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{FromStructure, Split, Structure}};
+use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{Disassemble, Split, Structure}};
 
 
 #[derive(From, Clone, Deref)]
@@ -22,7 +22,7 @@ pub struct GltfNodeWrapper(
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
 
-impl FromStructure for GltfPrimitiveWrapper {
+impl Disassemble for GltfPrimitiveWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mat = value.material.clone().map(|n| MeshMaterial3d(n));
         Structure::Root(
@@ -37,7 +37,7 @@ impl FromStructure for GltfPrimitiveWrapper {
 #[derive(Deref, From, Clone)]
 pub struct GltfNodePrimitiveOne(pub GltfNode);
 
-impl FromStructure for GltfNodePrimitiveOne {
+impl Disassemble for GltfNodePrimitiveOne {
     fn components(value: Self) -> Structure<impl Bundle> {
         let node = value.0;
 
@@ -68,7 +68,7 @@ impl FromStructure for GltfNodePrimitiveOne {
 pub struct GltfMeshPrimitiveOne(pub GltfMesh);
 
 
-impl FromStructure for GltfMeshPrimitiveOne {
+impl Disassemble for GltfMeshPrimitiveOne {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mesh = {
             if value.0.primitives.len() > 1 {
@@ -111,7 +111,7 @@ impl FromStructure for GltfMeshPrimitiveOne {
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfMeshWrapper(pub GltfMesh);
 
-impl FromStructure for GltfMeshWrapper {
+impl Disassemble for GltfMeshWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for primitive in value.0.primitives {
@@ -123,7 +123,7 @@ impl FromStructure for GltfMeshWrapper {
     }
 }
 
-impl FromStructure for GltfNodeWrapper {
+impl Disassemble for GltfNodeWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mesh = value.0.mesh.map(|n| RequestAssetStructure::Handle::<GltfMeshWrapper>(n));
         

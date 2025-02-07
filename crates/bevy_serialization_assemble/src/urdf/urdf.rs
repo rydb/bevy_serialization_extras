@@ -1,6 +1,9 @@
 
 
 use bevy_core::Name;
+use bevy_ecs::query::QueryIter;
+use bevy_ecs::system::SystemParam;
+use bevy_ecs::system::SystemState;
 use bevy_log::warn;
 use bevy_math::Dir3;
 use bevy_render::mesh::Mesh3d;
@@ -21,6 +24,7 @@ use bevy_serialization_physics::prelude::{
     rigidbodies::RigidBodyFlag,
     solvergroupfilter::{GroupWrapper, SolverGroupsFlag},
 };
+use bevy_ecs::system::SystemParamItem;
 use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
 use glam::Mat3A;
@@ -28,6 +32,11 @@ use glam::Vec3A;
 use glam::{EulerRot, Quat, Vec3};
 use nalgebra::Matrix3;
 use nalgebra::Vector3;
+use urdf_rs::Geometry;
+use urdf_rs::Inertial;
+use urdf_rs::JointType;
+use urdf_rs::LinkName;
+use std::any::type_name;
 // use nalgebra::{Matrix3, Vector3};
 use std::any::Any;
 use std::any::TypeId;
@@ -41,9 +50,10 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::components::Ids;
+use crate::traits::AssembleParms;
 use crate::traits::Split;
 use crate::{
-    components::{Maybe, RequestStructure, Resolve, RollDown}, traits::{FromStructure, IntoHashMap, Structure}
+    components::{Maybe, RequestStructure, Resolve, RollDown}, traits::{Disassemble, Assemble, Structure}
 };
 
 use super::*;
@@ -92,7 +102,7 @@ pub struct LinkQuery {
 #[derive(Clone)]
 pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
 
-impl FromStructure for LinksNJoints {
+impl Disassemble for LinksNJoints {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
@@ -128,7 +138,7 @@ pub struct Visuals(pub Vec<Visual>);
 #[derive(Clone)]
 pub struct UrdfJoint(Joint);
 
-impl FromStructure for UrdfJoint {
+impl Disassemble for UrdfJoint {
     fn components(value: Self)
     -> Structure<impl Bundle> {
         // let axis = value.0.axis.xyz.0.map(|n| n as f32 );
@@ -183,7 +193,7 @@ impl FromStructure for UrdfJoint {
 #[derive(Clone)]
 pub struct LinkColliders(pub Vec<Collision>);
 
-impl FromStructure for LinkColliders {
+impl Disassemble for LinkColliders {
     fn components(value: Self) -> Structure<impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry =  {
@@ -237,7 +247,7 @@ impl FromStructure for LinkColliders {
 
 
 
-impl FromStructure for UrdfWrapper {
+impl Disassemble for UrdfWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         //let robot = value.robot;
 
@@ -279,7 +289,7 @@ impl FromStructure for UrdfWrapper {
         // for (_, link) in structured_link_map.iter() {
         //     children.push(
         //         (
-        //             //FromStructure::components(link.visual.clone()),
+        //             //Disassemble::components(link.visual.clone()),
         //             LinkVisuals(link.visual.clone()),
         //             LinkColliders(link.collision.clone())
         //         )
@@ -305,7 +315,7 @@ impl FromStructure for UrdfWrapper {
         //     // //         .insert(MaterialFlag3d::from(&visual_wrapper));
         //     // // }
 
-        //     // //FromStructure::into_entities(commands, e, link.visual.clone());
+        //     // //Disassemble::into_entities(commands, e, link.visual.clone());
             
         //     // //let mut temp_rotate_for_demo = spawn_request.position;
 
@@ -335,91 +345,228 @@ impl FromStructure for UrdfWrapper {
     }
 }
 
-impl IntoHashMap<Query<'_, '_, LinkQuery>> for UrdfWrapper {
-    fn into_hashmap(value: Query<'_, '_, LinkQuery>, _world: &World) -> HashMap<String, Self> {
-        let mut urdf_map = HashMap::new();
-        for link in value.iter() {
-            let structure_name = link.structure.name.clone();
-            let entry = urdf_map.entry(structure_name.clone()).or_insert(UrdfWrapper (
-                Urdf(Robot {
-                    name: link.structure.name.clone(),
-                    links: Vec::new(),
-                    joints: Vec::new(),
-                    materials: Vec::new(),
-                }),
-            ));
+// #[derive(QueryData)]
+// pub struct TestQuery {
+//     item_one: Entity,
+// }
 
-            match link.joint {
-                Some(joint) => {
-                    let link_name = link
-                        .name
-                        .unwrap_or(&Name::new(entry.0.joints.len().to_string()))
-                        .to_string();
-                    let joint_name = link_name.clone() + "_joint";
-                    //let joint_parent = joint.parent_name.clone().unwrap_or_default();
-                    let Ok(joint_parent) = value.get(joint.parent) else {
-                        warn!("{:#} connects to {:#} but it cannot be found. Skipping", link.entity, joint.parent);
-                        continue
-                    };
-                    let Some(joint_parent_name) = joint_parent.name else {
-                        warn!("joint parent {:#?} has no name. joints must have a name to be valid in urdf. Skipping", joint.parent);
-                        continue
-                    };
-                    //let urdf_link_name = link_name + "_link";
-                    entry.0.0.joints.push(Joint {
-                        name: joint_name,
-                        //FIXME:  implement this properly have this be a consequence of joint data via a function. This is a placeholder.
-                        joint_type: urdf_rs::JointType::Continuous,
-                        origin: Pose {
-                            xyz: urdf_rs::Vec3([
-                                joint.joint.local_frame1.translation.x.into(),
-                                joint.joint.local_frame1.translation.y.into(),
-                                joint.joint.local_frame1.translation.z.into(),
-                            ]),
-                            rpy: {
-                                let rot = joint.joint.local_frame1.rotation.to_euler(EulerRot::XYZ);
-                                urdf_rs::Vec3([rot.0.into(), rot.1.into(), rot.2.into()])
+// pub struct LookupResults {
+//     links: QueryIter<QueryData>
+// }
+
+// impl Assemble<(
+//     Query<'_, '_, Entity>,
+
+// )> for UrdfWrapper {
+//     fn assemble(value: SystemState<(
+//     Query<'_, '_, Entity>,
+
+//     )>) -> HashMap<String, Self> {
+//         let val = value.get()
+//     }
+// }
+
+
+impl AssembleParms for UrdfWrapper {
+    type Params = (
+        Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static ColliderFlag, &'static MeshFlag3d), ()>,
+        Query<'static, 'static, (&'static JointFlag, &'static Name), ()>,
+    );
+}
+
+impl Assemble for UrdfWrapper {
+    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self {
+        let (links_query, joints_query,) = value;
+        
+        let mut links = Vec::new();
+        let mut joints = Vec::new();
+        for (rigid_body, name, collider, mesh) in links_query.iter_many(selected.clone()) {
+            
+            links.push(
+                Link {
+                    name: name.to_string(),
+                    //TODO: implement properly
+                    inertial: Inertial::default(),
+                    //FIXME: not-implemented. Cannot be implemented until other blockers are fixed.
+                    visual: Vec::new(),
+                    //FIXME: only implemented for singular primitive robots. fix when blockers fixed.
+                    collision: vec![
+                        Collision {
+                            name: Some(name.to_string()),
+                            origin: Pose {
+                                // TODO: implement properly.
+                                xyz: urdf_rs::Vec3([0.0, 0.0, 0.0]),
+                                // TODO: implement properly
+                                rpy: urdf_rs::Vec3([0.0, 0.0, 0.0]),
                             },
-                        },
-                        parent: urdf_rs::LinkName {
-                            link: joint_parent_name.to_string(),
-                        },
-                        child: urdf_rs::LinkName {
-                            link: link_name.clone(),
-                        },
-                        axis: urdf_rs::Axis {
-                            xyz: {
-                                let x = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X)
-                                    as u32 as f64;
-                                let y = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Y)
-                                    as u32 as f64;
-                                let z = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Z)
-                                    as u32 as f64;
-                                urdf_rs::Vec3([x, y, z])
-                            },
-                        },
-                        limit: urdf_rs::JointLimit {
-                            lower: joint.joint.limit.lower,
-                            upper: joint.joint.limit.upper,
-                            //FIXME: implement this properly
-                            effort: f64::MAX,
-                            //FIXME: implement this properly
-                            velocity: f64::MAX,
-                        },
-                        //FIXME: implement this properly
-                        dynamics: None,
-                        //FIXME: implement this properly
-                        mimic: None,
-                        //FIXME: implement this properly
-                        safety_controller: None,
-                    })
+                            geometry: GeometryWrapper::from(mesh).0
+                        }
+                    ],
                 }
-                None => {}
-            }
+            )
         }
-        urdf_map
+        for (joint, name) in joints_query.iter_many(selected) {
+            let Ok((_, parent_name, ..)) = links_query.get(joint.parent) else {
+                warn!("joint cannot find {:#?} in links_query. Skipping Joint", joint.parent);
+                continue;
+            };
+            joints.push(
+                Joint {
+                    name: name.to_string(),
+                    joint_type: {
+                        if joint.joint.locked_axes.is_empty() {
+                            JointType::Fixed
+                        } else {
+                            warn!("joints for non-fixed joints not fully implemented. All non-fixed joints default to continous in the mean time");
+                            JointType::Continuous
+                        }
+                    },
+                    origin: Pose {
+                        xyz: urdf_rs::Vec3(
+                            (joint.joint.local_frame1.translation - joint.joint.local_frame2.translation)
+                            .to_array()
+                            .map(|n| n as f64)
+                        ),
+                        rpy: {
+
+                            let rot_quat = joint.joint.local_frame1.rotation
+                             - joint.joint.local_frame2.rotation;
+                            
+                            let rot_euler = rot_quat.to_euler(EulerRot::XYZ);
+                            urdf_rs::Vec3([rot_euler.0.into(), rot_euler.1.into(), rot_euler.2.into()])
+                        },
+                    },
+                    parent: LinkName {
+                        link: parent_name.to_string()
+                    },
+                    child: LinkName { 
+                        link: name.to_string()
+                    },
+                    axis: urdf_rs::Axis {
+                        xyz: {
+                            let x = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X)
+                                as u32 as f64;
+                            let y = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Y)
+                                as u32 as f64;
+                            let z = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Z)
+                                as u32 as f64;
+                            urdf_rs::Vec3([x, y, z])
+                        },
+                    },
+                    limit: urdf_rs::JointLimit {
+                        lower: joint.joint.limit.lower,
+                        upper: joint.joint.limit.upper,
+                        //FIXME: implement this properly
+                        effort: f64::MAX,
+                        //FIXME: implement this properly
+                        velocity: f64::MAX,
+                    },
+                    // TODO: implement properly
+                    dynamics: None,
+                    // TODO: implement properly
+                    mimic: None,
+                    // TODO: implement properly
+                    safety_controller: None,
+                }
+            )
+        }
+        let robot = Urdf(
+            Robot {
+                name: "test_robot".to_string(),
+                links: links,
+                joints: joints,
+                // TODO: implement
+                materials: Vec::default()
+            }
+        );
+        UrdfWrapper(robot)
     }
 }
+
+    // fn assemble(value: Query<'_, '_, LinkQuery>) -> HashMap<String, Self> {
+    //     let mut urdf_map = HashMap::new();
+    //     for link in value.iter() {
+    //         let structure_name = link.structure.name.clone();
+    //         let entry = urdf_map.entry(structure_name.clone()).or_insert(UrdfWrapper (
+    //             Urdf(Robot {
+    //                 name: link.structure.name.clone(),
+    //                 links: Vec::new(),
+    //                 joints: Vec::new(),
+    //                 materials: Vec::new(),
+    //             }),
+    //         ));
+
+    //         match link.joint {
+    //             Some(joint) => {
+    //                 let link_name = link
+    //                     .name
+    //                     .unwrap_or(&Name::new(entry.0.joints.len().to_string()))
+    //                     .to_string();
+    //                 let joint_name = link_name.clone() + "_joint";
+    //                 //let joint_parent = joint.parent_name.clone().unwrap_or_default();
+    //                 let Ok(joint_parent) = value.get(joint.parent) else {
+    //                     warn!("{:#} connects to {:#} but it cannot be found. Skipping", link.entity, joint.parent);
+    //                     continue
+    //                 };
+    //                 let Some(joint_parent_name) = joint_parent.name else {
+    //                     warn!("joint parent {:#?} has no name. joints must have a name to be valid in urdf. Skipping", joint.parent);
+    //                     continue
+    //                 };
+    //                 //let urdf_link_name = link_name + "_link";
+    //                 entry.0.0.joints.push(Joint {
+    //                     name: joint_name,
+    //                     //FIXME:  implement this properly have this be a consequence of joint data via a function. This is a placeholder.
+    //                     joint_type: urdf_rs::JointType::Continuous,
+    //                     origin: Pose {
+    //                         xyz: urdf_rs::Vec3([
+    //                             joint.joint.local_frame1.translation.x.into(),
+    //                             joint.joint.local_frame1.translation.y.into(),
+    //                             joint.joint.local_frame1.translation.z.into(),
+    //                         ]),
+    //                         rpy: {
+    //                             let rot = joint.joint.local_frame1.rotation.to_euler(EulerRot::XYZ);
+    //                             urdf_rs::Vec3([rot.0.into(), rot.1.into(), rot.2.into()])
+    //                         },
+    //                     },
+    //                     parent: urdf_rs::LinkName {
+    //                         link: joint_parent_name.to_string(),
+    //                     },
+    //                     child: urdf_rs::LinkName {
+    //                         link: link_name.clone(),
+    //                     },
+    //                     axis: urdf_rs::Axis {
+    //                         xyz: {
+    //                             let x = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X)
+    //                                 as u32 as f64;
+    //                             let y = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Y)
+    //                                 as u32 as f64;
+    //                             let z = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Z)
+    //                                 as u32 as f64;
+    //                             urdf_rs::Vec3([x, y, z])
+    //                         },
+    //                     },
+    //                     limit: urdf_rs::JointLimit {
+    //                         lower: joint.joint.limit.lower,
+    //                         upper: joint.joint.limit.upper,
+    //                         //FIXME: implement this properly
+    //                         effort: f64::MAX,
+    //                         //FIXME: implement this properly
+    //                         velocity: f64::MAX,
+    //                     },
+    //                     //FIXME: implement this properly
+    //                     dynamics: None,
+    //                     //FIXME: implement this properly
+    //                     mimic: None,
+    //                     //FIXME: implement this properly
+    //                     safety_controller: None,
+    //                 })
+    //             }
+    //             None => {}
+    //         }
+    //     }
+    //     urdf_map
+    // }
+//}
 #[derive(From)]
 pub struct LinkWrapper(Link);
 

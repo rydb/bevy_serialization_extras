@@ -16,14 +16,14 @@ use urdf_rs::{Geometry, Visual};
 
 use bevy_math::prelude::*;
 
-use crate::{components::{RequestAssetStructure, Resolve}, gltf::{GltfMeshPrimitiveOne, GltfMeshWrapper, GltfNodePrimitiveOne, GltfNodeWrapper, GltfPrimitiveWrapper}, traits::{FromStructure, Split, Structure}};
+use crate::{components::{RequestAssetStructure, Resolve}, gltf::{GltfMeshPrimitiveOne, GltfMeshWrapper, GltfNodePrimitiveOne, GltfNodeWrapper, GltfPrimitiveWrapper}, traits::{Disassemble, Split, Structure}};
 
 
 
 #[derive(From, Clone)]
 pub struct VisualWrapper(pub Vec<Visual>);
 
-impl FromStructure for VisualWrapper {
+impl Disassemble for VisualWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for visual in value.0 {
@@ -38,6 +38,36 @@ impl FromStructure for VisualWrapper {
 
 
 pub struct GeometryWrapper(pub Geometry);
+
+impl From<&MeshFlag3d> for GeometryWrapper {
+    fn from(value: &MeshFlag3d) -> Self {
+        match value {
+            MeshFlag3d::AssetPath(path) => Self(Geometry::Mesh { 
+                filename: path.to_string(), 
+                //TODO: check if this is correct
+                scale: None 
+            }),
+            MeshFlag3d::Procedural(mesh_wrapper) => {
+                warn!("procedural meshes not supported in urdf serialization(currently) defaulting to error mesh");
+                Self(Geometry::Box { size: urdf_rs::Vec3([0.1, 0.1, 0.1]) })
+            },
+            MeshFlag3d::Prefab(mesh_prefab) => match mesh_prefab {
+                MeshPrefab::Cuboid(cuboid) => Self(
+                    Geometry::Box { size: urdf_rs::Vec3(cuboid.size().to_array().map(|n| n as f64)) }
+                ),
+                MeshPrefab::Cylinder(cylinder) => Self(
+                    Geometry::Cylinder { radius: cylinder.radius as f64, length: (cylinder.half_height * 2.0) as f64 }
+                ),
+                MeshPrefab::Capsule(capsule3d) => Self(
+                    Geometry::Capsule { radius: capsule3d.radius as f64, length: (capsule3d.half_length * 2.0) as f64 }
+                ),
+                MeshPrefab::Sphere(sphere) => Self(
+                    Geometry::Sphere { radius: sphere.radius as f64 }
+                ),
+            },
+        }
+    }
+}
 
 impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfNodePrimitiveOne>> {
     fn from(value: GeometryWrapper) -> Self {

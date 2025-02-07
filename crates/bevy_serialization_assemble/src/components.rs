@@ -1,6 +1,6 @@
 use std::{any::{type_name, Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData, ops::Deref};
 
-use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{FromStructure, Structure}};
+use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, Structure}};
 use bevy_asset::prelude::*;
 use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, world::DeferredWorld};
 use bevy_log::warn;
@@ -14,11 +14,11 @@ use bevy_state::commands;
 // #[reflect(Component)]
 // pub struct StructureFlag(pub String);
 
-/// Take inner new_type and add components to this components entity from [`FromStructure`]
+/// Take inner new_type and add components to this components entity from [`Disassemble`]
 #[derive(Clone)]
-pub struct RequestStructure<T: FromStructure + Sync + Send + Clone + 'static>(pub T);
+pub struct RequestStructure<T: Disassemble + Sync + Send + Clone + 'static>(pub T);
 
-impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStructure<T> {
+impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStructure<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
@@ -27,14 +27,14 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
                 let comp = match world.entity(e).get::<Self>() {
                     Some(val) => val,
                     None => {
-                        warn!("could not get FromStructure on: {:#}", e);
+                        warn!("could not get Disassemble on: {:#}", e);
                         return
                     },
                 };
                 comp.0.clone()
             };
 
-            match FromStructure::components(comp) {
+            match Disassemble::components(comp) {
                 Structure::Root(bundle) => {
                     world.commands().entity(e).insert(bundle);
                 },
@@ -79,9 +79,9 @@ impl<T: FromStructure + Sync + Send + Clone + 'static> Component for RequestStru
     }
 }
 
-/// Staging component for deserializing [`FromStructure`] implemented asset wrappers. 
+/// Staging component for deserializing [`Disassemble`] implemented asset wrappers. 
 /// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
-/// until [`FromStructure`] can be ran
+/// until [`Disassemble`] can be ran
 #[derive(Clone, Debug)]
 pub enum RequestAssetStructure<T> 
     where
@@ -95,7 +95,7 @@ pub enum RequestAssetStructure<T>
 
 impl<T> Component for RequestAssetStructure<T>
     where
-        T: Clone + From<T::Target> + Deref + FromStructure+ Send + Sync + 'static,
+        T: Clone + From<T::Target> + Deref + Disassemble+ Send + Sync + 'static,
         T::Target: Asset + Clone
 {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -155,7 +155,7 @@ impl<T> Component for RequestAssetStructure<T>
             //println!("populating structure for {:#}", e);
             
             
-            match FromStructure::components(asset) {
+            match Disassemble::components(asset) {
                 Structure::Root(bundle) => {
                     world.commands().entity(e).insert(bundle);
                 },

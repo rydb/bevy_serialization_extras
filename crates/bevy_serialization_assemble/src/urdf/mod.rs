@@ -3,6 +3,8 @@ pub mod resources;
 pub mod urdf;
 pub mod visual;
 
+use std::default;
+
 use crate::plugins::SerializeManyAsOneFor;
 // use crate::systems::split_open_self;
 // use crate::systems::split_open_self_children;
@@ -73,7 +75,8 @@ impl Plugin for UrdfSerializationPlugin {
         // .register_type::<CachedUrdf>()
         .add_plugins(UrdfLoaderPlugin)
         .insert_resource(CachedUrdf::default())
-        .add_plugins(SerializeManyAsOneFor::<LinkQuery, UrdfWrapper>::default())
+        .add_plugins(SerializeManyAsOneFor::<UrdfWrapper>::default())
+        //.add_plugins(SerializeManyAsOneFor::<LinkQuery, UrdfWrapper>::default())
         // .add_systems(Update, split_open_self_children::<LinksNJoints>)
         // .add_systems(Update, split_open_self::<UrdfJoint>)
         // .add_systems(Update, split_open_self_children::<Visuals>)

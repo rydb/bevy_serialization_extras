@@ -1,16 +1,31 @@
-use bevy_ecs::prelude::*;
+use bevy_ecs::{prelude::*, query::QueryData, system::{ReadOnlySystemParam, SystemParam, SystemParamItem, SystemState}};
 use std::{collections::HashMap, fmt::Display};
-pub trait IntoHashMap<T>
+
+/// The trait for assembling a structure into its root asset.
+/// 
+/// I.E: (Mesh, Material, Name) -> Assemble(FormatWrapper(Format)) -> model.format
+pub trait Assemble
 where
-    Self: Sized,
+    Self: Sized + AssembleParms,
 {
-    fn into_hashmap(value: T, world: &World ) -> HashMap<String, Self>;
+    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self;
 }
 
-pub trait FromStructure {
+pub trait AssembleParms {
+    /// params to fetch world data to assemble(put queries/resource/etc.. like a traditional bevy system in here)
+     type Params: SystemParam;
+}
+
+/// The trait for Disassembling structures into either:
+/// 
+/// A) its sub components
+/// 
+/// B) its children
+/// 
+/// I.E: model.format -> Disassemble(FormatWrapper(Format)) -> (Mesh, Material, Name) 
+pub trait Disassemble {
     fn components(value: Self) -> Structure<impl Bundle>;
 }
-
 
 /// Weather to split children off into seperate entities or have them as children to a parent.
 pub struct Split(pub bool);
@@ -51,9 +66,4 @@ impl Display for LoadError {
         res
     }
 }
-
-// /// newtype around asset. 
-// pub trait InnerTarget {
-//     type Inner;
-// }
 
