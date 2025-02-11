@@ -75,6 +75,7 @@ impl Plugin for SerializationAssembleBasePlugin {
         .insert_resource(AssembleRequest::default())
         .add_systems(Update, run_asset_status_checkers)
         .add_systems(PostUpdate, run_rolldown_checkers)
+        //.add_systems(Update, name_from_id)
         ;
     }
 }

@@ -268,7 +268,14 @@ fn setup(
     commands.spawn(
         (
             RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
-            Transform::from_xyz(0.0, 5.0, 0.0)
+            Transform::from_xyz(-2.0, 0.0, 0.0)
+        )
+    );
+    // Robot2
+    commands.spawn(
+        (
+            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
+            Transform::from_xyz(2.0, 0.0, 0.0)
         )
     );
 

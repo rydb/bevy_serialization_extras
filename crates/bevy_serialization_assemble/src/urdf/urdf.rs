@@ -96,6 +96,12 @@ pub struct LinkQuery {
 //     }
 // }
 
+#[derive(Component)]
+pub struct RequestIdFromName;
+
+pub struct Id(pub String);
+
+
 /// Links + Joints merged together.
 /// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
 /// so they are merged here.
@@ -116,7 +122,9 @@ impl Disassemble for LinksNJoints {
             );
             children.push(
                 (
+
                     Name::new(link.name),
+                    //RequestNameWithId(link.name),
                     //TODO: for sanity, refactor will not include this on initial release.
                     //RequestStructure(VisualWrapper(link.visual)),
                     RequestStructure(LinkColliders(link.collision)),

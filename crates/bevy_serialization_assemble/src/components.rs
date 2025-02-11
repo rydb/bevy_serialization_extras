@@ -50,9 +50,14 @@ impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStruct
 
                         } else {
                             //TODO: expand this to other components than [`Transform`]
-                            // if let Some(parent_transform) = world.entity(e).get::<Transform>() {
-                            //     world.commands().entity(child).insert(Transform);
-                            // }
+                            let parent_transform = {
+                                let parent = world.entity(e).get::<Transform>();
+                                parent.map(|n| n.clone())
+                            };
+                            if let Some(parent_trans) = parent_transform {
+                                world.commands().entity(child).insert(parent_trans);
+                            };
+
                         }
                         children.push(child);
                     }

@@ -2,6 +2,7 @@ use crate::components::{RequestAssetStructure, RollDown, RollDownIded};
 use crate::prelude::*;
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{Assemble, Disassemble, LazySerialize};
+use crate::urdf::urdf::RequestIdFromName;
 use bevy_asset::prelude::*;
 use bevy_core::Name;
 use bevy_ecs::component::{ComponentId, Components};
@@ -14,6 +15,21 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use crate::prelude::UrdfWrapper;
+
+
+// /// give entity a name from its entity id.
+// pub fn name_from_id(
+//     requests: Query<(Entity, &Name, &RequestIdFromName)>,
+//     mut commands: Commands
+// ) {
+//     for (e, name, _) in &requests {
+//         let name = name.0.clone() + &e.to_string();
+//         println!("e to string is {:#?}", e.to_string());
+//         commands.spawn(Name::new(name));
+//         commands.entity(e).remove::<RequestNameWithId>();
+//     }
+// }
+
 /// proxy system for checking load status of assets for component hooks.
 pub fn run_asset_status_checkers(
     asset_systems: Res<AssetCheckers>, mut commands: Commands
