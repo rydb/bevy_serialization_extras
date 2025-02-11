@@ -8,6 +8,7 @@ description = "A crate for assembling assets from entities and components"
 
 
 [dependencies]
+anyhow = {workspace = true}
 bevy_serialization_core = {workspace = true}
 bevy_serialization_physics = {workspace = true}
 bevy_ecs = {workspace = true}

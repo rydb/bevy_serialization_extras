@@ -6,7 +6,7 @@ use bevy_ecs::{prelude::*, query::QueryData};
 use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
 use crate::{
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{run_asset_status_checkers, run_rolldown_checkers, save_asset}, traits::{Assemble, Disassemble}
+    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{run_asset_status_checkers, run_rolldown_checkers, save_asset}, traits::{Assemble, Disassemble, LazySerialize}
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -47,8 +47,8 @@ where
         + Default
         + Clone
         + Assemble
-        + Disassemble,
-    
+        + Disassemble
+        + LazySerialize
         //+ LazyDeserialize, //+ LazySerialize,
 {
     fn build(&self, app: &mut App) {
@@ -72,6 +72,7 @@ impl Plugin for SerializationAssembleBasePlugin {
         .insert_resource(AssetCheckers::default())
         .insert_resource(InitializedStagers::default())
         .insert_resource(RollDownCheckers::default())
+        .insert_resource(AssembleRequest::default())
         .add_systems(Update, run_asset_status_checkers)
         .add_systems(PostUpdate, run_rolldown_checkers)
         ;

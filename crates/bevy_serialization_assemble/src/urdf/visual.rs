@@ -16,7 +16,7 @@ use urdf_rs::{Geometry, Visual};
 
 use bevy_math::prelude::*;
 
-use crate::{components::{RequestAssetStructure, Resolve}, gltf::{GltfMeshPrimitiveOne, GltfMeshWrapper, GltfNodePrimitiveOne, GltfNodeWrapper, GltfPrimitiveWrapper}, traits::{Disassemble, Split, Structure}};
+use crate::{components::{RequestAssetStructure, Resolve}, gltf::{GltfMeshPrimitiveOne, GltfMeshWrapper, GltfNodeWrapper, GltfPrimitiveWrapper}, traits::{Disassemble, Split, Structure}};
 
 
 
@@ -42,11 +42,19 @@ pub struct GeometryWrapper(pub Geometry);
 impl From<&MeshFlag3d> for GeometryWrapper {
     fn from(value: &MeshFlag3d) -> Self {
         match value {
-            MeshFlag3d::AssetPath(path) => Self(Geometry::Mesh { 
-                filename: path.to_string(), 
-                //TODO: check if this is correct
-                scale: None 
-            }),
+            MeshFlag3d::AssetPath(path) => {
+                let split = path.split("/Primitive").collect::<Vec<_>>();
+                let mut path = path.to_owned();
+                if split.len() > 1 {
+                    warn!("until: https://github.com/bevyengine/bevy/issues/17661 is resolved, primitives must be loaded through meshes. Chopping off `Primitive` in mean time. for \n {:#}", path);
+                    path = split.first().map(|n| n.to_string()).unwrap_or(path.to_owned());
+                }
+                Self(Geometry::Mesh { 
+                    filename: path, 
+                    //TODO: check if this is correct
+                    scale: None 
+                })
+            },
             MeshFlag3d::Procedural(mesh_wrapper) => {
                 warn!("procedural meshes not supported in urdf serialization(currently) defaulting to error mesh");
                 Self(Geometry::Box { size: urdf_rs::Vec3([0.1, 0.1, 0.1]) })
@@ -69,7 +77,7 @@ impl From<&MeshFlag3d> for GeometryWrapper {
     }
 }
 
-impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfNodePrimitiveOne>> {
+impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfMeshPrimitiveOne>> {
     fn from(value: GeometryWrapper) -> Self {
         match value.0 {
             urdf_rs::Geometry::Box { size } => {
@@ -101,7 +109,7 @@ impl From<GeometryWrapper> for Resolve<MeshFlag3d, RequestAssetStructure<GltfNod
             }))),
             urdf_rs::Geometry::Mesh { filename, .. } => {
                 Resolve::Other(
-                    RequestAssetStructure::<GltfNodePrimitiveOne>::Path(filename)
+                    RequestAssetStructure::<GltfMeshPrimitiveOne>::Path(filename)
                 )
 
             }

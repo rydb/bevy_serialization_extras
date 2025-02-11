@@ -1,4 +1,4 @@
-<robot name="diff_bot">
+<robot xmlns="http://www.ros.org" name="diff_bot">
     <link name="base_link">
         <inertial>
             <mass value="0.0055398003262668895"/>
@@ -6,7 +6,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/base.glb#Node0"/>
+                <mesh filename="package://model_pkg/models/base.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -25,7 +25,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/left_wheel_decimated.glb#Node0"/>
+                <mesh filename="package://model_pkg/models/left_wheel_decimated.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -44,7 +44,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/right_wheel_decimated.glb#Node0"/>
+                <mesh filename="package://model_pkg/models/right_wheel_decimated.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -63,7 +63,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/caster_wheel_decimated.glb#Node0"/>
+                <mesh filename="package://model_pkg/models/caster_wheel_decimated.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>

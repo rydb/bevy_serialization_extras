@@ -12,6 +12,8 @@ use bevy_transform::prelude::*;
 #[derive(Resource, Default)]
 pub struct InitializedStagers(pub HashMap<Entity, Vec<Entity>>);
 
+#[derive(Resource, Default)]
+pub struct AssembleRequest(pub Vec<Entity>);
 
 // /// registry of staging 
 // pub struct InitializedStagersEntities(pub HashMap<ComponentId, Vec<Entity>>);

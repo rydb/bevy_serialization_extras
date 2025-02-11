@@ -1,14 +1,17 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
+use std::any::{type_name, TypeId};
+
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
 use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat}};
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
-use bevy_serialization_assemble::{components::RequestAssetStructure, prelude::*};
-use bevy_serialization_core::prelude::*;
+use bevy_serialization_assemble::{components::{RequestAssetStructure, RollDown}, prelude::*};
+use bevy_serialization_core::prelude::{mesh::MeshFlag3d, *};
 use bevy_serialization_physics::prelude::*;
+use bevy_state::commands;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
 use glam::{Affine3A, Mat3A, Vec3A};
 use moonshine_save::save::Save;
@@ -73,9 +76,18 @@ fn main() {
         .add_systems(Update, bind_left_and_right_wheel)
         
         .add_systems(Update, freeze_spawned_robots)
+        .add_systems(Update, select_robot)
+        .add_systems(Update, save_selected)
+        .insert_resource(AlreadyRan(false))
         .register_type::<WasFrozen>()
+        .register_type::<Selected>()
         .run();
 }
+
+
+
+#[derive(Component, Clone, Reflect)]
+pub struct Selected;
 
 #[derive(Component, Reflect, Display)]
 pub enum Wheel {
@@ -197,21 +209,41 @@ pub fn control_robot(
     }
 }
 
-// pub fn queue_urdf_load_requests(
-//     mut urdf_load_requests: ResMut<AssetSpawnRequestQueue<Urdf>>,
-//     mut cached_urdf: ResMut<CachedUrdf>,
-//     asset_server: Res<AssetServer>,
+
+pub fn select_robot(
+    robots: Query<Entity, (With<MassFlag>, With<ColliderFlag>, With<MeshFlag3d>, Without<Selected>)>,
+    mut commands: Commands
+) {
+    for robot in &robots {
+        commands.entity(robot).insert(Selected);
+    }
+}
+
+#[derive(Resource)]
+pub struct AlreadyRan(bool);
+
+
+pub fn save_selected(
+    selected: Query<Entity, With<Selected>>,
+    mut assemble_request: ResMut<AssembleRequest>,
+    mut already_ran: ResMut<AlreadyRan>,
+) {
+    if already_ran.0 == true {
+        return
+    }
+    if selected.iter().len() > 0 {
+        let entities = &mut selected.iter().collect::<Vec<_>>();
+
+        assemble_request.0.append(entities);
+        already_ran.0 = true;
+
+    }
+}
+
+// pub fn queue_urdf_save_request(
+//     loading: Query<Entity, With<
 // ) {
-//     // set load_urdf_path to the urdf you want to load.
 
-//     let load_urdf_path = "root://model_pkg/urdf/diff_bot.xml";
-//     cached_urdf.urdf = asset_server.load(load_urdf_path);
-
-//     urdf_load_requests.requests.push_front(AssetSpawnRequest {
-//         source: load_urdf_path.to_owned().into(),
-//         position: Transform::from_xyz(0.0, 2.0, 0.0),
-//         ..Default::default()
-//     });
 // }
 
 /// set up a simple 3D scene
@@ -232,11 +264,11 @@ fn setup(
         ColliderFlag::Convex,
         Name::new("plane"),
     ));
-
     // Robot
     commands.spawn(
         (
-            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned())
+            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
+            Transform::from_xyz(0.0, 5.0, 0.0)
         )
     );
 

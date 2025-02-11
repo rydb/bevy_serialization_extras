@@ -35,35 +35,46 @@ pub enum Structure<T> {
     Children(Vec<T>, Split)
 }
 
-/// deserialize trait that works by offloading deserialization to desired format's deserializer
-pub trait LazyDeserialize
-where
-    Self: Sized,
-{
-    fn deserialize(absolute_path: String, world: &World) -> Result<Self, LoadError>;
-}
+// /// deserialize trait that works by offloading deserialization to desired format's deserializer
+// pub trait LazyDeserialize
+// where
+//     Self: Sized,
+// {
+//     fn deserialize(absolute_path: String, world: &World) -> Result<Self, LoadError>;
+// }
 
 pub trait LazySerialize
 where
     Self: Sized,
 {
-    fn serialize(absolute_path: String) -> Result<Self, LoadError>;
+    fn serialize(&self, name: String) -> Result<(), anyhow::Error>;
 }
 
 use thiserror::Error;
 
-#[non_exhaustive]
-#[derive(Error, Debug)]
-pub enum LoadError {
-    Error(String),
-}
+// #[non_exhaustive]
+// #[derive(Error, Debug)]
+// pub enum LoadError {
+//     Error(String),
+// }
 
-impl Display for LoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let res = match self {
-            LoadError::Error(err) => write!(f, "Error: {:#}", err),
-        };
-        res
-    }
-}
+
+// /// Errors in saving assets.
+// #[non_exhaustive]
+// #[derive(Error, Debug)]
+// pub enum SaveError {
+//     File(#[from] std::io::Error),
+//     Other(#[from] Box<dyn std::error::Error>)
+// }
+
+
+// impl Display for SaveError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         let res = match self {
+//             SaveError::Other(err) => write!(f, "Error: {:#}", err),
+//             SaveError::File(error) => write!(f, "Error: {:#}", error),
+//         };
+//         res
+//     }
+// }
 

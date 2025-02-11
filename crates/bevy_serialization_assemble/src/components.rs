@@ -8,6 +8,7 @@ use bevy_hierarchy::prelude::*;
 use bevy_reflect::{DynamicTypePath, Reflect};
 use bevy_serialization_core::prelude::mesh::{MeshFlag3d, MeshWrapper};
 use bevy_state::commands;
+use bevy_transform::components::Transform;
 
 // /// The structure this entity belongs to 
 // #[derive(Component, Reflect)]
@@ -47,6 +48,11 @@ impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStruct
                         if !split.0 {
                             world.commands().entity(e).add_child(child);
 
+                        } else {
+                            //TODO: expand this to other components than [`Transform`]
+                            // if let Some(parent_transform) = world.entity(e).get::<Transform>() {
+                            //     world.commands().entity(child).insert(Transform);
+                            // }
                         }
                         children.push(child);
                     }
@@ -294,7 +300,7 @@ pub enum Ids {
 
 /// staging component to roll down component to all children. 
 #[derive(Clone)]
-pub struct RollDown<T: Component>(
+pub struct RollDown<T: Clone + Component>(
     pub T,
     /// components to check for roll down.
     /// no world access so this is a [`TypeId`] instead of [`ComponentId`]

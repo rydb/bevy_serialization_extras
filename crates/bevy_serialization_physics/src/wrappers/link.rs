@@ -359,7 +359,7 @@ impl Component for JointFlag {
                 let new_translation = parent_trans.translation + comp.joint.local_frame1.translation - comp.joint.local_frame2.translation;
                 
                 let new_result = Transform::from_translation(new_translation).with_rotation(parent_trans.rotation);
-                println!("new result: {:#?}", new_result);
+                //println!("new result: {:#?}", new_result);
                 new_result
                 //parent_trans.translation + comp.joint.local_frame1.translation
             };

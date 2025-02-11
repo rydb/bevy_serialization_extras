@@ -281,91 +281,8 @@ impl Disassemble for UrdfWrapper {
                 //Transform::default()
             ),
         )
-        //FIXME: urdf meshes have their verticies re-oriented to match bevy's cordinate system, but their rotation isn't rotated back
-        // to account for this, this will need a proper fix later.
-        //temp_rotate_for_demo.rotate_x(-PI * 0.5);
-
-        
-        // for (_, link) in structured_link_map.iter() {
-        //     children.push(
-        //         (
-        //             //Disassemble::components(link.visual.clone()),
-        //             LinkVisuals(link.visual.clone()),
-        //             LinkColliders(link.collision.clone())
-        //         )
-        //     )
-        //     // let e = *structured_entities_map
-        //     //     .entry(link.name.clone())
-        //     //     .or_insert(commands.spawn_empty().id());
-
-        //     // commands.entity(e)
-        //     // .insert(Name::new(link.name.clone()))
-        //     // //.insert(LinkFlag::from(&link.clone().into()))
-        //     // .insert(StructureFlag { name: robot.name.clone() })
-        //     // //.insert(MassFlag { mass: link.inertial.mass.value as f32})
-        //     // ;
-        //     // // if let Some(visual) = link.visual.first() {
-        //     // //     let visual_wrapper = VisualWrapper::from(visual.clone());
-
-        //     // //     let mesh = MeshFlag3d::from(&visual_wrapper);
-        //     // //     commands.entity(e).insert(mesh);
-
-        //     // //     commands
-        //     // //         .entity(e)
-        //     // //         .insert(MaterialFlag3d::from(&visual_wrapper));
-        //     // // }
-
-        //     // //Disassemble::into_entities(commands, e, link.visual.clone());
-            
-        //     // //let mut temp_rotate_for_demo = spawn_request.position;
-
-
-        //     // commands
-        //     //     .entity(e)
-        //     //     .insert(Visibility::default())
-        //     //     .insert(Transform::default())
-        //     //     .insert(RigidBodyFlag::Dynamic)
-        //     //     .insert(CcdFlag::default());
-        // }
-
-        // for (_, joint) in structured_joint_map.iter() {
-        //     let e = *structured_entities_map
-        //         .entry(joint.child.link.clone())
-        //         .or_insert(commands.spawn_empty().id());
-
-        //     //log::info!("spawning joint on {:#?}", e);
-        //     let new_joint = JointFlag::from(&JointWrapper::from(joint.clone()));
-
-        //     commands
-        //         .entity(e)
-        //         .insert(new_joint)
-        //         .insert(RigidBodyFlag::Dynamic);
-        // }
-        //Ok(())
     }
 }
-
-// #[derive(QueryData)]
-// pub struct TestQuery {
-//     item_one: Entity,
-// }
-
-// pub struct LookupResults {
-//     links: QueryIter<QueryData>
-// }
-
-// impl Assemble<(
-//     Query<'_, '_, Entity>,
-
-// )> for UrdfWrapper {
-//     fn assemble(value: SystemState<(
-//     Query<'_, '_, Entity>,
-
-//     )>) -> HashMap<String, Self> {
-//         let val = value.get()
-//     }
-// }
-
 
 impl AssembleParms for UrdfWrapper {
     type Params = (
@@ -376,7 +293,8 @@ impl AssembleParms for UrdfWrapper {
 
 impl Assemble for UrdfWrapper {
     fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self {
-        let (links_query, joints_query,) = value;
+        let (links_query, 
+            joints_query,) = value;
         
         let mut links = Vec::new();
         let mut joints = Vec::new();
@@ -407,7 +325,7 @@ impl Assemble for UrdfWrapper {
         }
         for (joint, name) in joints_query.iter_many(selected) {
             let Ok((_, parent_name, ..)) = links_query.get(joint.parent) else {
-                warn!("joint cannot find {:#?} in links_query. Skipping Joint", joint.parent);
+                warn!("joint cannot find: {:#?} in links_query. Skipping Joint", joint.parent);
                 continue;
             };
             joints.push(
@@ -472,6 +390,7 @@ impl Assemble for UrdfWrapper {
         }
         let robot = Urdf(
             Robot {
+                // TODO: give proper name source post testing
                 name: "test_robot".to_string(),
                 links: links,
                 joints: joints,
@@ -483,90 +402,6 @@ impl Assemble for UrdfWrapper {
     }
 }
 
-    // fn assemble(value: Query<'_, '_, LinkQuery>) -> HashMap<String, Self> {
-    //     let mut urdf_map = HashMap::new();
-    //     for link in value.iter() {
-    //         let structure_name = link.structure.name.clone();
-    //         let entry = urdf_map.entry(structure_name.clone()).or_insert(UrdfWrapper (
-    //             Urdf(Robot {
-    //                 name: link.structure.name.clone(),
-    //                 links: Vec::new(),
-    //                 joints: Vec::new(),
-    //                 materials: Vec::new(),
-    //             }),
-    //         ));
-
-    //         match link.joint {
-    //             Some(joint) => {
-    //                 let link_name = link
-    //                     .name
-    //                     .unwrap_or(&Name::new(entry.0.joints.len().to_string()))
-    //                     .to_string();
-    //                 let joint_name = link_name.clone() + "_joint";
-    //                 //let joint_parent = joint.parent_name.clone().unwrap_or_default();
-    //                 let Ok(joint_parent) = value.get(joint.parent) else {
-    //                     warn!("{:#} connects to {:#} but it cannot be found. Skipping", link.entity, joint.parent);
-    //                     continue
-    //                 };
-    //                 let Some(joint_parent_name) = joint_parent.name else {
-    //                     warn!("joint parent {:#?} has no name. joints must have a name to be valid in urdf. Skipping", joint.parent);
-    //                     continue
-    //                 };
-    //                 //let urdf_link_name = link_name + "_link";
-    //                 entry.0.0.joints.push(Joint {
-    //                     name: joint_name,
-    //                     //FIXME:  implement this properly have this be a consequence of joint data via a function. This is a placeholder.
-    //                     joint_type: urdf_rs::JointType::Continuous,
-    //                     origin: Pose {
-    //                         xyz: urdf_rs::Vec3([
-    //                             joint.joint.local_frame1.translation.x.into(),
-    //                             joint.joint.local_frame1.translation.y.into(),
-    //                             joint.joint.local_frame1.translation.z.into(),
-    //                         ]),
-    //                         rpy: {
-    //                             let rot = joint.joint.local_frame1.rotation.to_euler(EulerRot::XYZ);
-    //                             urdf_rs::Vec3([rot.0.into(), rot.1.into(), rot.2.into()])
-    //                         },
-    //                     },
-    //                     parent: urdf_rs::LinkName {
-    //                         link: joint_parent_name.to_string(),
-    //                     },
-    //                     child: urdf_rs::LinkName {
-    //                         link: link_name.clone(),
-    //                     },
-    //                     axis: urdf_rs::Axis {
-    //                         xyz: {
-    //                             let x = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_X)
-    //                                 as u32 as f64;
-    //                             let y = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Y)
-    //                                 as u32 as f64;
-    //                             let z = joint.joint.limit_axes.contains(JointAxesMaskWrapper::ANG_Z)
-    //                                 as u32 as f64;
-    //                             urdf_rs::Vec3([x, y, z])
-    //                         },
-    //                     },
-    //                     limit: urdf_rs::JointLimit {
-    //                         lower: joint.joint.limit.lower,
-    //                         upper: joint.joint.limit.upper,
-    //                         //FIXME: implement this properly
-    //                         effort: f64::MAX,
-    //                         //FIXME: implement this properly
-    //                         velocity: f64::MAX,
-    //                     },
-    //                     //FIXME: implement this properly
-    //                     dynamics: None,
-    //                     //FIXME: implement this properly
-    //                     mimic: None,
-    //                     //FIXME: implement this properly
-    //                     safety_controller: None,
-    //                 })
-    //             }
-    //             None => {}
-    //         }
-    //     }
-    //     urdf_map
-    // }
-//}
 #[derive(From)]
 pub struct LinkWrapper(Link);
 
