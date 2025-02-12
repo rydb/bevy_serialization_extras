@@ -6,7 +6,7 @@ use bevy_ecs::{prelude::*, query::QueryData};
 use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
 use crate::{
-    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{run_asset_status_checkers, run_rolldown_checkers, save_asset}, traits::{Assemble, Disassemble, LazySerialize}
+    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{bind_joint_request_to_parent, run_asset_status_checkers, run_rolldown_checkers, save_asset}, traits::{Assemble, Disassemble, LazySerialize}, Assemblies, AssemblyId
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -73,8 +73,12 @@ impl Plugin for SerializationAssembleBasePlugin {
         .insert_resource(InitializedStagers::default())
         .insert_resource(RollDownCheckers::default())
         .insert_resource(AssembleRequest::default())
+        .insert_resource(Assemblies::default())
+        .register_type::<AssemblyId>()
         .add_systems(Update, run_asset_status_checkers)
         .add_systems(PostUpdate, run_rolldown_checkers)
+        .add_systems(PreUpdate, bind_joint_request_to_parent);
+
         //.add_systems(Update, name_from_id)
         ;
     }

@@ -1,5 +1,5 @@
 use crate::components::{RequestAssetStructure, RollDown, RollDownIded};
-use crate::prelude::*;
+use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage};
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{Assemble, Disassemble, LazySerialize};
 use crate::urdf::urdf::RequestIdFromName;
@@ -10,6 +10,9 @@ use bevy_ecs::system::SystemState;
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::prelude::*;
+use bevy_render::mesh::Mesh3d;
+use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
+use bevy_transform::components::Transform;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -157,4 +160,55 @@ pub fn save_asset<T>(
     //     asset_server.add(uncached_asset.clone());
     //     //LazyDeserialize::deserialize(uncached_asset.clone(), asset_handle.path());
     // }
+}
+
+
+// get joints and bind them to their named connection if it exists
+pub fn bind_joint_request_to_parent(
+    mut joints: Query<(Entity, &mut JointRequest, &AssemblyId), Without<JointBounded>>,
+    link_names: Query<(Entity, &Name, &AssemblyId), (
+        With<RigidBodyFlag>, 
+        // JointFlag requires this to be initialized on the parent link to initialize properly        
+        With<Transform>
+    )>,
+    decendents: Query<&Children>,
+    
+    meshes: Query<&Mesh3d>,
+    mut commands: Commands,
+) {
+    for (e, request, assembly_id) in joints.iter() {
+        let parent = match &request.stage {
+            JointRequestStage::Name(parent) => {
+                let name_matches = link_names
+                .iter()
+                .filter(|(e, name, parent_assembly_id)| name.as_str() == parent && &assembly_id == parent_assembly_id)
+                .map(|(e, n, id)| e)
+                .collect::<Vec<_>>();
+                //.collect::<HashMap<Entity, Vec<Name>>>();
+
+                if name_matches.len() > 1 {
+                    //warn!("more than one entity which matches query and is named {:#?}, entities with same name + id: {:#?}", parent, name_matches);
+                    return
+                }
+                let Some(parent) = name_matches.first() else {
+                    return
+                };
+                parent.clone()
+
+            },
+            JointRequestStage::Entity(entity) => entity.clone(),
+        };
+        
+        commands.entity(e).insert(
+            JointFlag {
+                parent: parent,
+                joint: request.joint.clone()
+            }
+        );
+        commands.entity(e).remove::<JointRequest>();
+
+        // let joint_parent_name = request.0;
+
+
+    }
 }

@@ -289,19 +289,7 @@ pub struct JointFlag {
 
     pub joint: JointInfo,
 }
-/// current stage of request for joint from increasing context. 
-#[derive(Debug, Reflect, Clone)]
-pub enum JointRequestStage {
-    Name(String),
-    Entity(Entity)
-}
 
-/// Request for a joint. Split into stages depending on available info on joint at time of initialization. Eventually elevated to [`JointFlag`]
-#[derive(Component, Debug, Reflect, Clone)]
-pub struct JointRequest {
-    pub stage: JointRequestStage,
-    pub joint: JointInfo
-}
 
 
 #[derive(Debug, Reflect, Clone)]

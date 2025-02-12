@@ -11,59 +11,11 @@ use bevy_transform::prelude::*;
 
 use crate::prelude::{link::{
     GeometryShiftMarked, GeometryShifted, JointBounded, JointFlag, LinkFlag,
-}, JointRequest, JointRequestStage, RigidBodyFlag};
+}, RigidBodyFlag};
 
 
 
-// get joints and bind them to their named connection if it exists
-pub fn bind_joint_request_to_parent(
-    mut joints: Query<(Entity, &mut JointRequest), Without<JointBounded>>,
-    link_names: Query<(Entity, &Name), (
-        With<RigidBodyFlag>, 
-        // JointFlag requires this to be initialized on the parent link to initialize properly        
-        With<Transform>
-    )>,
-    decendents: Query<&Children>,
-    
-    meshes: Query<&Mesh3d>,
-    mut commands: Commands,
-) {
-    for (e, request) in joints.iter() {
-        let parent = match &request.stage {
-            JointRequestStage::Name(parent) => {
-                let name_matches = link_names
-                .iter()
-                .filter(|(e, name)| name.as_str() == parent)
-                .map(|(e, n)| e)
-                .collect::<Vec<_>>();
-                //.collect::<HashMap<Entity, Vec<Name>>>();
 
-                if name_matches.len() > 1 {
-                    warn!("more than one entity which matches query and is named {:#?}, entities with same name: {:#?}", parent, name_matches);
-                    return
-                }
-                let Some(parent) = name_matches.first() else {
-                    return
-                };
-                parent.clone()
-
-            },
-            JointRequestStage::Entity(entity) => entity.clone(),
-        };
-        
-        commands.entity(e).insert(
-            JointFlag {
-                parent: parent,
-                joint: request.joint.clone()
-            }
-        );
-        commands.entity(e).remove::<JointRequest>();
-
-        // let joint_parent_name = request.0;
-
-
-    }
-}
 
 // /// shifts local frame to match link offset
 // pub fn local_frame2_shift(

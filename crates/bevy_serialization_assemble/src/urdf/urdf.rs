@@ -11,8 +11,6 @@ use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::{material::MaterialFlag3d, mesh::MeshFlag3d};
 use bevy_serialization_physics::prelude::JointInfo;
-use bevy_serialization_physics::prelude::JointRequest;
-use bevy_serialization_physics::prelude::JointRequestStage;
 use bevy_serialization_physics::prelude::{
     colliders::ColliderFlag,
     continous_collision::CcdFlag,
@@ -52,24 +50,18 @@ use bevy_ecs::{prelude::*, query::QueryData};
 use crate::components::Ids;
 use crate::traits::AssembleParms;
 use crate::traits::Split;
+use crate::JointRequest;
+use crate::JointRequestStage;
 use crate::{
     components::{Maybe, RequestStructure, Resolve, RollDown}, traits::{Disassemble, Assemble, Structure}
 };
 
 use super::*;
 
-// pub trait CordinateSystem {
-//     type Handedness = Handed
-// }
+// pub struct RequestAssemblyId;
 
-// pub enum Handed {
-//     LEFT,
-//     RIGHT,
-// }
 
-// pub enum CordUp {
 
-// }
 
 /// the collection of things that qualify as a "link", in the ROS 2 context.
 #[derive(QueryData)]

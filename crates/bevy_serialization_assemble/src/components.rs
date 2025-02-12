@@ -1,6 +1,6 @@
 use std::{any::{type_name, Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData, ops::Deref};
 
-use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, Structure}};
+use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, Structure}, Assemblies, AssemblyId};
 use bevy_asset::prelude::*;
 use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, world::DeferredWorld};
 use bevy_log::warn;
@@ -14,6 +14,76 @@ use bevy_transform::components::Transform;
 // #[derive(Component, Reflect)]
 // #[reflect(Component)]
 // pub struct StructureFlag(pub String);
+
+pub fn disassemble_components<'a, T: Disassemble>(world: &mut DeferredWorld<'a>,  e: Entity, id: ComponentId, comp: T) {
+    let assembly_id = {
+        if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
+            assembly_id.0
+        } 
+        else {
+            println!("creating new id for {:#}", e);
+            let mut assemblies = world.get_resource_mut::<Assemblies>().unwrap();
+            let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
+                
+            latest_assembly += 1;
+            assemblies.0.insert(latest_assembly, latest_assembly);
+            world.commands().entity(e).insert(AssemblyId(latest_assembly));
+
+            latest_assembly
+        }
+    };
+    
+    match Disassemble::components(comp) {
+        Structure::Root(bundle) => {
+            world.commands().entity(e).insert(bundle);
+        },
+        Structure::Children(bundles, split) => {
+            let mut children = Vec::new();
+            for bundle in bundles {
+                
+                let child = world.commands().spawn(bundle).id();
+                world.commands().entity(child).insert(AssemblyId(assembly_id));
+                if !split.0 {
+                    world.commands().entity(e).add_child(child);
+
+                } else {
+                    //TODO: expand this to other components than [`Transform`]
+                    let parent_transform = {
+                        let parent = world.entity(e).get::<Transform>();
+                        parent.map(|n| n.clone())
+                    };
+                    if let Some(parent_trans) = parent_transform {
+                        world.commands().entity(child).insert(parent_trans);
+                    };
+
+                }
+                children.push(child);
+            }
+            {
+                let mut initialized_stagers = world.get_resource_mut::<InitializedStagers>().unwrap();
+
+                let previous_result = initialized_stagers.0.get_mut(&e);
+
+                match previous_result {
+                    Some(res) => {
+                        for child in children {
+                            res.push(child);
+                        }
+                    },
+                    None => {
+                        initialized_stagers.0.insert(e, children.clone());
+                    },
+                }
+                //initialized_stagers.0.insert(e, v)
+                // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+                // if let Some(old_val) = initialized_children.0.insert(e, children) {
+                //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                // }
+            }
+            //world.commands().entity(e).remove::<Self>();
+        },
+    }
+}
 
 /// Take inner new_type and add components to this components entity from [`Disassemble`]
 #[derive(Clone)]
@@ -35,56 +105,7 @@ impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStruct
                 comp.0.clone()
             };
 
-            match Disassemble::components(comp) {
-                Structure::Root(bundle) => {
-                    world.commands().entity(e).insert(bundle);
-                },
-                Structure::Children(bundles, split) => {
-                    let mut children = Vec::new();
-                    for bundle in bundles {
-                        
-                        let child = world.commands().spawn(bundle).id();
-                        //let components = world.entity(child).archetype().components().collect::<Vec<_>>();
-                        if !split.0 {
-                            world.commands().entity(e).add_child(child);
-
-                        } else {
-                            //TODO: expand this to other components than [`Transform`]
-                            let parent_transform = {
-                                let parent = world.entity(e).get::<Transform>();
-                                parent.map(|n| n.clone())
-                            };
-                            if let Some(parent_trans) = parent_transform {
-                                world.commands().entity(child).insert(parent_trans);
-                            };
-
-                        }
-                        children.push(child);
-                    }
-                    {
-                        let mut initialized_stagers = world.get_resource_mut::<InitializedStagers>().unwrap();
-
-                        let previous_result = initialized_stagers.0.get_mut(&e);
-
-                        match previous_result {
-                            Some(res) => {
-                                for child in children {
-                                    res.push(child);
-                                }
-                            },
-                            None => {
-                                initialized_stagers.0.insert(e, children.clone());
-                            },
-                        }
-                        //initialized_stagers.0.insert(e, v)
-                        // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
-                        // if let Some(old_val) = initialized_children.0.insert(e, children) {
-                        //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
-                        // }
-                    }
-                    world.commands().entity(e).remove::<Self>();
-                },
-            }
+            disassemble_components(&mut world, e, id, comp);
             world.commands().entity(e).remove::<Self>();
         });
     }
@@ -130,7 +151,6 @@ impl<T> Component for RequestAssetStructure<T>
                         return;
                     },
                     RequestAssetStructure::Handle(_) => {
-                        
                         let add_system = 
                         {
                             let asset_checkers = world.get_resource_mut::<AssetCheckers>().unwrap();
@@ -163,52 +183,7 @@ impl<T> Component for RequestAssetStructure<T>
                 };
                 asset
             };
-            //println!("populating structure for {:#}", e);
-            
-            
-            match Disassemble::components(asset) {
-                Structure::Root(bundle) => {
-                    world.commands().entity(e).insert(bundle);
-                },
-                Structure::Children(bundles, split) => {
-                    let mut children = Vec::new();
-                    for bundle in bundles {
-                        let child = world.commands().spawn(bundle).id();
-                        if !split.0 {
-                            world.commands().entity(e).add_child(child);
-                        }
-                        //let components = world.entity(child).archetype().components().collect::<Vec<_>>();
-                        children.push((child));
-            
-                    }
-                    {
-                        let mut initialized_stagers = world.get_resource_mut::<InitializedStagers>().unwrap();
-
-                        let previous_result = initialized_stagers.0.get_mut(&e);
-
-                        match previous_result {
-                            Some(res) => {
-                                for child in children {
-                                    res.push(child);
-                                }
-                            },
-                            None => {
-                                
-                                for child in &children {
-                                    initialized_stagers.0.insert(e, children.clone());
-                                }    
-                            
-                            },
-                        }
-                        // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
-                        // if let Some(old_val) = initialized_children.0.insert(e, children) {
-                        //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
-                        // }
-                    }
-
-                    world.commands().entity(e).remove::<Self>();
-                },
-            }
+            disassemble_components(&mut world, e, id, asset);
             world.commands().entity(e).remove::<Self>();
         });
     }
