@@ -1,17 +1,21 @@
-use std::any::type_name;
+use std::{any::type_name, str::FromStr};
 
+use bevy_asset::Handle;
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_log::warn;
 use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
-use bevy_gltf::{GltfMesh, GltfNode, GltfPrimitive};
+use bevy_gltf::{GltfExtras, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_render::prelude::*;
+use bevy_serialization_physics::prelude::AsyncColliderFlag;
 use bevy_transform::components::{GlobalTransform, Transform};
 use derive_more::derive::From;
 use glam::{Affine3A, Mat3A, Mat4, Vec3, Vec3A, Vec4};
+use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter};
 
-use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{Disassemble, Split, Structure}};
+use crate::{components::{Maybe, RequestAssetStructure, RequestStructure, Resolve}, traits::{Disassemble, Split, Structure}};
 
 
 #[derive(From, Clone, Deref)]
@@ -30,6 +34,122 @@ impl Disassemble for GltfPrimitiveWrapper {
                 Mesh3d(value.mesh.clone()),
                 Maybe(mat),
             ),
+        )
+    }
+}
+
+#[derive(Clone, Deref, From)]
+pub struct GltfNodeMeshOne(pub GltfNode);
+
+
+impl Disassemble for GltfNodeMeshOne {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        let mesh = value.0.mesh.map(|n| RequestAssetStructure::<GltfMeshPrimitiveOne>::Handle(n));
+        Structure::Root(
+            (
+                Maybe(mesh),
+            )
+        )
+    }
+}
+
+
+/// GltfNode wrapper for spawning gltf nodes with a parent collider mesh, and children visual meshes.
+/// This is for physics
+pub struct GltfNodeColliderVisualChilds(pub GltfNode);
+
+#[derive(Clone)]
+pub struct GltfNodeVisuals(pub Vec<Handle<GltfNode>>);
+
+impl Disassemble for GltfNodeVisuals {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        //let mesh = value.0.mesh.map(|n| RequestAssetStructure::<GltfMeshPrimitiveOne>::Handle(n));
+        
+        let mut children = Vec::new();
+
+        for handle in value.0 {
+            children.push(
+                (
+                    RequestAssetStructure::<GltfNodeMeshOne>::Handle(handle),
+                )
+            )
+        }
+
+        Structure::Children(
+            children, 
+            Split(false)
+        )
+    }
+}
+
+/// Collider alternate for mesh collider for gltf loading.
+/// parsed from [`GltfExtra`] due to no physics support within GLTF(yet)
+/// 
+/// TODO: upgrade [`GltfExtra`] based parse to proper physics parsing if physics ever gets added to the spec or if a usable spec proposable comes out.
+#[derive(EnumIter, Debug, Display, Default, PartialEq, Component, Clone)]
+pub enum RequestPrimitiveCollider {
+    #[default]
+    Cuboid
+}
+
+// impl FromStr for PerformancePrimitiveCollider {
+//     type Err;
+
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         let target = s
+//         .replace(" ", "")
+//         .to_lowercase();
+
+
+//     }
+// }
+
+impl From<GltfExtras> for RequestPrimitiveCollider {
+    fn from(value: GltfExtras) -> Self {
+        let target = value.value.replace(" ", "").to_lowercase();
+
+        for variant in RequestPrimitiveCollider::iter() {
+            if target == variant.to_string().to_lowercase() {
+                return variant
+            }
+        }
+        warn!(
+            "
+            provided GltfExtra attribute did not match any valid primitive colliders. reverting to default \n
+            valid variants: {:#?} \n
+            parsed value: {:#}
+            ", Self::iter().map(|n| n.to_string()).collect::<Vec<_>>(), target
+        );
+        Self::default()
+
+        // if target == "cuboid" {
+        //     PerformancePrimitiveCollider::Cuboid
+        // } else {
+        //     warn!("GltfExtra Attribute provided, but no attributes")
+        // }
+    }
+}
+
+impl Disassemble for GltfNodeColliderVisualChilds {
+    fn components(value: Self) -> Structure<impl Bundle> {
+        let mesh = value.0.mesh.map(|n| RequestAssetStructure::<GltfMeshPrimitiveOne>::Handle(n));
+        
+        let collider = {
+            if let Some(gltf_extras) = value.0.extras {
+                let collider = RequestPrimitiveCollider::from(gltf_extras);
+                Resolve::One(collider)
+            } else {
+                Resolve::Other(AsyncColliderFlag::Convex)
+            }
+        };
+
+        Structure::Root(
+            (
+                collider,
+                //ColliderFlag::Convex,
+                Maybe(mesh),
+                RequestStructure(GltfNodeVisuals(value.0.children))
+            )
         )
     }
 }

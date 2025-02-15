@@ -33,12 +33,12 @@ nalgebra = {workspace = true}
 urdf-rs = {workspace = true}
 bevy_math = {workspace = true}
 moonshine-save = {workspace = true}
+strum_macros = {workspace = true}
+strum = {workspace = true}
 
 [dev-dependencies]
-strum_macros = {workspace = true}
 bevy = {workspace = true, features = ["dynamic_linking"]}
 bevy_ui_extras = {workspace = true}
-strum = {workspace = true}
 moonshine-save = {workspace = true}
 bevy_camera_extras = {workspace = true}
 bevy_rapier3d = {workspace = true}

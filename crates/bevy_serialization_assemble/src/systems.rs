@@ -163,6 +163,11 @@ pub fn save_asset<T>(
 }
 
 
+/// generate a collider primitive from a primitive request
+pub fn generate_primitive_for_request() {
+    
+}
+
 // get joints and bind them to their named connection if it exists
 pub fn bind_joint_request_to_parent(
     mut joints: Query<(Entity, &mut JointRequest, &AssemblyId), Without<JointBounded>>,

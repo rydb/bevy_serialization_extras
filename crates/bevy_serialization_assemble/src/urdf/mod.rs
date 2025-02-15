@@ -23,7 +23,7 @@ use bevy_derive::Deref;
 use bevy_reflect::TypePath;
 use derive_more::derive::From;
 use resources::CachedUrdf;
-use urdf::LinkQuery;
+// use urdf::LinkQuery;
 use urdf_rs::Robot;
 
 pub const PACKAGE: &str = "package";

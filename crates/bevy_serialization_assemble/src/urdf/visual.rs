@@ -8,7 +8,7 @@ use bevy_serialization_core::prelude::{
     mesh::{MeshFlag3d, MeshPrefab},
 };
 use bevy_log::warn;
-use bevy_serialization_physics::prelude::{ColliderFlag, GroupWrapper, MassFlag, SolverGroupsFlag};
+use bevy_serialization_physics::prelude::{GroupWrapper, MassFlag, SolverGroupsFlag};
 use derive_more::From;
 use glam::Vec3;
 use nalgebra::Vector3;
@@ -37,6 +37,8 @@ impl Disassemble for VisualWrapper {
 }
 
 
+const FALLBACK_GEOMETRY: Geometry = Geometry::Box { size: urdf_rs::Vec3([0.1, 0.1, 0.1])};
+
 pub struct GeometryWrapper(pub Geometry);
 
 impl From<&MeshFlag3d> for GeometryWrapper {
@@ -57,7 +59,7 @@ impl From<&MeshFlag3d> for GeometryWrapper {
             },
             MeshFlag3d::Procedural(mesh_wrapper) => {
                 warn!("procedural meshes not supported in urdf serialization(currently) defaulting to error mesh");
-                Self(Geometry::Box { size: urdf_rs::Vec3([0.1, 0.1, 0.1]) })
+                Self(FALLBACK_GEOMETRY)
             },
             MeshFlag3d::Prefab(mesh_prefab) => match mesh_prefab {
                 MeshPrefab::Cuboid(cuboid) => Self(
@@ -72,6 +74,14 @@ impl From<&MeshFlag3d> for GeometryWrapper {
                 MeshPrefab::Sphere(sphere) => Self(
                     Geometry::Sphere { radius: sphere.radius as f64 }
                 ),
+                MeshPrefab::Cone(cone) => {
+                    warn!("Cones not supported by urdf-rs. Using fallback primitive.");
+                    Self(FALLBACK_GEOMETRY)
+                },
+                MeshPrefab::Unimplemented => {
+                    warn!("Unimplemented mesh prefab provided. Using fallback primitive");
+                    Self(FALLBACK_GEOMETRY)
+                },
             },
         }
     }

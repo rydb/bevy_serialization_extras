@@ -117,7 +117,7 @@ impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStruct
 #[derive(Clone, Debug)]
 pub enum RequestAssetStructure<T> 
     where
-        T: From<T::Target> + Deref,
+        T: Clone + From<T::Target> + Deref + Disassemble+ Send + Sync + 'static,
         T::Target: Asset + Sized
 {
     Path(String),
@@ -244,7 +244,7 @@ impl<T: Component> Component for Maybe<T> {
 /// staging component for resolving one component from another.
 /// useful for bundles where the context for what something is has to be resolved later
 #[derive(Clone)]
-pub enum Resolve<T, U> {
+pub enum Resolve<T: Clone, U: Clone> {
     One(T),
     Other(U)
 }

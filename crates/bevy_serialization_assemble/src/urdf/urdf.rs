@@ -10,9 +10,9 @@ use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::{material::MaterialFlag3d, mesh::MeshFlag3d};
+use bevy_serialization_physics::prelude::AsyncColliderFlag;
 use bevy_serialization_physics::prelude::JointInfo;
 use bevy_serialization_physics::prelude::{
-    colliders::ColliderFlag,
     continous_collision::CcdFlag,
     link::{
         Dynamics, GeometryShiftMarked, JointAxesMaskWrapper, JointFlag, JointLimitWrapper,
@@ -63,19 +63,19 @@ use super::*;
 
 
 
-/// the collection of things that qualify as a "link", in the ROS 2 context.
-#[derive(QueryData)]
-pub struct LinkQuery {
-    pub entity: Entity,
-    pub name: Option<&'static Name>,
-    pub structure: &'static StructureFlag,
-    pub inertial: Option<&'static MassFlag>,
-    //pub joint_target: 
-    //pub visual: FileCheck<GeometryFlag, GeometryFile>,
-    pub visual: &'static MeshFlag3d,
-    pub collision: Option<&'static ColliderFlag>,
-    pub joint: Option<&'static JointFlag>,
-}
+// /// the collection of things that qualify as a "link", in the ROS 2 context.
+// #[derive(QueryData)]
+// pub struct LinkQuery {
+//     pub entity: Entity,
+//     pub name: Option<&'static Name>,
+//     pub structure: &'static StructureFlag,
+//     pub inertial: Option<&'static MassFlag>,
+//     //pub joint_target: 
+//     //pub visual: FileCheck<GeometryFlag, GeometryFile>,
+//     pub visual: &'static MeshFlag3d,
+//     pub collision: Option<&'static ColliderFlag>,
+//     pub joint: Option<&'static JointFlag>,
+// }
 
 // impl LazyDeserialize for Urdf {
 //     fn deserialize(absolute_path: String, world: &World) -> Result<Self, LoadError> {
@@ -125,6 +125,12 @@ impl Disassemble for LinksNJoints {
                 )
             )
         }
+        //TODO: figure out how to resolve root entity and children entity transform desync. 
+        //robots can be spawned via Split(false), and they will be correct. Initially.
+        //but transform propagation and joint transform propagation are mutually exclusive(at least in rapier)(as of 0.15). 
+        // This causes bevy transform and rapier joints to desync if you update root transform.
+
+        // So, in order to prevent this desync, [`Split`] currently is set to true.
         Structure::Children(children, Split(true))
     }
 }
@@ -217,7 +223,7 @@ impl Disassemble for LinkColliders {
                     memberships: GroupWrapper::all(),
                     filters: GroupWrapper::all(),
                 },
-                ColliderFlag::Convex,
+                //ColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
                 Visibility::default()
@@ -286,7 +292,7 @@ impl Disassemble for UrdfWrapper {
 
 impl AssembleParms for UrdfWrapper {
     type Params = (
-        Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static ColliderFlag, &'static MeshFlag3d), ()>,
+        Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static MeshFlag3d), ()>,
         Query<'static, 'static, (&'static JointFlag, &'static Name), ()>,
     );
 }
@@ -298,7 +304,7 @@ impl Assemble for UrdfWrapper {
         
         let mut links = Vec::new();
         let mut joints = Vec::new();
-        for (rigid_body, name, collider, mesh) in links_query.iter_many(selected.clone()) {
+        for (rigid_body, name, mesh) in links_query.iter_many(selected.clone()) {
             
             links.push(
                 Link {

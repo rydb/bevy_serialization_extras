@@ -1,4 +1,5 @@
 use bevy_asset::{AssetServer, Assets, Handle};
+use derive_more::derive::From;
 use log::warn;
 //use bevy::prelude::*;
 //use urdf_rs::Visual;
@@ -15,13 +16,23 @@ use bevy_render::prelude::*;
 // pub mod gltf;
 
 /// bevy prefab meshes
-#[derive(Clone, Reflect, PartialEq)]
+#[derive(Clone, Reflect, Debug, PartialEq, From)]
 pub enum MeshPrefab {
     Cuboid(Cuboid),
     Cylinder(Cylinder),
     Capsule(Capsule3d),
     Sphere(Sphere),
+    Cone(Cone),
+    /// Fallback for unimplemented shapes. Should lead to fallback variant mesh.
+    Unimplemented,
 }
+
+impl Default for MeshPrefab {
+    fn default() -> Self {
+        Self::Cuboid(Cuboid::from_length(0.1))
+    }
+}
+
 
 #[derive(Component, Reflect, Clone, PartialEq)]
 #[reflect(Component)]
@@ -41,6 +52,14 @@ impl Default for MeshFlag3d {
     }
 }
 
+pub const FALLBACK_MESH: Cuboid = Cuboid {
+    half_size: Vec3 {
+        x: 0.1,
+        y: 0.1,
+        z: 0.1,
+    }
+};
+
 impl FromWrapper<MeshFlag3d> for Mesh3d {
     fn from_wrapper(
         value: &MeshFlag3d,
@@ -51,13 +70,18 @@ impl FromWrapper<MeshFlag3d> for Mesh3d {
             MeshFlag3d::AssetPath(path) => asset_server.load(path),
             MeshFlag3d::Procedural(_) => {
                 warn!("MeshFlag3d <--> Mesh conversion not implemented in bevy_serialization_core. Using fallback mesh.");
-                assets.add(Cuboid::from_size(Vec3::new(0.1, 0.1, 0.1)))
+                assets.add(FALLBACK_MESH)
             }
             MeshFlag3d::Prefab(prefab) => match prefab {
                 MeshPrefab::Cuboid(cuboid) => assets.add(*cuboid),
                 MeshPrefab::Cylinder(cylinder) => assets.add(*cylinder),
                 MeshPrefab::Capsule(capsule3d) => assets.add(*capsule3d),
                 MeshPrefab::Sphere(sphere) => assets.add(*sphere),
+                MeshPrefab::Unimplemented => {
+                    warn!("Attempted to convert unimplemented MeshPrefab kind to Mesh3d. Defaulting to fallback shape.");
+                    assets.add(FALLBACK_MESH)
+                },
+                MeshPrefab::Cone(cone) => assets.add(*cone),
             },
             //MeshFlag3d::Handle(handle) => handle.clone(),
         };

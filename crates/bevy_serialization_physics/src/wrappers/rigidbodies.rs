@@ -4,7 +4,7 @@ use strum_macros::EnumIter;
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
 
-use super::{colliders::ColliderFlag, friction::FrictionFlag, mass::MassFlag};
+use super::mass::MassFlag;
 
 #[derive(Component, Reflect, Clone, Default, EnumIter)]
 #[reflect(Component)]
