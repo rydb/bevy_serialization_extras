@@ -39,7 +39,10 @@ bevy_hierarchy = {workspace = true}
 
 
 [dev-dependencies]
-bevy = {workspace = true, features = ["dynamic_linking"]}
+bevy = {workspace = true, features = [
+    "dynamic_linking", 
+    "trace_tracy"
+]}
 bevy-inspector-egui = {workspace = true}
 bitvec = {workspace = true}
 bevy_ui_extras = {workspace = true}

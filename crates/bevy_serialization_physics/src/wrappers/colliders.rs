@@ -47,6 +47,8 @@ impl From<&PrimitiveColliderFlag> for Collider {
 
 impl From<&Collider> for PrimitiveColliderFlag {
     fn from(value: &Collider) -> Self {
+        
+        println!("UPDATING PRIMITIVE COLLIDER");
         let collider = value.as_unscaled_typed_shape();
         //TODO: Implement unimplemented collider types.
         match collider {
@@ -94,11 +96,14 @@ impl From<&AsyncCollider> for AsyncColliderFlag {
 
 impl From<&AsyncColliderFlag> for AsyncCollider {
     fn from(value: &AsyncColliderFlag) -> Self {
+        println!("UPDATING ASYNC COLLIDER");
         match value {
             //TODO: double check this is correct
-            AsyncColliderFlag::Trimesh => Self(ComputedColliderShape::TriMesh(TriMeshFlags::default())),
+            AsyncColliderFlag::Trimesh => AsyncCollider::default(),
             //TODO: double check this is correct
-            AsyncColliderFlag::Convex => Self(ComputedColliderShape::ConvexDecomposition(VHACDParameters::default())),
+            AsyncColliderFlag::Convex => Self(
+                ComputedColliderShape::ConvexHull,
+            ),
         }
     }
 }

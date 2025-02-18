@@ -2,7 +2,7 @@ use super::resources::*;
 use super::systems::*;
 use crate::traits::ChangeChecked;
 use crate::wrappers::mesh::MeshFlag3d;
-use crate::{traits::*, wrappers::material::MaterialFlag3d};
+use crate::traits::*;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_ecs::query::{QueryData, WorldQuery};
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph};

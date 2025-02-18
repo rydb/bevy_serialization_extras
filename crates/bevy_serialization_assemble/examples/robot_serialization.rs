@@ -33,10 +33,6 @@ fn main() {
         })
         .insert_resource(UrdfHandles::default())
         .insert_resource(UtilitySelection::default())
-        // asset sources
-        // .add_plugins(AssetSourcesUrdfPlugin {
-        //     assets_folder_local_path: "assets/".to_owned()
-        // })
         .add_plugins(
             DefaultPlugins.set(WindowPlugin {
                 exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
@@ -47,14 +43,13 @@ fn main() {
 
         .add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(ObjPlugin)
-        // serialization plugins
+        // // serialization plugins
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationAssembleBasePlugin)
         .add_plugins(SerializationPhysicsPlugin)
         .add_plugins(SerializationBasePlugin)
         .add_plugins(UrdfSerializationPlugin)
-        //.add_plugins(GltfSerializationPlugin)
-        // rapier physics plugins
+        // // rapier physics plugins
         .add_plugins(UiExtrasDebug::default())
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
@@ -67,20 +62,17 @@ fn main() {
                 bevy_ui_extras::Side::Right,
             )),
         )
-        // Demo systems
-        .register_type::<Wheel>()
+        // // Demo systems
+        // .register_type::<Wheel>()
         .add_systems(Startup, setup)
-        //.add_systems(Startup, queue_urdf_load_requests)
-        .add_systems(Update, control_robot)
-        // .add_systems(Update, make_robots_selectable)
-        .add_systems(Update, bind_left_and_right_wheel)
-        
-        .add_systems(Update, freeze_spawned_robots)
-        .add_systems(Update, select_robot)
-        .add_systems(Update, save_selected)
-        .insert_resource(AlreadyRan(false))
-        .register_type::<WasFrozen>()
-        .register_type::<Selected>()
+        // .add_systems(Update, control_robot)
+        // .add_systems(Update, bind_left_and_right_wheel)
+        // .add_systems(Update, freeze_spawned_robots)
+        // .add_systems(Update, select_robot)
+        // .add_systems(Update, save_selected)
+        // .insert_resource(AlreadyRan(false))
+        // .register_type::<WasFrozen>()
+        // .register_type::<Selected>()
         .run();
 }
 
@@ -211,7 +203,7 @@ pub fn control_robot(
 
 
 pub fn select_robot(
-    robots: Query<Entity, (With<MassFlag>, With<ColliderFlag>, With<MeshFlag3d>, Without<Selected>)>,
+    robots: Query<Entity, (With<MassFlag>, With<AsyncColliderFlag>, With<MeshFlag3d>, Without<Selected>)>,
     mut commands: Commands
 ) {
     for robot in &robots {
@@ -261,7 +253,7 @@ fn setup(
         MeshMaterial3d(materials.add(Color::LinearRgba(LinearRgba::new(0.3, 0.5, 0.3, 1.0)))),
         Transform::from_xyz(0.0, -1.0, 0.0),
         // RigidBodyFlag::Fixed,
-        ColliderFlag::Convex,
+        AsyncColliderFlag::Convex,
         Name::new("plane"),
     ));
     // Robot
@@ -271,13 +263,13 @@ fn setup(
             Transform::from_xyz(-2.0, 0.0, 0.0)
         )
     );
-    // Robot2
-    commands.spawn(
-        (
-            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
-            Transform::from_xyz(2.0, 0.0, 0.0)
-        )
-    );
+    // // Robot2
+    // commands.spawn(
+    //     (
+    //         RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
+    //         Transform::from_xyz(2.0, 0.0, 0.0)
+    //     )
+    // );
 
     // light
     commands.spawn((

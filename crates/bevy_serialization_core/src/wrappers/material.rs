@@ -5,46 +5,46 @@ use bevy_ecs::prelude::*;
 use bevy_pbr::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_utils::prelude::*;
+use derive_more::derive::From;
 
 use crate::traits::{AssetKind, FromAsset, FromWrapper};
 
-/// General wrapper to represent materials.
-/// TODO: give this a full implementation.
-#[derive(Default, Reflect, Clone, PartialEq)]
-pub struct MaterialWrapper {
-    pub color: Color,
-}
+// /// General wrapper to represent materials.
+// /// TODO: give this a full implementation.
+// #[derive(Default, Reflect, Clone, PartialEq)]
+// pub struct MaterialWrapper {
+//     pub color: Color,
+// }
 
 /// Serializable version of MeshMaterial3d
-#[derive(Component, Reflect, Clone, PartialEq)]
-#[reflect(Component)]
-pub enum MaterialFlag3d {
-    Wrapper(MaterialWrapper),
+#[derive(Reflect, Clone, PartialEq, From)]
+pub enum MaterialWrapper{
+    Color(Color),
     AssetPath(String),
 }
 
-impl Default for MaterialFlag3d {
+impl Default for MaterialWrapper {
     fn default() -> Self {
-        Self::Wrapper(MaterialWrapper::default())
+        Color::default().into()
     }
 }
 
-impl FromWrapper<MaterialFlag3d> for MeshMaterial3d<StandardMaterial> {
+impl FromWrapper<MaterialWrapper> for MeshMaterial3d<StandardMaterial> {
     fn from_wrapper(
-        value: &MaterialFlag3d,
+        value: &MaterialWrapper,
         asset_server: &Res<bevy_asset::AssetServer>,
         assets: &mut ResMut<bevy_asset::Assets<Self::AssetKind>>,
     ) -> Self {
         match value {
-            MaterialFlag3d::Wrapper(material_wrapper) => {
+            MaterialWrapper::Color(material_wrapper) => {
                 let mat = StandardMaterial {
-                    base_color: material_wrapper.color,
+                    base_color: material_wrapper.clone(),
                     ..default()
                 };
                 let mat_handle = assets.add(mat);
                 MeshMaterial3d(mat_handle)
             }
-            MaterialFlag3d::AssetPath(path) => {
+            MaterialWrapper::AssetPath(path) => {
                 let mat_handle = asset_server.load(path);
                 MeshMaterial3d(mat_handle)
             }
@@ -52,7 +52,7 @@ impl FromWrapper<MaterialFlag3d> for MeshMaterial3d<StandardMaterial> {
     }
 }
 
-impl FromAsset<MeshMaterial3d<StandardMaterial>> for MaterialFlag3d {
+impl FromAsset<MeshMaterial3d<StandardMaterial>> for MaterialWrapper {
     fn from_asset(
         value: &MeshMaterial3d<StandardMaterial>,
         assets: &ResMut<Assets<StandardMaterial>>,
@@ -62,9 +62,9 @@ impl FromAsset<MeshMaterial3d<StandardMaterial>> for MaterialFlag3d {
             None => {
                 let asset = assets.get(value.id());
                 if let Some(asset) = asset {
-                    Self::Wrapper(MaterialWrapper::from(asset))
+                    Self::Color(asset.base_color)
                 } else {
-                    Self::Wrapper(MaterialWrapper::default())
+                    Self::AssetPath("UNIMPLEMENTED".to_owned())
                 }
             }
         }
@@ -75,17 +75,17 @@ impl<T: Asset + Material> AssetKind for MeshMaterial3d<T> {
     type AssetKind = T;
 }
 
-impl From<&StandardMaterial> for MaterialWrapper {
-    fn from(value: &StandardMaterial) -> Self {
-        Self {
-            color: value.base_color,
-            //..default()
-        }
-    }
-}
+// impl From<&StandardMaterial> for MaterialWrapper {
+//     fn from(value: &StandardMaterial) -> Self {
+//         Self {
+//             color: value.base_color,
+//             //..default()
+//         }
+//     }
+// }
 
-impl From<Color> for MaterialWrapper {
-    fn from(value: Color) -> Self {
-        Self { color: value }
-    }
-}
+// impl From<Color> for MaterialWrapper {
+//     fn from(value: Color) -> Self {
+//         Self { color: value }
+//     }
+// }

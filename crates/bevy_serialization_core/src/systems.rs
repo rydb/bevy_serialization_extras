@@ -46,7 +46,7 @@ pub fn serialize_for<Target, Wrapper>(
 /// Takes a query based interpretation of thing(`thing` that is composted of several components), and decomposes it into a single component
 pub fn deserialize_as_one<T, U>(
     mut commands: Commands,
-    structure_query: Query<(Entity, T), Or<(Without<U>, Changed<T::ChangeCheckedComp>)>>,
+    structure_query: Query<(Entity, T), Changed<T::ChangeCheckedComp>>,
 ) where
     T: QueryData + ChangeChecked,
     U: Component

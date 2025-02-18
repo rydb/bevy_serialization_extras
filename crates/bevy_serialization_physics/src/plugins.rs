@@ -33,6 +33,7 @@ impl Plugin for SerializationPhysicsPlugin {
             .register_type::<SolverGroupsFlag>()
             .register_type::<CcdFlag>()
             .register_type::<CollisionGroupsFlag>()
+            .register_type::<AsyncColliderFlag>()
             .register_type::<FrictionFlag>()
             .add_plugins(SerializeComponentFor::<AsyncCollider, AsyncColliderFlag>::default())
             .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())

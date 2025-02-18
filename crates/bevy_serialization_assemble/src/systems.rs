@@ -1,4 +1,5 @@
 use crate::components::{RequestAssetStructure, RollDown, RollDownIded};
+use crate::gltf::RequestPrimitiveCollider;
 use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage};
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{Assemble, Disassemble, LazySerialize};
@@ -10,8 +11,10 @@ use bevy_ecs::system::SystemState;
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::prelude::*;
+use bevy_math::primitives::Cuboid;
 use bevy_render::mesh::Mesh3d;
-use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
+use bevy_serialization_core::prelude::mesh::MeshPrefab;
+use bevy_serialization_physics::prelude::{JointBounded, JointFlag, PrimitiveColliderFlag, RigidBodyFlag};
 use bevy_transform::components::Transform;
 use std::collections::VecDeque;
 use std::fmt::Debug;
@@ -164,8 +167,23 @@ pub fn save_asset<T>(
 
 
 /// generate a collider primitive from a primitive request
-pub fn generate_primitive_for_request() {
-    
+pub fn generate_primitive_for_request(
+    requests: Query<(Entity, &RequestPrimitiveCollider)>,
+    commands: Commands,
+) {
+    // for (e, collider) in requests.iter() {
+    //     match collider {
+    //         RequestPrimitiveCollider::Cuboid => {
+    //             commands.entity(e).insert(
+    //                 PrimitiveColliderFlag(
+    //                     Cuboid {
+                            
+    //                     }
+    //                 )
+    //             )
+    //         },
+    //     }
+    // }
 }
 
 // get joints and bind them to their named connection if it exists

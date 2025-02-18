@@ -105,7 +105,8 @@ fn create_revolute_joints(
             Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
             Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
             MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
-            ColliderFlag::Convex,
+            //AsyncColliderFlag::Trimesh,
+            AsyncCollider::default(),
         ))
         .id();
 
@@ -127,7 +128,8 @@ fn create_revolute_joints(
                     Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
                     Transform::from_translation(positions[k]),
                     MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
-                    ColliderFlag::Convex,
+                    AsyncColliderFlag::Convex,
+                    //AsyncCollider::default(),
                 ))
                 .id();
         }

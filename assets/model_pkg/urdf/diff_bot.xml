@@ -25,7 +25,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/left_wheel_decimated.glb#Mesh0"/>
+                <mesh filename="package://model_pkg/models/left_wheel.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -44,7 +44,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/right_wheel_decimated.glb#Mesh0"/>
+                <mesh filename="package://model_pkg/models/right_wheel.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -63,7 +63,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/caster_wheel_decimated.glb#Mesh0"/>
+                <mesh filename="package://model_pkg/models/caster_wheel.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>

@@ -223,7 +223,7 @@ impl Disassemble for LinkColliders {
                     memberships: GroupWrapper::all(),
                     filters: GroupWrapper::all(),
                 },
-                //ColliderFlag::Convex,
+                AsyncColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
                 Visibility::default()

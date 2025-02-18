@@ -37,7 +37,10 @@ strum_macros = {workspace = true}
 strum = {workspace = true}
 
 [dev-dependencies]
-bevy = {workspace = true, features = ["dynamic_linking"]}
+bevy = {workspace = true, features = [
+    "dynamic_linking", 
+    "trace_tracy"
+]}
 bevy_ui_extras = {workspace = true}
 moonshine-save = {workspace = true}
 bevy_camera_extras = {workspace = true}
