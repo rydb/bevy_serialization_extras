@@ -4,12 +4,9 @@ use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, TextEdit}};
 use bevy_serialization_core::{
-    plugins::SerializationPlugin,
-    prelude::{
-        ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable,
-        ShowUnserializable, TypeRegistryOnSave,
-    },
-    resources::{LoadRequest, SaveRequest},
+    components::Flag, plugins::SerializationPlugin, prelude::{
+        material::MaterialWrapper, ComponentsOnSave, RefreshCounter, ShowSerializable, ShowUnserializable, TypeRegistryOnSave
+    }, resources::{LoadRequest, SaveRequest}
 };
 use bevy_ui_extras::UiExtrasDebug;
 use moonshine_save::save::Save;
@@ -30,7 +27,7 @@ fn main() {
         }))
         .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
-        .add_plugins(SerializationBasePlugin)
+        // .add_plugins(SerializationBasePlugin)
         .add_plugins(UiExtrasDebug::default())
         .add_systems(Startup, setup)
         .add_systems(Update, save_file_selection)
@@ -63,7 +60,8 @@ fn setup(
     // // cube
     commands.spawn((
         Mesh3d(mesh_handle),
-        MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
+        //MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
+        EchoAsset(MaterialWrapper::Color(Color::Srgba(Srgba::GREEN))),
         Transform::from_xyz(0.0, 0.5, 0.0),
         Save,
         Name::new("Cube"),

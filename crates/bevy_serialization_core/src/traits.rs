@@ -1,5 +1,6 @@
 use bevy_asset::prelude::*;
 use bevy_ecs::prelude::*;
+use bevy_reflect::Reflect;
 use std::ops::Deref;
 
 /// trait that explains how to take struct and unwrap it into a bevy thing.
@@ -7,6 +8,34 @@ use std::ops::Deref;
 pub trait Unwrap<T>: Sized {
     fn unwrap(value: T) -> Result<Self, String>;
 }
+
+// pub trait FlagWrapper
+// {
+//     type Mirror;
+
+//     fn retrieve() -> Self::Mirror;
+// }
+
+pub trait ComponentWrapper 
+    where
+        Self: Reflect + Clone + From<Self::Echo>,
+        Self::Echo: Clone + From<Self>
+{
+    type Echo: Component + Clone;
+}
+
+pub trait AssetWrapper
+    where
+        Self: Sized + From<<Self::Echo as AssetKind>::AssetKind>,
+        Self::Echo: AssetKind + Sized + Deref,
+{
+    type Echo: Component + Deref;
+}
+
+pub trait AssetFlag {
+    type Target: Asset;
+}
+
 
 // component on a query that is checked for changes
 //FIXME: make this work with a set of components, or better, change to use a "component iter" to have this work for all components in query

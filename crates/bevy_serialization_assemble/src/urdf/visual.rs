@@ -4,7 +4,7 @@ use bevy_color::{Color, LinearRgba};
 use bevy_gltf::GltfNode;
 use bevy_hierarchy::BuildChildren;
 use bevy_serialization_core::prelude::{
-    material::{MaterialFlag3d, MaterialWrapper},
+    material::MaterialWrapper,
     mesh::{MeshFlag3d, MeshPrefab},
 };
 use bevy_log::warn;

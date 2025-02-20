@@ -1,23 +1,36 @@
-use std::any::type_name;
+use std::{any::type_name, ops::Deref};
 
-use bevy_ecs::{component::{ComponentHooks, StorageType}, prelude::*};
+use bevy_asset::Asset;
+use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, system::SystemId};
 use bevy_log::warn;
 use bevy_reflect::Reflect;
+use bevy_utils::HashMap;
 use derive_more::derive::From;
 
+use crate::{systems::serialize_for, traits::ComponentWrapper};
 
-pub trait FlagTarget {
-    type FlagTarget: Component;
-}
+
+#[derive(Resource, Default)]
+pub struct EchoizerSerializers(pub HashMap<ComponentId, SystemId>);
+#[derive(Resource, Default)]
+pub struct EchoizerDeserializers(pub HashMap<ComponentId, SystemId>);
+
+
+#[derive(Resource, Default)]
+pub struct EchoSerializers(pub HashMap<ComponentId, SystemId>);
+
+#[derive(Resource, Default)]
+pub struct EchoDeserializers(pub HashMap<ComponentId, SystemId>);
+
 
 /// The componentized version of a wrapper for another component.
 #[derive(Reflect, From)]
-pub struct Flag<T: Reflect + FlagTarget + Clone>(pub T);
+pub struct Echoize<T: Reflect + Asset + Clone>(pub T);
 
-impl<T: Reflect + FlagTarget + Clone> Component for Flag<T>
-    where
-        T::FlagTarget: From<T>
-{
+#[derive(Clone)]
+pub struct Echo<T: Reflect + ComponentWrapper + Clone>(pub T);
+
+impl<T: Reflect + ComponentWrapper + Clone> Component for Echo<T>{
     const STORAGE_TYPE: StorageType = StorageType::Table;
 
     /// Called when registering this component, allowing mutable access to its [`ComponentHooks`].
@@ -32,9 +45,33 @@ impl<T: Reflect + FlagTarget + Clone> Component for Flag<T>
                     },
                 }
             };
-            let flag_target = T::FlagTarget::from(comp.0.clone());
+            let echo = T::Echo::from(comp.0.clone());
+            world.commands().entity(e).insert(echo);
 
-            world.commands().entity(e).insert(flag_target);
+            if world.get_resource::<EchoSerializers>().unwrap().0.contains_key(&id) == false {
+                let system_id = {
+                    world.commands().register_system(serialize_for::<T>)
+                };
+            }
+            // match comp.0.clone().retrieve_target() {
+            //     FlagKind::Component(comp) => {
+            //         todo!()
+            //         // if world.get_resource_mut::<AssetCheckers>().unwrap().0.contains_key(&id) == false {
+            //         //     let system_id = {
+            //         //         world.commands().register_system(initialize_asset_structure::<T>)
+            //         //     };
+            //         //     let mut asset_checkers = world.get_resource_mut::<AssetCheckers>().unwrap();
+
+            //         //     asset_checkers.0.insert(id, system_id);
+            //         // }
+            //     },
+            //     FlagKind::Asset(pure_or_path) => todo!(),
+            // }
+            //let x = T::Target::from(comp.0.clone());
+
+            //let flag_target = T::Target::from(comp.0.clone());
+
+            //world.commands().entity(e).insert(flag_target);
             
         });
     }

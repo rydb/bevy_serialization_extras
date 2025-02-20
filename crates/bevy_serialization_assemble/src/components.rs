@@ -151,21 +151,7 @@ impl<T> Component for RequestAssetStructure<T>
                         return;
                     },
                     RequestAssetStructure::Handle(_) => {
-                        let add_system = 
-                        {
-                            let asset_checkers = world.get_resource_mut::<AssetCheckers>().unwrap();
-                            //let type_path = T::Inner::type_path();
-
-                            //let comp_id = T::
-                            if asset_checkers.0.contains_key(&id) {
-                                //asset_checkers.0.insert(id, type_path.to_string());
-                                false
-                            } else {
-                                true
-                            }
-                        };
-
-                        if add_system {
+                        if world.get_resource_mut::<AssetCheckers>().unwrap().0.contains_key(&id) == false {
                             let system_id = {
                                 world.commands().register_system(initialize_asset_structure::<T>)
                             };

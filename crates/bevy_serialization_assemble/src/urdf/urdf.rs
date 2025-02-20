@@ -9,7 +9,7 @@ use bevy_math::Dir3;
 use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
-use bevy_serialization_core::prelude::{material::MaterialFlag3d, mesh::MeshFlag3d};
+use bevy_serialization_core::prelude::mesh::MeshFlag3d;
 use bevy_serialization_physics::prelude::AsyncColliderFlag;
 use bevy_serialization_physics::prelude::JointInfo;
 use bevy_serialization_physics::prelude::{

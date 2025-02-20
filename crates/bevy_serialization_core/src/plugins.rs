@@ -117,48 +117,48 @@ where
     }
 }
 
-/// plugin for serialization for WrapperComponent -> Asset, Asset -> WrapperComponent
-#[derive(Default)]
-pub struct SerializeAssetFor<T, U>
-where
-    T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
-    U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq,
-{
-    thing: PhantomData<fn() -> T>,
-    wrapper_thing: PhantomData<fn() -> U>,
-}
+// /// plugin for serialization for WrapperComponent -> Asset, Asset -> WrapperComponent
+// #[derive(Default)]
+// pub struct SerializeAssetFor<T, U>
+// where
+//     T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
+//     U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq,
+// {
+//     thing: PhantomData<fn() -> T>,
+//     wrapper_thing: PhantomData<fn() -> U>,
+// }
 
-impl<T, U> Plugin for SerializeAssetFor<T, U>
-where
-    T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
-    U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq,
-{
-    fn build(&self, app: &mut App) {
-        skip_serializing::<T>(app);
+// impl<T, U> Plugin for SerializeAssetFor<T, U>
+// where
+//     T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
+//     U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq,
+// {
+//     fn build(&self, app: &mut App) {
+//         skip_serializing::<T>(app);
 
-        app.register_type::<U>().add_systems(
-            PreUpdate,
-            (
-                try_serialize_asset_for::<T, U>,
-                deserialize_asset_for::<U, T>,
-            )
-                .chain(),
-        );
-    }
-}
+//         app.register_type::<U>().add_systems(
+//             PreUpdate,
+//             (
+//                 try_serialize_asset_for::<T, U>,
+//                 deserialize_asset_for::<U, T>,
+//             )
+//                 .chain(),
+//         );
+//     }
+// }
 
 /// base addons for [`SerializationPlugins`]. Adds wrappers for some bevy structs that don't serialize/fully reflect otherwise.
 pub struct SerializationBasePlugin;
 
 impl Plugin for SerializationBasePlugin {
     fn build(&self, app: &mut App) {
-        app
-            // default conversions
-            .add_plugins(SerializeAssetFor::<
-                MeshMaterial3d<StandardMaterial>,
-                MaterialFlag3d,
-            >::default())
-            .add_plugins(SerializeAssetFor::<Mesh3d, MeshFlag3d>::default());
+        //app
+            // // default conversions
+            // .add_plugins(SerializeAssetFor::<
+            //     MeshMaterial3d<StandardMaterial>,
+            //     MaterialFlag3d,
+            // >::default())
+            // .add_plugins(SerializeAssetFor::<Mesh3d, MeshFlag3d>::default());
     }
 }
 
