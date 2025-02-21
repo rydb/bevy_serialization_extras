@@ -122,7 +122,7 @@ where
 // #[derive(Default)]
 // pub struct SerializeAssetFor<T, U>
 // where
-//     T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
+//     T: 'static + AssetHandleComponent + Component + Deref<Target = Handle<T::AssetHandleComponent>> + FromWrapper<U>,
 //     U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq,
 // {
 //     thing: PhantomData<fn() -> T>,
@@ -131,7 +131,7 @@ where
 
 // impl<T, U> Plugin for SerializeAssetFor<T, U>
 // where
-//     T: 'static + AssetKind + Component + Deref<Target = Handle<T::AssetKind>> + FromWrapper<U>,
+//     T: 'static + AssetHandleComponent + Component + Deref<Target = Handle<T::AssetHandleComponent>> + FromWrapper<U>,
 //     U: 'static + Component + GetTypeRegistration + FromAsset<T> + PartialEq,
 // {
 //     fn build(&self, app: &mut App) {

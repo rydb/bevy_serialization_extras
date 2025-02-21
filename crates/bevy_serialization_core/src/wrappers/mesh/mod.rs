@@ -64,7 +64,7 @@ impl FromWrapper<MeshFlag3d> for Mesh3d {
     fn from_wrapper(
         value: &MeshFlag3d,
         asset_server: &Res<AssetServer>,
-        assets: &mut ResMut<Assets<Self::AssetKind>>,
+        assets: &mut ResMut<Assets<Self::AssetType>>,
     ) -> Self {
         let asset = match value {
             MeshFlag3d::AssetPath(path) => asset_server.load(path),
@@ -90,7 +90,7 @@ impl FromWrapper<MeshFlag3d> for Mesh3d {
 }
 
 impl FromAsset<Mesh3d> for MeshFlag3d {
-    fn from_asset(value: &Mesh3d, _: &ResMut<Assets<<Mesh3d as AssetKind>::AssetKind>>) -> Self {
+    fn from_asset(value: &Mesh3d, _: &ResMut<Assets<<Mesh3d as AssetHandleComponent>::AssetType>>) -> Self {
         match value.0.path() {
             Some(path) => Self::AssetPath(path.to_string()),
             None => Self::Procedural(MeshWrapper),
@@ -98,8 +98,8 @@ impl FromAsset<Mesh3d> for MeshFlag3d {
     }
 }
 
-impl AssetKind for Mesh3d {
-    type AssetKind = Mesh;
+impl AssetHandleComponent for Mesh3d {
+    type AssetType = Mesh;
 }
 /// THIS IS A DUMMY
 ///

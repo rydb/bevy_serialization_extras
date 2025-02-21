@@ -9,7 +9,7 @@ use bevy_reflect::prelude::*;
 use bevy_utils::prelude::*;
 use derive_more::derive::From;
 
-use crate::traits::{AssetWrapper, AssetKind, FromAsset, FromWrapper};
+use crate::traits::{AssetWrapper, AssetHandleComponent, FromAsset, FromWrapper};
 
 // /// General wrapper to represent materials.
 // /// TODO: give this a full implementation.
@@ -33,25 +33,28 @@ pub enum MaterialWrapper{
 
 
 impl AssetWrapper for MaterialWrapper {
-    type AssetTarget = MeshMaterial3d<StandardMaterial>;
+    type WrapperTarget = MeshMaterial3d<StandardMaterial>;
 }
-impl From<MaterialWrapper> for StandardMaterial {
-    fn from(value: MaterialWrapper) -> Self {
+impl From<&MaterialWrapper> for StandardMaterial {
+    fn from(value: &MaterialWrapper) -> Self {
         match value {
             MaterialWrapper::Color(color) => Self {
-                base_color: color,
+                base_color: *color,
                 ..default()
             },
         }
     }
 }
 
-impl From<StandardMaterial> for MaterialWrapper {
-    fn from(value: StandardMaterial) -> Self {
+impl From<&StandardMaterial> for MaterialWrapper {
+    fn from(value: &StandardMaterial) -> Self {
         Self::Color(value.base_color)
     }
 }
 
+impl<T: Asset + Material> AssetHandleComponent for MeshMaterial3d<T> {
+    type AssetType = T;
+}
 
 
 // impl FlagWrapper for MaterialWrapper {
@@ -96,7 +99,7 @@ impl Default for MaterialWrapper {
 //     fn from_wrapper(
 //         value: &MaterialWrapper,
 //         asset_server: &Res<bevy_asset::AssetServer>,
-//         assets: &mut ResMut<bevy_asset::Assets<Self::AssetKind>>,
+//         assets: &mut ResMut<bevy_asset::Assets<Self::AssetHandleComponent>>,
 //     ) -> Self {
 //         match value {
 //             MaterialWrapper::Color(material_wrapper) => {
@@ -153,9 +156,7 @@ pub enum PureOrPath<T> {
 //     }
 // }
 
-impl<T: Asset + Material> AssetKind for MeshMaterial3d<T> {
-    type AssetKind = T;
-}
+
 
 // impl From<&StandardMaterial> for MaterialWrapper {
 //     fn from(value: &StandardMaterial) -> Self {

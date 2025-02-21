@@ -56,9 +56,10 @@ impl Disassemble for GltfNodeMeshOne {
 
 /// GltfNode wrapper for spawning gltf nodes with a parent collider mesh, and children visual meshes.
 /// This is for physics
+#[derive(Clone, Deref)]
 pub struct GltfNodeColliderVisualChilds(pub GltfNode);
 
-#[derive(Clone)]
+#[derive(Clone, Deref)]
 pub struct GltfNodeVisuals(pub Vec<Handle<GltfNode>>);
 
 impl Disassemble for GltfNodeVisuals {
