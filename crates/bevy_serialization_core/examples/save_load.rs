@@ -4,7 +4,7 @@ use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, TextEdit}};
 use bevy_serialization_core::{
-    components::Flag, plugins::SerializationPlugin, prelude::{
+    components::{WrapAsset}, plugins::SerializationPlugin, prelude::{
         material::MaterialWrapper, ComponentsOnSave, RefreshCounter, ShowSerializable, ShowUnserializable, TypeRegistryOnSave
     }, resources::{LoadRequest, SaveRequest}
 };
@@ -61,7 +61,7 @@ fn setup(
     commands.spawn((
         Mesh3d(mesh_handle),
         //MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
-        EchoAsset(MaterialWrapper::Color(Color::Srgba(Srgba::GREEN))),
+        WrapAsset(MaterialWrapper::Color(Color::Srgba(Srgba::GREEN))),
         Transform::from_xyz(0.0, 0.5, 0.0),
         Save,
         Name::new("Cube"),

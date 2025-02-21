@@ -1,11 +1,13 @@
 use bevy_derive::{Deref, DerefMut};
+use bevy_ecs::component::ComponentId;
+use bevy_ecs::system::SystemId;
 use bevy_reflect::Reflect;
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph, Exposure};
 use bevy_render::prelude::*;
+use bevy_utils::HashMap;
 use moonshine_save::save::SaveInput;
 use moonshine_save::GetFilePath;
 use std::any::TypeId;
-use std::collections::HashMap;
 use std::path::Path;
 
 use bevy_ecs::prelude::*;
@@ -15,6 +17,18 @@ use bevy_ecs::prelude::*;
 pub struct RefreshCounter {
     pub counter: usize,
 }
+
+#[derive(Resource, Default, Deref)]
+pub struct WrapAssetSerializers(pub HashMap<ComponentId, SystemId>);
+#[derive(Resource, Default, Deref)]
+pub struct WrapAssetDeserializers(pub HashMap<ComponentId, SystemId>);
+
+
+#[derive(Resource, Default, Deref)]
+pub struct WrapCompSerializers(pub HashMap<ComponentId, SystemId>);
+
+#[derive(Resource, Default, Deref)]
+pub struct WrapCompDeserializers(pub HashMap<ComponentId, SystemId>);
 
 /// Resource version of moonshine-save's [`SaveFilter`].
 #[derive(Resource, Clone, DerefMut, Deref)]

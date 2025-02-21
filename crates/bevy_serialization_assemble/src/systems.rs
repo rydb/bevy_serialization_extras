@@ -7,7 +7,7 @@ use crate::urdf::urdf::RequestIdFromName;
 use bevy_asset::prelude::*;
 use bevy_core::Name;
 use bevy_ecs::component::{ComponentId, Components};
-use bevy_ecs::system::SystemState;
+use bevy_ecs::system::{SystemId, SystemState};
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::prelude::*;
@@ -36,25 +36,7 @@ use crate::prelude::UrdfWrapper;
 //     }
 // }
 
-/// proxy system for checking load status of assets for component hooks.
-pub fn run_asset_status_checkers(
-    asset_systems: Res<AssetCheckers>, mut commands: Commands
-) {
-    for (_, system) in asset_systems.0.iter() {
-        // run systems for each asset type
-        commands.run_system(*system);
-    }
-}
 
-pub fn run_rolldown_checkers(
-    rolldown_systems: Res<RollDownCheckers>,
-    mut commands: Commands
-) {
-    for (_, system) in rolldown_systems.0.iter() {
-        // run systems for each asset type
-        commands.run_system(*system);
-    }
-}
 
 pub fn check_roll_down<T: Component + Clone>(
     initialized_children: Res<InitializedStagers>,

@@ -2,7 +2,7 @@ use bevy_rapier3d::{
     dynamics::{AdditionalMassProperties, ImpulseJoint, RigidBody},
     geometry::{AsyncCollider, SolverGroups},
 };
-use bevy_serialization_core::plugins::{SerializeComponentFor, SerializeQueryFor};
+use bevy_serialization_core::plugins::{SerializeQueryFor};
 
 use crate::{
     prelude::{
@@ -35,11 +35,11 @@ impl Plugin for SerializationPhysicsPlugin {
             .register_type::<CollisionGroupsFlag>()
             .register_type::<AsyncColliderFlag>()
             .register_type::<FrictionFlag>()
-            .add_plugins(SerializeComponentFor::<AsyncCollider, AsyncColliderFlag>::default())
-            .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
-            .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
-            .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
-            .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
+            // .add_plugins(SerializeComponentFor::<AsyncCollider, AsyncColliderFlag>::default())
+            // .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
+            // .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
+            // .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
+            // .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
             ;
             // post processing
             //.add_systems(Update, local_frame2_shift)

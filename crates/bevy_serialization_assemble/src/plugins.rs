@@ -3,10 +3,11 @@ use std::marker::PhantomData;
 use bevy_app::prelude::*;
 use bevy_asset::{processor::InitializeError, Asset};
 use bevy_ecs::{prelude::*, query::QueryData};
+use bevy_serialization_core::run_proxy_system;
 use moonshine_save::{load::LoadSystem, save::SaveSystem};
 
 use crate::{
-    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{bind_joint_request_to_parent, generate_primitive_for_request, run_asset_status_checkers, run_rolldown_checkers, save_asset}, traits::{Assemble, Disassemble, LazySerialize}, Assemblies, AssemblyId
+    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{bind_joint_request_to_parent, generate_primitive_for_request, save_asset}, traits::{Assemble, Disassemble, LazySerialize}, Assemblies, AssemblyId
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -75,8 +76,8 @@ impl Plugin for SerializationAssembleBasePlugin {
         .insert_resource(AssembleRequest::default())
         .insert_resource(Assemblies::default())
         .register_type::<AssemblyId>()
-        .add_systems(Update, run_asset_status_checkers)
-        .add_systems(PostUpdate, run_rolldown_checkers)
+        .add_systems(Update, run_proxy_system::<AssetCheckers>)
+        .add_systems(Update, run_proxy_system::<RollDownCheckers>)
         .add_systems(PreUpdate, bind_joint_request_to_parent)
         //.add_systems(Update, generate_primitive_for_request)
         //.add_systems(Update, name_from_id)

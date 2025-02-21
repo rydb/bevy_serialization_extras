@@ -1,5 +1,6 @@
 use super::resources::*;
 use super::systems::*;
+use crate::run_proxy_system;
 use crate::traits::ChangeChecked;
 use crate::wrappers::mesh::MeshFlag3d;
 use crate::traits::*;
@@ -53,24 +54,24 @@ pub fn skip_serializing<SkippedType: 'static>(app: &mut App) {
         .deny_by_id(TypeId::of::<SkippedType>());
 }
 
-impl<S, T, U> Plugin for SerializeQueryFor<S, T, U>
-where
-    S: 'static + QueryData + ChangeChecked,
-    T: 'static
-        + Component
-        + Debug
-        + for<'a, 'b> From<&'b <<S as QueryData>::ReadOnly as WorldQuery>::Item<'a>>,
-    U: 'static + Component + for<'a> From<&'a T> + GetTypeRegistration,
-{
-    fn build(&self, app: &mut App) {
-        skip_serializing::<T>(app);
+// impl<S, T, U> Plugin for SerializeQueryFor<S, T, U>
+// where
+//     S: 'static + QueryData + ChangeChecked,
+//     T: 'static
+//         + Component
+//         + Debug
+//         + for<'a, 'b> From<&'b <<S as QueryData>::ReadOnly as WorldQuery>::Item<'a>>,
+//     U: 'static + Component + for<'a> From<&'a T> + GetTypeRegistration,
+// {
+//     fn build(&self, app: &mut App) {
+//         skip_serializing::<T>(app);
 
-        app.register_type::<U>().add_systems(
-            PreUpdate,
-            (serialize_for::<T, U>, deserialize_as_one::<S, T>).chain(),
-        );
-    }
-}
+//         app.register_type::<U>().add_systems(
+//             PreUpdate,
+//             (serialize_for::<T, U>, deserialize_as_one::<S, T>).chain(),
+//         );
+//     }
+// }
 
 impl<S, T, U> Default for SerializeQueryFor<S, T, U>
 where
@@ -90,32 +91,32 @@ where
     }
 }
 
-/// plugin for serialization for WrapperComponent -> Component, Component -> WrapperComponent
-#[derive(Default)]
-pub struct SerializeComponentFor<T, U>
-where
-    T: 'static + Component + for<'a> From<&'a U>,
-    U: 'static + Component + for<'a> From<&'a T>, // + ManagedTypeRegistration ,
-{
-    thing: PhantomData<fn() -> T>,
-    wrapper_thing: PhantomData<fn() -> U>,
-}
+// /// plugin for serialization for WrapperComponent -> Component, Component -> WrapperComponent
+// #[derive(Default)]
+// pub struct SerializeComponentFor<T, U>
+// where
+//     T: 'static + Component + for<'a> From<&'a U>,
+//     U: 'static + Component + for<'a> From<&'a T>, // + ManagedTypeRegistration ,
+// {
+//     thing: PhantomData<fn() -> T>,
+//     wrapper_thing: PhantomData<fn() -> U>,
+// }
 
-impl<T, U> Plugin for SerializeComponentFor<T, U>
-// until trait alaises are stabalized, trait bounds have to be manually duplicated...
-where
-    T: 'static + Component + for<'a> From<&'a U>,
-    U: 'static + Component + for<'a> From<&'a T> + GetTypeRegistration,
-{
-    fn build(&self, app: &mut App) {
-        skip_serializing::<T>(app);
+// impl<T, U> Plugin for SerializeComponentFor<T, U>
+// // until trait alaises are stabalized, trait bounds have to be manually duplicated...
+// where
+//     T: 'static + Component + for<'a> From<&'a U>,
+//     U: 'static + Component + for<'a> From<&'a T> + GetTypeRegistration,
+// {
+//     fn build(&self, app: &mut App) {
+//         skip_serializing::<T>(app);
 
-        app.register_type::<U>().add_systems(
-            PreUpdate,
-            (serialize_for::<T, U>, deserialize_for::<U, T>).chain(),
-        );
-    }
-}
+//         app.register_type::<U>().add_systems(
+//             PreUpdate,
+//             (serialize_for::<T, U>, deserialize_for::<U, T>).chain(),
+//         );
+//     }
+// }
 
 // /// plugin for serialization for WrapperComponent -> Asset, Asset -> WrapperComponent
 // #[derive(Default)]
@@ -216,6 +217,16 @@ impl Plugin for SerializationPlugin {
             //     add_inherieted_visibility.after(LoadSystem::PostLoad),
             // )
             // .add_systems(Update, add_view_visibility.after(LoadSystem::PostLoad))
+            .init_resource::<WrapAssetSerializers>()
+            .init_resource::<WrapAssetDeserializers>()
+            .init_resource::<WrapCompSerializers>()
+            .init_resource::<WrapCompDeserializers>()
+
+            .add_systems(Update, run_proxy_system::<WrapAssetSerializers>)
+            .add_systems(Update, run_proxy_system::<WrapAssetDeserializers>)
+            .add_systems(Update, run_proxy_system::<WrapCompSerializers>)
+            .add_systems(Update, run_proxy_system::<WrapCompDeserializers>)
+
             .add_systems(PreUpdate, load(file_from_resource::<LoadRequest>()));
     }
 }

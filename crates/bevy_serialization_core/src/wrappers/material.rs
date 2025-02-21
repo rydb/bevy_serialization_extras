@@ -25,7 +25,7 @@ pub struct DummyComponent;
 #[derive(Reflect, Clone, PartialEq, From)]
 pub enum MaterialWrapper{
     Color(Color),
-    AssetPath(String),
+    //AssetPath(String),
 }
 
 // pub trait TryAsset
@@ -33,12 +33,22 @@ pub enum MaterialWrapper{
 
 
 impl AssetWrapper for MaterialWrapper {
-    type Echo = MeshMaterial3d<StandardMaterial>;
+    type AssetTarget = MeshMaterial3d<StandardMaterial>;
+}
+impl From<MaterialWrapper> for StandardMaterial {
+    fn from(value: MaterialWrapper) -> Self {
+        match value {
+            MaterialWrapper::Color(color) => Self {
+                base_color: color,
+                ..default()
+            },
+        }
+    }
 }
 
 impl From<StandardMaterial> for MaterialWrapper {
     fn from(value: StandardMaterial) -> Self {
-        Self::Color(Color::default())
+        Self::Color(value.base_color)
     }
 }
 
@@ -110,38 +120,38 @@ pub enum PureOrPath<T> {
     Path(String),
 }
 
-impl From<MaterialWrapper> for PureOrPath<StandardMaterial> {
-    fn from(value: MaterialWrapper) -> Self {
-        match value {
-            MaterialWrapper::Color(color) => PureOrPath::Pure(
-                StandardMaterial {
-                    base_color: color,
-                    ..default()
-                }
-            ),
-            MaterialWrapper::AssetPath(path) => PureOrPath::Path(path),
-        }
-    }
-}
+// impl From<MaterialWrapper> for PureOrPath<StandardMaterial> {
+//     fn from(value: MaterialWrapper) -> Self {
+//         match value {
+//             MaterialWrapper::Color(color) => PureOrPath::Pure(
+//                 StandardMaterial {
+//                     base_color: color,
+//                     ..default()
+//                 }
+//             ),
+//             MaterialWrapper::AssetPath(path) => PureOrPath::Path(path),
+//         }
+//     }
+// }
 
-impl FromAsset<MeshMaterial3d<StandardMaterial>> for MaterialWrapper {
-    fn from_asset(
-        value: &MeshMaterial3d<StandardMaterial>,
-        assets: &ResMut<Assets<StandardMaterial>>,
-    ) -> Self {
-        match value.0.path() {
-            Some(path) => Self::AssetPath(path.to_string()),
-            None => {
-                let asset = assets.get(value.id());
-                if let Some(asset) = asset {
-                    Self::Color(asset.base_color)
-                } else {
-                    Self::AssetPath("UNIMPLEMENTED".to_owned())
-                }
-            }
-        }
-    }
-}
+// impl FromAsset<MeshMaterial3d<StandardMaterial>> for MaterialWrapper {
+//     fn from_asset(
+//         value: &MeshMaterial3d<StandardMaterial>,
+//         assets: &ResMut<Assets<StandardMaterial>>,
+//     ) -> Self {
+//         match value.0.path() {
+//             Some(path) => Self::AssetPath(path.to_string()),
+//             None => {
+//                 let asset = assets.get(value.id());
+//                 if let Some(asset) = asset {
+//                     Self::Color(asset.base_color)
+//                 } else {
+//                     Self::AssetPath("UNIMPLEMENTED".to_owned())
+//                 }
+//             }
+//         }
+//     }
+// }
 
 impl<T: Asset + Material> AssetKind for MeshMaterial3d<T> {
     type AssetKind = T;

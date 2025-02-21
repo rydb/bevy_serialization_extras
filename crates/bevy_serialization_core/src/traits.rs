@@ -18,18 +18,21 @@ pub trait Unwrap<T>: Sized {
 
 pub trait ComponentWrapper 
     where
-        Self: Reflect + Clone + From<Self::Echo>,
-        Self::Echo: Clone + From<Self>
+        Self: Reflect + Clone + From<Self::Target>,
+        Self::Target: Clone + From<Self>
 {
-    type Echo: Component + Clone;
+    type Target: Component + Clone;
 }
 
 pub trait AssetWrapper
     where
-        Self: Sized + From<<Self::Echo as AssetKind>::AssetKind>,
-        Self::Echo: AssetKind + Sized + Deref,
+        Self: PartialEq + Clone + Reflect + Sized + From<<Self::AssetTarget as AssetKind>::AssetKind>,
+        Self::AssetTarget: Deref<Target = Handle<<Self::AssetTarget as AssetKind>::AssetKind>>
+             + AssetKind + Sized + From<Handle<<Self::AssetTarget as AssetKind>::AssetKind>>,
+        <Self::AssetTarget as AssetKind>::AssetKind: From<Self>,
+        <<Self as AssetWrapper>::AssetTarget as AssetKind>::AssetKind: Clone
 {
-    type Echo: Component + Deref;
+    type AssetTarget: Component + Deref;
 }
 
 pub trait AssetFlag {

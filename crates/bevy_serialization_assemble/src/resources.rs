@@ -1,8 +1,10 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 use bevy_asset::prelude::*;
+use bevy_derive::Deref;
 use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
+use bevy_utils::HashMap;
 
 // /// registry of initialized structures + their children.
 // #[derive(Resource, Default)]
@@ -49,12 +51,12 @@ pub struct AssetSpawnRequestQueue<T: Asset> {
     pub requests: VecDeque<AssetSpawnRequest<T>>,
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Deref)]
 pub struct AssetCheckers(pub HashMap<ComponentId, SystemId>);
 
 
 /// registry of components to be rolled down onto children.
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Deref)]
 pub struct RollDownCheckers(pub HashMap<ComponentId, SystemId>);
 
 
