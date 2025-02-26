@@ -9,7 +9,7 @@ use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, 
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{components::{RequestAssetStructure, RollDown}, prelude::*};
-use bevy_serialization_core::prelude::{mesh::MeshFlag3d, *};
+use bevy_serialization_core::{prelude::{mesh::Mesh3dFlag, *}};
 use bevy_serialization_physics::prelude::*;
 use bevy_state::commands;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
@@ -63,10 +63,10 @@ fn main() {
             )),
         )
         // // Demo systems
-        // .register_type::<Wheel>()
+        .register_type::<Wheel>()
         .add_systems(Startup, setup)
-        // .add_systems(Update, control_robot)
-        // .add_systems(Update, bind_left_and_right_wheel)
+        .add_systems(Update, control_robot)
+        .add_systems(Update, bind_left_and_right_wheel)
         // .add_systems(Update, freeze_spawned_robots)
         // .add_systems(Update, select_robot)
         // .add_systems(Update, save_selected)
@@ -85,6 +85,7 @@ pub struct Selected;
 pub enum Wheel {
     Left,
     Right,
+    Passive,
 }
 
 /// find what is "probably" the left and right wheel, and give them a marker.
@@ -96,12 +97,14 @@ pub fn bind_left_and_right_wheel(
         let name_str = name.to_string().to_lowercase();
 
         let split_up = name_str.split("_").collect::<Vec<&str>>();
-
+        //println!("binding wheel");
         if split_up.contains(&Wheel::Left.to_string().to_lowercase().as_str()) {
             commands.entity(e).insert(Wheel::Left);
         }
-        if split_up.contains(&Wheel::Right.to_string().to_lowercase().as_str()) {
+        else if split_up.contains(&Wheel::Right.to_string().to_lowercase().as_str()) {
             commands.entity(e).insert(Wheel::Right);
+        } else {
+            commands.entity(e).insert(Wheel::Passive);
         }
     }
 }
@@ -158,6 +161,8 @@ pub fn control_robot(
     for (mut joint, wheel) in wheels.iter_mut() {
         for axis in joint.joint.motors.iter_mut() {
             if keys.pressed(forward_key) {
+                println!("driving wheel....");
+
                 axis.target_vel = target_speed
             } else if keys.pressed(backward_key) {
                 axis.target_vel = -target_speed
@@ -186,6 +191,7 @@ pub fn control_robot(
                     }
                 }
             }
+            Wheel::Passive => {},
         }
     }
 
@@ -203,7 +209,7 @@ pub fn control_robot(
 
 
 pub fn select_robot(
-    robots: Query<Entity, (With<MassFlag>, With<AsyncColliderFlag>, With<MeshFlag3d>, Without<Selected>)>,
+    robots: Query<Entity, (With<MassFlag>, With<AsyncColliderFlag>, With<Mesh3d>, Without<Selected>)>,
     mut commands: Commands
 ) {
     for robot in &robots {
@@ -252,7 +258,7 @@ fn setup(
         ))),
         MeshMaterial3d(materials.add(Color::LinearRgba(LinearRgba::new(0.3, 0.5, 0.3, 1.0)))),
         Transform::from_xyz(0.0, -1.0, 0.0),
-        // RigidBodyFlag::Fixed,
+        RigidBodyFlag::Fixed,
         AsyncColliderFlag::Convex,
         Name::new("plane"),
     ));
@@ -263,13 +269,13 @@ fn setup(
             Transform::from_xyz(-2.0, 0.0, 0.0)
         )
     );
-    // // Robot2
-    // commands.spawn(
-    //     (
-    //         RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
-    //         Transform::from_xyz(2.0, 0.0, 0.0)
-    //     )
-    // );
+    // Robot2
+    commands.spawn(
+        (
+            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
+            Transform::from_xyz(2.0, 0.0, 0.0)
+        )
+    );
 
     // light
     commands.spawn((

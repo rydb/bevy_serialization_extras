@@ -9,7 +9,7 @@ use bevy_math::Dir3;
 use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
-use bevy_serialization_core::prelude::mesh::MeshFlag3d;
+use bevy_serialization_core::prelude::mesh::Mesh3dFlag;
 use bevy_serialization_physics::prelude::AsyncColliderFlag;
 use bevy_serialization_physics::prelude::JointInfo;
 use bevy_serialization_physics::prelude::{
@@ -97,7 +97,7 @@ pub struct Id(pub String);
 /// Links + Joints merged together.
 /// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
 /// so they are merged here.
-#[derive(Clone)]
+#[derive(Clone, Deref)]
 pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
 
 impl Disassemble for LinksNJoints {
@@ -141,7 +141,7 @@ pub struct Visuals(pub Vec<Visual>);
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deref)]
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
@@ -196,7 +196,7 @@ impl Disassemble for UrdfJoint {
     
 //     ]
 
-#[derive(Clone)]
+#[derive(Clone, Deref)]
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
@@ -292,7 +292,7 @@ impl Disassemble for UrdfWrapper {
 
 impl AssembleParms for UrdfWrapper {
     type Params = (
-        Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static MeshFlag3d), ()>,
+        Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static Mesh3dFlag), ()>,
         Query<'static, 'static, (&'static JointFlag, &'static Name), ()>,
     );
 }

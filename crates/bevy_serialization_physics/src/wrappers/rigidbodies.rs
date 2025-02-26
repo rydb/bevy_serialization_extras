@@ -1,4 +1,5 @@
 use bevy_rapier3d::prelude::RigidBody;
+use bevy_serialization_core::traits::ComponentWrapper;
 use strum_macros::EnumIter;
 
 use bevy_ecs::prelude::*;
@@ -6,13 +7,16 @@ use bevy_reflect::prelude::*;
 
 use super::mass::MassFlag;
 
-#[derive(Component, Reflect, Clone, Default, EnumIter)]
+#[derive(Component, PartialEq, Reflect, Clone, Default, EnumIter)]
 #[reflect(Component)]
 #[require(MassFlag)]
 pub enum RigidBodyFlag {
     #[default]
     Fixed,
     Dynamic,
+}
+impl ComponentWrapper for RigidBodyFlag {
+    type WrapperTarget = RigidBody;
 }
 
 impl From<&RigidBodyFlag> for RigidBody {

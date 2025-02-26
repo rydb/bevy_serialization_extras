@@ -1,10 +1,7 @@
 use bevy_log::warn;
 use bevy_math::primitives::{Capsule3d, Cone, Cuboid, Cylinder, Sphere};
-use bevy_rapier3d::{geometry::ComputedColliderShape, math::Vect, prelude::{AsyncCollider, Collider, ColliderView, VHACDParameters}};
-use bevy_render::mesh::Meshable;
-use bevy_serialization_core::prelude::mesh::{MeshPrefab, FALLBACK_MESH};
-use derive_more::derive::From;
-use rapier3d::prelude::{SharedShape, TriMeshFlags};
+use bevy_rapier3d::{geometry::ComputedColliderShape, prelude::{AsyncCollider, Collider, ColliderView}};
+use bevy_serialization_core::{prelude::mesh::{MeshPrefab, FALLBACK_MESH}, traits::ComponentWrapper};
 use strum_macros::EnumIter;
 
 use bevy_ecs::prelude::*;
@@ -21,7 +18,6 @@ use super::{
 #[derive(Component, Reflect, Clone, Default, Debug)]
 #[reflect(Component)]
 #[require(CcdFlag, CollisionGroupsFlag, SolverGroupsFlag)]
-/// Wrapper for primitive colliders
 pub struct PrimitiveColliderFlag(pub MeshPrefab);
 
 impl From<&PrimitiveColliderFlag> for Collider {
@@ -48,33 +44,32 @@ impl From<&PrimitiveColliderFlag> for Collider {
 impl From<&Collider> for PrimitiveColliderFlag {
     fn from(value: &Collider) -> Self {
         
-        println!("UPDATING PRIMITIVE COLLIDER");
         let collider = value.as_unscaled_typed_shape();
         //TODO: Implement unimplemented collider types.
         match collider {
             ColliderView::Ball(ball_view) => Self(Sphere::new(ball_view.radius()).into()),
             ColliderView::Cuboid(cuboid_view) => Self(Cuboid::from_size(cuboid_view.half_extents()).into()),
             ColliderView::Capsule(capsule_view) => Self(Capsule3d::new(capsule_view.radius(), capsule_view.height()).into()),
-            ColliderView::Segment(segment_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::Triangle(triangle_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::TriMesh(tri_mesh_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::Polyline(polyline_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::HalfSpace(half_space_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::HeightField(height_field_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::Compound(compound_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::ConvexPolyhedron(convex_polyhedron_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::Segment(_segment_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::Triangle(_triangle_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::TriMesh(_tri_mesh_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::Polyline(_polyline_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::HalfSpace(_half_space_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::HeightField(_height_field_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::Compound(_compound_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::ConvexPolyhedron(_convex_polyhedron_view) => Self(MeshPrefab::Unimplemented),
             ColliderView::Cylinder(cylinder_view) => Self(Cylinder::new(cylinder_view.radius(), cylinder_view.half_height() * 2.0).into()),
             ColliderView::Cone(cone_view) => Self(Cone::new(cone_view.radius(), cone_view.half_height() * 2.0).into()),
-            ColliderView::RoundCuboid(round_cuboid_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::RoundTriangle(round_triangle_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::RoundCylinder(round_cylinder_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::RoundCone(round_cone_view) => Self(MeshPrefab::Unimplemented),
-            ColliderView::RoundConvexPolyhedron(round_convex_polyhedron_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::RoundCuboid(_round_cuboid_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::RoundTriangle(_round_triangle_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::RoundCylinder(_round_cylinder_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::RoundCone(_round_cone_view) => Self(MeshPrefab::Unimplemented),
+            ColliderView::RoundConvexPolyhedron(_round_convex_polyhedron_view) => Self(MeshPrefab::Unimplemented),
         }
     }
 }
 
-#[derive(Component, EnumIter, Reflect, Clone, Default, Debug)]
+#[derive(Component, PartialEq, EnumIter, Reflect, Clone, Default, Debug)]
 #[reflect(Component)]
 #[require(CcdFlag, CollisionGroupsFlag, SolverGroupsFlag)]
 ///Wrapper for mesh colliders
@@ -86,8 +81,12 @@ pub enum AsyncColliderFlag {
     Convex,
 }
 
+impl ComponentWrapper for AsyncColliderFlag {
+    type WrapperTarget = AsyncCollider;
+}
+
 impl From<&AsyncCollider> for AsyncColliderFlag {
-    fn from(value: &AsyncCollider) -> Self {
+    fn from(_value: &AsyncCollider) -> Self {
         // TODO: implement a way to choose between trimesh and Convex.
         // In meantime, defaulting to convex to minimize lag.
         Self::Convex
@@ -96,7 +95,6 @@ impl From<&AsyncCollider> for AsyncColliderFlag {
 
 impl From<&AsyncColliderFlag> for AsyncCollider {
     fn from(value: &AsyncColliderFlag) -> Self {
-        println!("UPDATING ASYNC COLLIDER");
         match value {
             //TODO: double check this is correct
             AsyncColliderFlag::Trimesh => AsyncCollider::default(),

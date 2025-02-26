@@ -1,5 +1,5 @@
-use bevy_ecs::{prelude::*, query::QueryData, system::{ReadOnlySystemParam, SystemParam, SystemParamItem, SystemState}};
-use std::{collections::HashMap, fmt::Display};
+use bevy_ecs::{prelude::*, system::{SystemParam, SystemParamItem}};
+use std::ops::Deref;
 
 /// The trait for assembling a structure into its root asset.
 /// 
@@ -23,7 +23,10 @@ pub trait AssembleParms {
 /// B) its children
 /// 
 /// I.E: model.format -> Disassemble(FormatWrapper(Format)) -> (Mesh, Material, Name) 
-pub trait Disassemble {
+pub trait Disassemble 
+    where
+        Self: Clone + Send + Sync + Deref + 'static,
+{
     fn components(value: Self) -> Structure<impl Bundle>;
 }
 
@@ -50,7 +53,6 @@ where
     fn serialize(&self, name: String) -> Result<(), anyhow::Error>;
 }
 
-use thiserror::Error;
 
 // #[non_exhaustive]
 // #[derive(Error, Debug)]

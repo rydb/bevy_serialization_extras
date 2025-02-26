@@ -3,6 +3,7 @@ use bevy_rapier3d::prelude::SolverGroups;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
+use bevy_serialization_core::traits::ComponentWrapper;
 
 pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
     memberships: GroupWrapper::ALL,
@@ -10,7 +11,7 @@ pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
 };
 
 /// wrapper around rapier groups to prevent libraries that use this from needing to import the entirety of rapier.
-#[derive(Reflect, Clone, Copy)]
+#[derive(Reflect, PartialEq, Clone, Copy)]
 pub struct GroupWrapper(pub u32);
 
 bitflags::bitflags! {
@@ -105,11 +106,15 @@ impl From<Group> for GroupWrapper {
     }
 }
 
-#[derive(Component, Reflect, Clone, Default)]
+#[derive(Component, PartialEq, Reflect, Clone, Default)]
 #[reflect(Component)]
 pub struct SolverGroupsFlag {
     pub memberships: GroupWrapper,
     pub filters: GroupWrapper,
+}
+
+impl ComponentWrapper for SolverGroupsFlag {
+    type WrapperTarget = SolverGroups;
 }
 
 impl From<&SolverGroupsFlag> for SolverGroups {

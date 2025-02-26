@@ -2,12 +2,17 @@ use bevy_rapier3d::prelude::AdditionalMassProperties;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
+use bevy_serialization_core::traits::ComponentWrapper;
 
-#[derive(Reflect, Component, Clone)]
-#[reflect(Component)]
+#[derive(Reflect, PartialEq, Component, Clone)]
 pub struct MassFlag {
     pub mass: f32,
 }
+
+impl ComponentWrapper for MassFlag {
+    type WrapperTarget = AdditionalMassProperties;
+}
+
 // W.I.P
 impl Default for MassFlag {
     fn default() -> Self {

@@ -1,8 +1,5 @@
-use bevy_rapier3d::{
-    dynamics::{AdditionalMassProperties, ImpulseJoint, RigidBody},
-    geometry::{AsyncCollider, SolverGroups},
-};
-use bevy_serialization_core::plugins::{SerializeQueryFor};
+
+use bevy_serialization_core::prelude::SerializeComponentFor;
 
 use crate::{
     prelude::{
@@ -10,7 +7,7 @@ use crate::{
         friction::FrictionFlag, link::JointRecieverFlag, AsyncColliderFlag,
     },
     wrappers::{
-        link::{JointFlag, LinkFlag, Linkage, StructureFlag},
+        link::{JointFlag, LinkFlag, StructureFlag},
         mass::MassFlag,
         rigidbodies::RigidBodyFlag,
         solvergroupfilter::SolverGroupsFlag,
@@ -27,19 +24,17 @@ impl Plugin for SerializationPhysicsPlugin {
         app.register_type::<StructureFlag>()
             .register_type::<LinkFlag>()
             .register_type::<JointRecieverFlag>()
-            .register_type::<JointFlag>()
-            .register_type::<MassFlag>()
-            .register_type::<RigidBodyFlag>()
-            .register_type::<SolverGroupsFlag>()
-            .register_type::<CcdFlag>()
             .register_type::<CollisionGroupsFlag>()
             .register_type::<AsyncColliderFlag>()
             .register_type::<FrictionFlag>()
-            // .add_plugins(SerializeComponentFor::<AsyncCollider, AsyncColliderFlag>::default())
-            // .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
-            // .add_plugins(SerializeComponentFor::<RigidBody, RigidBodyFlag>::default())
-            // .add_plugins(SerializeComponentFor::<AdditionalMassProperties, MassFlag>::default())
-            // .add_plugins(SerializeComponentFor::<SolverGroups, SolverGroupsFlag>::default())
+            .add_plugins(SerializeComponentFor::<AsyncColliderFlag>::default())
+            .add_plugins(SerializeComponentFor::<RigidBodyFlag>::default())
+            .add_plugins(SerializeComponentFor::<MassFlag>::default())
+            .add_plugins(SerializeComponentFor::<SolverGroupsFlag>::default())
+            .add_plugins(SerializeComponentFor::<CollisionGroupsFlag>::default())
+            .add_plugins(SerializeComponentFor::<CcdFlag>::default())
+            //.add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
+            .add_plugins(SerializeComponentFor::<JointFlag>::default())
             ;
             // post processing
             //.add_systems(Update, local_frame2_shift)

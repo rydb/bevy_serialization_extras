@@ -6,7 +6,7 @@ use crate::traits::{Assemble, Disassemble, LazySerialize};
 use crate::urdf::urdf::RequestIdFromName;
 use bevy_asset::prelude::*;
 use bevy_core::Name;
-use bevy_ecs::component::{ComponentId, Components};
+use bevy_ecs::component::{Components};
 use bevy_ecs::system::{SystemId, SystemState};
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_hierarchy::{BuildChildren, Children};

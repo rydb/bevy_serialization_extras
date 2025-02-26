@@ -2,11 +2,16 @@ use bevy_rapier3d::dynamics::Ccd;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
+use bevy_serialization_core::traits::ComponentWrapper;
 
-#[derive(Reflect, Component, Clone)]
+#[derive(Reflect, PartialEq, Component, Clone)]
 #[reflect(Component)]
 pub struct CcdFlag {
     pub enabled: bool,
+}
+
+impl ComponentWrapper for CcdFlag {
+    type WrapperTarget = Ccd;
 }
 
 impl Default for CcdFlag {
@@ -15,16 +20,16 @@ impl Default for CcdFlag {
     }
 }
 
-impl From<CcdFlag> for Ccd {
-    fn from(value: CcdFlag) -> Self {
+impl From<&CcdFlag> for Ccd {
+    fn from(value: &CcdFlag) -> Self {
         Self {
             enabled: value.enabled,
         }
     }
 }
 
-impl From<Ccd> for CcdFlag {
-    fn from(value: Ccd) -> Self {
+impl From<&Ccd> for CcdFlag {
+    fn from(value: &Ccd) -> Self {
         Self {
             enabled: value.enabled,
         }

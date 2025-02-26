@@ -2,11 +2,11 @@ use std::{any::{type_name, Any, TypeId}, collections::HashMap, fmt::Debug, marke
 
 use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, Structure}, Assemblies, AssemblyId};
 use bevy_asset::prelude::*;
+use bevy_derive::Deref;
 use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, world::DeferredWorld};
 use bevy_log::warn;
 use bevy_hierarchy::prelude::*;
 use bevy_reflect::{DynamicTypePath, Reflect};
-use bevy_serialization_core::prelude::mesh::{MeshFlag3d, MeshWrapper};
 use bevy_state::commands;
 use bevy_transform::components::Transform;
 
@@ -15,7 +15,18 @@ use bevy_transform::components::Transform;
 // #[reflect(Component)]
 // pub struct StructureFlag(pub String);
 
-pub fn disassemble_components<'a, T: Disassemble>(world: &mut DeferredWorld<'a>,  e: Entity, id: ComponentId, comp: T) {
+
+
+
+pub fn disassemble_components<'a, T>(world: &mut DeferredWorld<'a>,  e: Entity, id: ComponentId, comp: T) 
+    where
+        T: Disassemble
+    // where
+    //     T: Deref + Component,
+    //     T::Target: Disassemble
+{
+
+    
     let assembly_id = {
         if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
             assembly_id.0
@@ -33,6 +44,8 @@ pub fn disassemble_components<'a, T: Disassemble>(world: &mut DeferredWorld<'a>,
         }
     };
     
+
+
     match Disassemble::components(comp) {
         Structure::Root(bundle) => {
             world.commands().entity(e).insert(bundle);
@@ -86,10 +99,10 @@ pub fn disassemble_components<'a, T: Disassemble>(world: &mut DeferredWorld<'a>,
 }
 
 /// Take inner new_type and add components to this components entity from [`Disassemble`]
-#[derive(Clone)]
-pub struct RequestStructure<T: Disassemble + Sync + Send + Clone + 'static>(pub T);
+#[derive(Clone, Deref)]
+pub struct RequestStructure<T: Disassemble>(pub T);
 
-impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStructure<T> {
+impl<T: Disassemble> Component for RequestStructure<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
@@ -102,10 +115,10 @@ impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStruct
                         return
                     },
                 };
-                comp.0.clone()
+                comp.clone()
             };
 
-            disassemble_components(&mut world, e, id, comp);
+            disassemble_components(&mut world, e, id, comp.0);
             world.commands().entity(e).remove::<Self>();
         });
     }
@@ -117,7 +130,7 @@ impl<T: Disassemble + Sync + Send + Clone + 'static> Component for RequestStruct
 #[derive(Clone, Debug)]
 pub enum RequestAssetStructure<T> 
     where
-        T: Clone + From<T::Target> + Deref + Disassemble+ Send + Sync + 'static,
+        T: From<T::Target> + Disassemble,
         T::Target: Asset + Sized
 {
     Path(String),
@@ -127,7 +140,7 @@ pub enum RequestAssetStructure<T>
 
 impl<T> Component for RequestAssetStructure<T>
     where
-        T: Clone + From<T::Target> + Deref + Disassemble+ Send + Sync + 'static,
+        T: From<T::Target> + Disassemble,
         T::Target: Asset + Clone
 {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -136,7 +149,7 @@ impl<T> Component for RequestAssetStructure<T>
         _hooks.on_add(|mut world, e, id| {
             let asset = {
                 let path = match world.entity(e).get::<Self>() {
-                    Some(val) => val.clone(),
+                    Some(val) => val,
                     None => {
                         warn!("could not get RequestAssetStructure on: {:#}", e);
                         return
@@ -167,7 +180,7 @@ impl<T> Component for RequestAssetStructure<T>
                         asset
                     }
                 };
-                asset
+                asset.clone()
             };
             disassemble_components(&mut world, e, id, asset);
             world.commands().entity(e).remove::<Self>();
@@ -229,32 +242,50 @@ impl<T: Component> Component for Maybe<T> {
 
 /// staging component for resolving one component from another.
 /// useful for bundles where the context for what something is has to be resolved later
-#[derive(Clone)]
-pub enum Resolve<T: Clone, U: Clone> {
+pub enum Resolve<T: Component, U: Component> {
     One(T),
     Other(U)
 }
 
-impl<T: Component + Clone, U: Component + Clone> Component for Resolve<T, U> {
+struct ResolveCommand<T, U> {
+    entity: Entity,
+    _phantom: PhantomData<(T, U)>,
+}
+
+fn resolve_command<T: Component, U: Component>(mut world: DeferredWorld<'_>, entity: Entity, _component_id: ComponentId) {
+    // Component hooks can't perform structural changes, so we need to rely on commands.
+    world.commands().queue(ResolveCommand {
+        entity,
+        _phantom: PhantomData::<(T, U)>,
+    });
+}
+
+impl<T: Component, U: Component> Command for ResolveCommand<T, U> {
+    fn apply(self, world: &mut World) {
+        let Ok(mut e_mut) = world.get_entity_mut(self.entity) else {
+            return
+        };
+
+        let e = e_mut.id();
+        let Some(comp) = e_mut.take::<Resolve<T, U>>() else {
+            warn!("could not get {:#?} on: {:#?}", type_name::<Self>(), e);
+            return
+        };
+
+        match comp {
+            Resolve::One(one) => e_mut.insert(one),
+            Resolve::Other(other) => e_mut.insert(other),
+        };
+    }
+}
+
+impl<T: Component, U: Component> Component for Resolve<T, U> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
-        _hooks.on_add(|mut world, e, id| {
-            let comp = {
-                match world.entity(e).get::<Self>() {
-                    Some(val) => val.clone(),
-                    None => {
-                        warn!("could not get {:#?} on: {:#}", type_name::<Self>(), e);
-                        return
-                    },
-                }
-            };
-            match comp {
-                Resolve::One(one) => {world.commands().entity(e).insert(one);},
-                Resolve::Other(other) => {world.commands().entity(e).insert(other);},
-            }
-            world.commands().entity(e).remove::<Self>();
-        });
+        _hooks.on_add(
+            resolve_command::<T, U>
+        );
     }
 }
 

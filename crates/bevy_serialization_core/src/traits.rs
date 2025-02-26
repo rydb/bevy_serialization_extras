@@ -3,29 +3,36 @@ use bevy_ecs::prelude::*;
 use bevy_reflect::{FromReflect, GetTypeRegistration, Reflect, Typed};
 use std::ops::Deref;
 
-/// trait that explains how to take struct and unwrap it into a bevy thing.
-/// Like [`From`], but returns either the Target to be unwrapped or a filepath to thing.
-pub trait Unwrap<T>: Sized {
-    fn unwrap(value: T) -> Result<Self, String>;
-}
+
 pub trait ComponentWrapper 
     where
-        Self: Reflect + Clone + for <'a> From<&'a Self::Target>,
-        Self::Target: Clone + for <'a> From<&'a Self>
+        Self: Component + PartialEq + Reflect + FromReflect + Typed + GetTypeRegistration + for <'a> From<&'a Self::WrapperTarget>,
+        Self::WrapperTarget: Clone + for <'a> From<&'a Self>
 {
-    type Target: Component + Clone;
-}
+    type WrapperTarget: Component + Clone;
 
+}
 
 pub type AssetType<T> = <<T as AssetWrapper>::WrapperTarget as AssetHandleComponent>::AssetType;
 
+pub enum AssetState<'a, T, U> {
+    Pure(&'a T),
+    Path(&'a U),
+}
+
+
 pub trait AssetWrapper
     where
-        Self: PartialEq + Reflect + FromReflect + Typed + GetTypeRegistration + for <'a> From<&'a AssetType<Self>>,
+        Self: Component + PartialEq + Reflect + FromReflect + Typed + GetTypeRegistration+ From<String> + From<Self::PureVariant>,
         Self::WrapperTarget: Deref<Target = Handle<AssetType<Self>>> + From<Handle<AssetType<Self>>> + AssetHandleComponent,
-        AssetType<Self>: for <'a> From<&'a Self>
+        AssetType<Self>: for <'a> From<&'a Self::PureVariant>,
+        Self::PureVariant: for<'a> From<&'a AssetType<Self>> + PartialEq,
 {
     type WrapperTarget: Component + Deref;
+    type PureVariant;
+
+    fn asset_state(&self) -> AssetState<Self::PureVariant, String>;
+
 }
 
 // component on a query that is checked for changes

@@ -4,8 +4,8 @@ use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, TextEdit}};
 use bevy_serialization_core::{
-    components::{WrapAsset}, plugins::SerializationPlugin, prelude::{
-        material::MaterialWrapper, ComponentsOnSave, RefreshCounter, ShowSerializable, ShowUnserializable, TypeRegistryOnSave
+    plugins::SerializationPlugin, prelude::{
+        material::Material3dFlag, ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave
     }, resources::{LoadRequest, SaveRequest}
 };
 use bevy_ui_extras::UiExtrasDebug;
@@ -27,7 +27,7 @@ fn main() {
         }))
         .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
-        // .add_plugins(SerializationBasePlugin)
+        .add_plugins(SerializationBasePlugin)
         .add_plugins(UiExtrasDebug::default())
         .add_systems(Startup, setup)
         .add_systems(Update, save_file_selection)
@@ -61,7 +61,8 @@ fn setup(
     commands.spawn((
         Mesh3d(mesh_handle),
         //MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
-        WrapAsset(MaterialWrapper::Color(Color::Srgba(Srgba::GREEN))),
+        //WrapAsset::Pure(Material3dFlag::Color(Color::Srgba(Srgba::GREEN))),
+        Material3dFlag::Pure(Color::Srgba(Srgba::GREEN).into()),
         Transform::from_xyz(0.0, 0.5, 0.0),
         Save,
         Name::new("Cube"),

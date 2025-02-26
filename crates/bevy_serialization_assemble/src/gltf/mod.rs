@@ -235,9 +235,9 @@ pub struct GltfMeshWrapper(pub GltfMesh);
 impl Disassemble for GltfMeshWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
-        for primitive in value.0.primitives {
+        for primitive in &value.0.primitives {
             children.push(
-                RequestStructure(GltfPrimitiveWrapper(primitive))
+                RequestStructure(GltfPrimitiveWrapper(primitive.clone()))
             )
         }
         Structure::Children(children, Split(false))

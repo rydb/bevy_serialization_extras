@@ -7,7 +7,7 @@ use bevy_log::warn;
 //     reflect::GetTypeRegistration,
 // };
 use bevy_rapier3d::prelude::ImpulseJoint;
-use bevy_serialization_core::traits::ChangeChecked;
+use bevy_serialization_core::traits::{ChangeChecked, ComponentWrapper};
 use bevy_utils::prelude::default;
 //use urdf_rs::{Joint, Pose, Link, Visual};
 use rapier3d::{
@@ -36,13 +36,13 @@ pub struct StructureFlag {
     pub name: String,
 }
 
-#[derive(Default, Debug, Reflect, Clone)]
+#[derive(Default, PartialEq, Debug, Reflect, Clone)]
 pub struct Dynamics {
     pub damping: f64,
     pub friction: f64,
 }
 
-#[derive(Debug, Reflect, Clone)]
+#[derive(Debug, PartialEq, Reflect, Clone)]
 pub struct JointLimitWrapper {
     pub lower: f64,
     pub upper: f64,
@@ -148,12 +148,23 @@ impl From<&JointFlag> for GenericJoint {
     }
 }
 
-impl From<&LinkageItem<'_>> for ImpulseJoint {
-    fn from(value: &LinkageItem) -> Self {
-        let joint = GenericJoint::from(value.joint);
+// impl From<&LinkageItem<'_>> for ImpulseJoint {
+//     fn from(value: &LinkageItem) -> Self {
+//         let joint = GenericJoint::from(value.joint);
+//         let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
+//         Self {
+//             parent: value.joint.parent,
+//             data: bevy_rapier3d::prelude::TypedJoint::GenericJoint(bevy_rapier_joint),
+//         }
+//     }
+// }
+
+impl From<&JointFlag> for ImpulseJoint {
+    fn from(value: &JointFlag) -> Self {
+        let joint = GenericJoint::from(value);
         let bevy_rapier_joint = bevy_rapier3d::dynamics::GenericJoint { raw: joint };
         Self {
-            parent: value.joint.parent,
+            parent: value.parent,
             data: bevy_rapier3d::prelude::TypedJoint::GenericJoint(bevy_rapier_joint),
         }
     }
@@ -274,7 +285,7 @@ bitflags::bitflags! {
 }
 
 /// serializable wrapper for physics joints.
-#[derive(Debug, Reflect, Clone)]
+#[derive(Debug, PartialEq, Reflect, Clone)]
 #[reflect(Component)]
 pub struct JointFlag {
     // removed. local_frame1 serves the same purpose.
@@ -290,9 +301,12 @@ pub struct JointFlag {
     pub joint: JointInfo,
 }
 
+impl ComponentWrapper for JointFlag {
+    type WrapperTarget = ImpulseJoint;
+}
 
 
-#[derive(Debug, Reflect, Clone)]
+#[derive(Debug, PartialEq, Reflect, Clone)]
 pub struct JointInfo {
     pub limit: JointLimitWrapper,
     pub dynamics: Dynamics,
@@ -327,7 +341,7 @@ impl Component for JointFlag {
 
     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
         // keeps joint and Transform consistent with eachother to stop parts from flying off
-        _hooks.on_add(|mut world, e, id| {
+        _hooks.on_add(|mut world, e, _| {
             
             // rapier joint positions affect transform, but do not affect transformation unless they're part of an active rigidbody.
             // to prevent rebound from joint being snapped on by joint, add transform onto this entity to automatically snap it to where its supposed to be
@@ -361,7 +375,7 @@ impl Component for JointFlag {
     }
 }
 
-#[derive(Reflect, Clone, Debug)]
+#[derive(Reflect, PartialEq, Clone, Debug)]
 pub struct JointMotorWrapper {
     /// The target velocity of the motor.
     pub target_vel: f32,

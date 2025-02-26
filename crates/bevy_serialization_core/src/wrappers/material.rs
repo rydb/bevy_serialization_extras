@@ -1,40 +1,61 @@
-use std::ops::Deref;
 
-use bevy_asset::{Asset, Assets};
-//use bevy::prelude::*;
+
+use bevy_asset::Asset;
 use bevy_color::prelude::*;
-use bevy_ecs::prelude::*;
+use bevy_ecs::component::Component;
 use bevy_pbr::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_utils::prelude::*;
 use derive_more::derive::From;
 
-use crate::traits::{AssetWrapper, AssetHandleComponent, FromAsset, FromWrapper};
+use crate::traits::{AssetHandleComponent, AssetState, AssetWrapper};
 
-// /// General wrapper to represent materials.
-// /// TODO: give this a full implementation.
-// #[derive(Default, Reflect, Clone, PartialEq)]
-// pub struct MaterialWrapper {
-//     pub color: Color,
+/// serializable wrapper for mesh materials
+#[derive(Component, Reflect, Clone, PartialEq, From)]
+pub enum Material3dFlag{
+    Pure(MaterialWrapper),
+    Path(String),
+}
+
+#[derive(Clone, From, PartialEq, Reflect)]
+pub enum MaterialWrapper {
+    Color(Color)
+}
+
+impl AssetWrapper for Material3dFlag {
+    type WrapperTarget = MeshMaterial3d<StandardMaterial>; 
+    type PureVariant = MaterialWrapper;
+        
+    fn asset_state(&self) -> AssetState<Self::PureVariant, String> {
+        match self {
+            Material3dFlag::Pure(material_wrapper) => AssetState::Pure(material_wrapper),
+            Material3dFlag::Path(path) => AssetState::Path(path),
+        }
+    }
+}
+// impl<'a, 'b> Into<AssetState<'b, <Material3dFlag as AssetWrapper>::PureVariant, <Material3dFlag as AssetWrapper>::PathVariant>> for &'a Material3dFlag
+
+// impl IntoAssetState for Material3dFlag {
+//     fn asset_state(&self) -> AssetState<Self::PureVariant,  Self::PathVariant> {
+//         match self {
+//             Material3dFlag::Pure(material_wrapper) => AssetState::Pure(material_wrapper),
+//             Material3dFlag::Path(path) => AssetState::Path(path),
+//         }
+//     }
 // }
 
-#[derive(Component)]
-pub struct DummyComponent;
+// impl<'a, 'b> From<&'a Material3dFlag> for AssetState<'b, <Material3dFlag as AssetWrapper>::PureVariant, <Material3dFlag as AssetWrapper>::PathVariant> 
+//     where
+//         'a: 'b
+// {
+//     fn from(value: &'a Material3dFlag) -> Self {
+//         match value {
+//             Material3dFlag::Pure(material_wrapper) => AssetState::Pure(material_wrapper),
+//             Material3dFlag::Path(path) => AssetState::Path(path),
+//         }
+//     }
+// }
 
-/// Serializable version of MeshMaterial3d
-#[derive(Reflect, Clone, PartialEq, From)]
-pub enum MaterialWrapper{
-    Color(Color),
-    //AssetPath(String),
-}
-
-// pub trait TryAsset
-
-
-
-impl AssetWrapper for MaterialWrapper {
-    type WrapperTarget = MeshMaterial3d<StandardMaterial>;
-}
 impl From<&MaterialWrapper> for StandardMaterial {
     fn from(value: &MaterialWrapper) -> Self {
         match value {
@@ -52,123 +73,61 @@ impl From<&StandardMaterial> for MaterialWrapper {
     }
 }
 
+// impl FromAssetState<&Material3dFlag> for StandardMaterial {
+//     fn from_asset_state(value: &Material3dFlag) -> AssetState<Self> {
+//         match value {
+//             Material3dFlag::Pure(color) => AssetState::Pure(
+//                         Self {
+//                             base_color: *color,
+//                             ..default()
+//                         }
+//                     ),
+//             //Material3dFlag::Path(path) => todo!(),
+//         }
+//     }
+// }
+
+// impl FromAssetState<&StandardMaterial> for Material3dFlag {
+//     fn from_asset_state(value: &StandardMaterial) -> AssetState<Self> {
+//         todo!()
+//     }
+// }
+
+
+// impl From<&Material3dFlag> for AssetState<StandardMaterial> {
+//     fn from(value: &Material3dFlag) -> Self {
+//         match value {
+//             Material3dFlag::Color(color) => AssetState::Pure(
+//                 Self {
+//                     base_color: *color,
+//                     ..default()
+//                 }
+//             ),
+//         }
+//         // match value {
+//         //     Material3dFlag::Color(color) => Self {
+//         //         base_color: *color,
+//         //         ..default()
+//         //     },
+//         // }
+//     }
+// }
+
+impl From<&StandardMaterial> for Material3dFlag {
+    fn from(value: &StandardMaterial) -> Self {
+        Self::Pure(value.base_color.into())
+    }
+}
+
+
 impl<T: Asset + Material> AssetHandleComponent for MeshMaterial3d<T> {
     type AssetType = T;
 }
 
 
-// impl FlagWrapper for MaterialWrapper {
-//     fn retrieve() -> Either<Option<impl Component>, impl Asset> {
-//         Either::Other::<(), _>(StandardMaterial::default())
-//     }
-//     // fn retrieve() -> Either<impl Component, impl Asset> {
-//     //     Either::Other::<(), _>(StandardMaterial::default())
-//     // }
-//     // type Target = MeshMaterial3d<StandardMaterial>;
 
-//     // fn retrieve_target() -> impl FlagKind {
-//     //    FlagKind::retrieve()
-//     // }
-    
-//     // fn retrieve_target(self) -> FlagKind<Self> {
-//     //     FlagKind::Component(MaterialWrapper)
-//     // }
-// }
-
-// impl FlagKind for MaterialWrapper {
-//     type T = MeshMaterial3d<StandardMaterial>;
-
-//     fn retrieve() -> Either<Self::T, impl Asset> {
-//         Either::Other(StandardMaterial::default())
-//     }
-    
-//     //type U = StandardMaterial;
-
-//     // fn retrieve() -> Either<Self::T> {
-//     //     Either::Other(StandardMaterial::default())
-//     // }
-// }
-
-impl Default for MaterialWrapper {
+impl Default for Material3dFlag {
     fn default() -> Self {
-        Color::default().into()
+        Material3dFlag::Pure(Color::default().into())
     }
 }
-
-// impl FromWrapper<MaterialWrapper> for MeshMaterial3d<StandardMaterial> {
-//     fn from_wrapper(
-//         value: &MaterialWrapper,
-//         asset_server: &Res<bevy_asset::AssetServer>,
-//         assets: &mut ResMut<bevy_asset::Assets<Self::AssetHandleComponent>>,
-//     ) -> Self {
-//         match value {
-//             MaterialWrapper::Color(material_wrapper) => {
-//                 let mat = StandardMaterial {
-//                     base_color: material_wrapper.clone(),
-//                     ..default()
-//                 };
-//                 let mat_handle = assets.add(mat);
-//                 MeshMaterial3d(mat_handle)
-//             }
-//             MaterialWrapper::AssetPath(path) => {
-//                 let mat_handle = asset_server.load(path);
-//                 MeshMaterial3d(mat_handle)
-//             }
-//         }
-//     }
-// }
-
-pub enum PureOrPath<T> {
-    Pure(T),
-    Path(String),
-}
-
-// impl From<MaterialWrapper> for PureOrPath<StandardMaterial> {
-//     fn from(value: MaterialWrapper) -> Self {
-//         match value {
-//             MaterialWrapper::Color(color) => PureOrPath::Pure(
-//                 StandardMaterial {
-//                     base_color: color,
-//                     ..default()
-//                 }
-//             ),
-//             MaterialWrapper::AssetPath(path) => PureOrPath::Path(path),
-//         }
-//     }
-// }
-
-// impl FromAsset<MeshMaterial3d<StandardMaterial>> for MaterialWrapper {
-//     fn from_asset(
-//         value: &MeshMaterial3d<StandardMaterial>,
-//         assets: &ResMut<Assets<StandardMaterial>>,
-//     ) -> Self {
-//         match value.0.path() {
-//             Some(path) => Self::AssetPath(path.to_string()),
-//             None => {
-//                 let asset = assets.get(value.id());
-//                 if let Some(asset) = asset {
-//                     Self::Color(asset.base_color)
-//                 } else {
-//                     Self::AssetPath("UNIMPLEMENTED".to_owned())
-//                 }
-//             }
-//         }
-//     }
-// }
-
-
-
-// impl From<&StandardMaterial> for MaterialWrapper {
-//     fn from(value: &StandardMaterial) -> Self {
-//         Self {
-//             color: value.base_color,
-//             //..default()
-//         }
-//     }
-// }
-
-// impl From<Color> for MaterialWrapper {
-//     fn from(value: Color) -> Self {
-//         Self { color: value }
-//     }
-// }
