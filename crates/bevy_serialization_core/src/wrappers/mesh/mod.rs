@@ -14,7 +14,7 @@ use bevy_render::prelude::*;
 // pub mod gltf;
 
 /// bevy prefab meshes
-#[derive(Clone, Reflect, Debug, PartialEq, Copy, From)]
+#[derive(Reflect, Clone, Copy, Debug, PartialEq, From)]
 pub enum MeshPrefab {
     Cuboid(Cuboid),
     Cylinder(Cylinder),
@@ -22,7 +22,7 @@ pub enum MeshPrefab {
     Sphere(Sphere),
     Cone(Cone),
     /// Fallback for unimplemented shapes. Should lead to fallback variant mesh.
-    Unimplemented,
+    Unimplemented(&'static str),
 }
 
 impl From<&MeshWrapper> for Mesh {
@@ -34,7 +34,7 @@ impl From<&MeshWrapper> for Mesh {
                 MeshPrefab::Capsule(capsule3d) => capsule3d.into(),
                 MeshPrefab::Sphere(sphere) => sphere.into(),
                 MeshPrefab::Cone(cone) => cone.into(),
-                MeshPrefab::Unimplemented => FALLBACK_MESH.into(),
+                MeshPrefab::Unimplemented(kind) => FALLBACK_MESH.into(),
             },
             MeshWrapper::Procedural => FALLBACK_MESH.into(),
         }

@@ -6,7 +6,7 @@ use std::ops::Deref;
 
 pub trait ComponentWrapper 
     where
-        Self: Component + PartialEq + Reflect + FromReflect + Typed + GetTypeRegistration + for <'a> From<&'a Self::WrapperTarget>,
+        Self: Component + Reflect + FromReflect + Typed + GetTypeRegistration + for <'a> From<&'a Self::WrapperTarget>,
         Self::WrapperTarget: Clone + for <'a> From<&'a Self>
 {
     type WrapperTarget: Component + Clone;

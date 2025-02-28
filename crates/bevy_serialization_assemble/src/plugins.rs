@@ -79,7 +79,7 @@ impl Plugin for SerializationAssembleBasePlugin {
         .add_systems(Update, run_proxy_system::<AssetCheckers>)
         .add_systems(Update, run_proxy_system::<RollDownCheckers>)
         .add_systems(PreUpdate, bind_joint_request_to_parent)
-        //.add_systems(Update, generate_primitive_for_request)
+        .add_systems(Update, generate_primitive_for_request)
         //.add_systems(Update, name_from_id)
         ;
     }

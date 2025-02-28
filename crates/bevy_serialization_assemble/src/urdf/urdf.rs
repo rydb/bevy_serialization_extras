@@ -48,6 +48,7 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::components::Ids;
+use crate::gltf::RequestPrimitiveCollider;
 use crate::traits::AssembleParms;
 use crate::traits::Split;
 use crate::JointRequest;
@@ -223,7 +224,8 @@ impl Disassemble for LinkColliders {
                     memberships: GroupWrapper::all(),
                     filters: GroupWrapper::all(),
                 },
-                AsyncColliderFlag::Convex,
+                RequestPrimitiveCollider::Cuboid,
+                //AsyncColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
                 Visibility::default()

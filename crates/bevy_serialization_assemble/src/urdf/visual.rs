@@ -81,8 +81,8 @@ impl From<&Mesh3dFlag> for GeometryWrapper {
                             warn!("Cones not supported by urdf-rs. Using fallback primitive.");
                             Self(FALLBACK_GEOMETRY)
                         },
-                        MeshPrefab::Unimplemented => {
-                            warn!("Unimplemented mesh prefab provided. Using fallback primitive");
+                        MeshPrefab::Unimplemented(mesh) => {
+                            warn!("Unimplemented mesh prefab {:#?}. Using fallback primitive", mesh);
                             Self(FALLBACK_GEOMETRY)
                         },
                     },

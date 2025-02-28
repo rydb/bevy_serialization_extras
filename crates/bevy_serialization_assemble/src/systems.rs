@@ -12,10 +12,12 @@ use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::prelude::*;
 use bevy_math::primitives::Cuboid;
-use bevy_render::mesh::Mesh3d;
+use bevy_rapier3d::prelude::{Collider, ComputedColliderShape, VHACDParameters};
+use bevy_render::mesh::{Mesh, Mesh3d};
 use bevy_serialization_core::prelude::mesh::MeshPrefab;
-use bevy_serialization_physics::prelude::{JointBounded, JointFlag, PrimitiveColliderFlag, RigidBodyFlag};
+use bevy_serialization_physics::prelude::{ColliderFlag, JointBounded, JointFlag, RigidBodyFlag};
 use bevy_transform::components::Transform;
+use glam::Vec3;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -148,24 +150,124 @@ pub fn save_asset<T>(
 }
 
 
+pub struct MeshProperties<'a> {
+    positions: &'a [[f32; 3]],
+    normals: &'a [[f32; 3]],
+    indices: Vec<u16>,
+}
+
 /// generate a collider primitive from a primitive request
 pub fn generate_primitive_for_request(
-    requests: Query<(Entity, &RequestPrimitiveCollider)>,
-    commands: Commands,
+    requests: Query<(Entity, &RequestPrimitiveCollider, &Mesh3d)>,
+    mut commands: Commands,
+    meshes: ResMut<Assets<Mesh>>
 ) {
-    // for (e, collider) in requests.iter() {
-    //     match collider {
-    //         RequestPrimitiveCollider::Cuboid => {
-    //             commands.entity(e).insert(
-    //                 PrimitiveColliderFlag(
-    //                     Cuboid {
+    for (e, collider, mesh) in requests.iter() {
+        let Some(mesh) = meshes.get(&mesh.0) else {
+            return;
+        };             
+        let Some(positions)= mesh.attribute(Mesh::ATTRIBUTE_POSITION) else {
+            warn!("Expected positions. Exiting");
+            return;
+        };
+        let Some(positions) = positions.as_float3() else {
+            warn!("Expected positions ot be float3. Exiting");
+            return;
+        };
+    
+        let Some(normals) = mesh.attribute(Mesh::ATTRIBUTE_NORMAL) else {
+            warn!("Expected normals. Exiting");
+            return;
+        };
+        let Some(normals) = normals.as_float3() else {
+            warn!("normals not float3. Exiting");
+            return;
+        };
+    
+        let Some(indices) = mesh.indices() else {
+            warn!("Expected indices. Exiting");
+            return;
+        };
+
+        let indices = indices.iter().map(|i|  i as u16).collect::<Vec<u16>>();
+
+        println!("Generating from bevy_mesh");
+        let performance_collider = match collider {
+            RequestPrimitiveCollider::Cuboid => {
+                let mut farthest_x_positive = 0.0;
+                let mut farthest_x_negative= 0.0;
+                
+                let mut farthest_y_positive = 0.0;
+                let mut farthest_y_negative = 0.0;
+
+                let mut farthest_z_positive = 0.0;
+                let mut farthest_z_negative = 0.0;
+
+                for position in positions {
+
+                    let x = position[0];
+                    let y = position[1];
+                    let z = position[2];
+                    if x > farthest_x_positive {
+                        farthest_x_positive = x;
+                    }
+                    if x < farthest_x_negative {
+                        farthest_x_negative = x;
+                    }
+
+                    if y > farthest_y_positive {
+                        farthest_y_positive = y;
+                    }
+                    if y < farthest_y_negative {
+                        farthest_y_negative = y;
+                    }
+                    
+                    if z > farthest_z_positive {
+                        farthest_z_positive = z;
+                    }
+                    if z < farthest_z_negative {
+                        farthest_z_negative = z;
+                    }
+                }
+                let half_size = Vec3 {
+                    x: (f32::abs(farthest_x_negative) + farthest_x_positive),
+                    y: (f32::abs(farthest_y_negative) + farthest_y_positive),
+                    z: (f32::abs(farthest_z_negative) + farthest_z_positive),
+                };
+                let collider = Cuboid {
+                    half_size
+                };
+                println!("half size for {:#?} is {:#}", e, half_size);
+                ColliderFlag::Prefab(MeshPrefab::from(collider))
+
+            },
+        };
+        commands.entity(e).insert(
+            performance_collider
+        );
+        commands.entity(e).remove::<RequestPrimitiveCollider>();
+
+        // commands.entity(e).insert(
+        //     Collider::from_bevy_mesh(mesh, &ComputedColliderShape::ConvexDecomposition(VHACDParameters::default())).unwrap()
+        //     // Collider::convex_decomposition(vertices, indices)
+        // );
+        // println!("finished generating from bevy mesh");
+        // commands.entity(e).remove::<RequestPrimitiveCollider>();
+        // let performance_collider = match collider {
+        //     RequestPrimitiveCollider::Cuboid => {
+        //         //PrimitiveColliderFlag(MeshPrefab::Cuboid(Cuboid::new()))
+        //         commands.spawn(Collider::convex_decomposition(vertices, indices))
+        //         //let farthest
+        //         // commands.entity(e).insert(
+        //         //     PrimitiveColliderFlag(
+        //         //         Cuboid {
                             
-    //                     }
-    //                 )
-    //             )
-    //         },
-    //     }
-    // }
+        //         //         }
+        //         //     )
+        //         // )
+        //     },
+        // }
+    }
 }
 
 // get joints and bind them to their named connection if it exists

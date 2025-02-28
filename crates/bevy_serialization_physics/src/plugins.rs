@@ -4,7 +4,7 @@ use bevy_serialization_core::prelude::SerializeComponentFor;
 use crate::{
     prelude::{
         collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag,
-        friction::FrictionFlag, link::JointRecieverFlag, AsyncColliderFlag,
+        friction::FrictionFlag, link::JointRecieverFlag, AsyncColliderFlag, ColliderFlag,
     },
     wrappers::{
         link::{JointFlag, LinkFlag, StructureFlag},
@@ -33,6 +33,7 @@ impl Plugin for SerializationPhysicsPlugin {
             .add_plugins(SerializeComponentFor::<SolverGroupsFlag>::default())
             .add_plugins(SerializeComponentFor::<CollisionGroupsFlag>::default())
             .add_plugins(SerializeComponentFor::<CcdFlag>::default())
+            .add_plugins(SerializeComponentFor::<ColliderFlag>::default())
             //.add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
             .add_plugins(SerializeComponentFor::<JointFlag>::default())
             ;

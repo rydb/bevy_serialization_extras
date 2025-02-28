@@ -4,6 +4,7 @@ use bevy_asset::Handle;
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_log::warn;
+use bevy_math::primitives::Cuboid;
 use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
 use bevy_gltf::{GltfExtras, GltfMesh, GltfNode, GltfPrimitive};
@@ -87,11 +88,17 @@ impl Disassemble for GltfNodeVisuals {
 /// parsed from [`GltfExtra`] due to no physics support within GLTF(yet)
 /// 
 /// TODO: upgrade [`GltfExtra`] based parse to proper physics parsing if physics ever gets added to the spec or if a usable spec proposable comes out.
-#[derive(EnumIter, Debug, Display, Default, PartialEq, Component, Clone)]
+#[derive(EnumIter, Debug, Default, Display, PartialEq, Component, Clone)]
 pub enum RequestPrimitiveCollider {
     #[default]
     Cuboid
 }
+
+// impl Default for RequestPrimitiveCollider {
+//     fn default() -> Self {
+//         Self::Cuboid(Cuboid::default())
+//     }
+// }
 
 // impl FromStr for PerformancePrimitiveCollider {
 //     type Err;
@@ -107,9 +114,11 @@ pub enum RequestPrimitiveCollider {
 
 impl From<GltfExtras> for RequestPrimitiveCollider {
     fn from(value: GltfExtras) -> Self {
+        println!("gltf extra property: {:#?}", value);
         let target = value.value.replace(" ", "").to_lowercase();
-
+        
         for variant in RequestPrimitiveCollider::iter() {
+            
             if target == variant.to_string().to_lowercase() {
                 return variant
             }
@@ -209,6 +218,10 @@ impl Disassemble for GltfMeshPrimitiveOne {
         let primitive = mesh
         .map(|n| Mesh3d(n.mesh.clone()));
 
+        let collider = match value.0.extras.map(|n| RequestPrimitiveCollider::from(n)) {
+            Some(performance_collider) => Resolve::One(performance_collider),
+            None => Resolve::Other(AsyncColliderFlag::Convex),
+        };
         //let global_transform = GlobalTransform::from
         Structure::Root(
             (
@@ -222,6 +235,7 @@ impl Disassemble for GltfMeshPrimitiveOne {
                 //         translation: Vec3A::new(0.0, 0.0, 0.0),
                 //     }
                 // ),
+                //collider,
                 Maybe(material),
                 Maybe(primitive),
             )

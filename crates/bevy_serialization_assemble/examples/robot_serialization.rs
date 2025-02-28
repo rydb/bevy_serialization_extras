@@ -67,7 +67,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, control_robot)
         .add_systems(Update, bind_left_and_right_wheel)
-        // .add_systems(Update, freeze_spawned_robots)
+        .add_systems(Update, freeze_spawned_robots)
         // .add_systems(Update, select_robot)
         // .add_systems(Update, save_selected)
         // .insert_resource(AlreadyRan(false))
@@ -76,7 +76,8 @@ fn main() {
         .run();
 }
 
-
+#[derive(Component)]
+pub struct BasePlate;
 
 #[derive(Component, Clone, Reflect)]
 pub struct Selected;
@@ -116,7 +117,7 @@ pub struct WasFrozen;
 pub fn freeze_spawned_robots(
     mut robots: Query<
         (Entity, &mut RigidBodyFlag),
-        Without<WasFrozen>,
+        (Without<WasFrozen>),
     >,
     mut commands: Commands,
 ) {
@@ -132,7 +133,7 @@ pub struct UrdfHandles {
 }
 
 pub fn control_robot(
-    mut rigid_body_flag: Query<&mut RigidBodyFlag, With<Name>>,
+    mut rigid_body_flag: Query<&mut RigidBodyFlag, Without<BasePlate>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
     mut wheels: Query<(&mut JointFlag, &Wheel)>,
@@ -261,6 +262,7 @@ fn setup(
         RigidBodyFlag::Fixed,
         AsyncColliderFlag::Convex,
         Name::new("plane"),
+        BasePlate,
     ));
     // Robot
     commands.spawn(
