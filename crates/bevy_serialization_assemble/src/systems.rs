@@ -1,5 +1,5 @@
 use crate::components::{RequestAssetStructure, RollDown, RollDownIded};
-use crate::gltf::RequestPrimitiveCollider;
+use crate::gltf::RequestCollider;
 use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage};
 use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{Assemble, Disassemble, LazySerialize};
@@ -11,8 +11,8 @@ use bevy_ecs::system::{SystemId, SystemState};
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_hierarchy::{BuildChildren, Children};
 use bevy_log::prelude::*;
-use bevy_math::primitives::Cuboid;
-use bevy_rapier3d::prelude::{Collider, ComputedColliderShape, VHACDParameters};
+use bevy_math::primitives::{Cuboid, Sphere};
+use bevy_rapier3d::prelude::{AsyncCollider, Collider, ComputedColliderShape, VHACDParameters};
 use bevy_render::mesh::{Mesh, Mesh3d};
 use bevy_serialization_core::prelude::mesh::MeshPrefab;
 use bevy_serialization_physics::prelude::{ColliderFlag, JointBounded, JointFlag, RigidBodyFlag};
@@ -158,7 +158,7 @@ pub struct MeshProperties<'a> {
 
 /// generate a collider primitive from a primitive request
 pub fn generate_primitive_for_request(
-    requests: Query<(Entity, &RequestPrimitiveCollider, &Mesh3d)>,
+    requests: Query<(Entity, &RequestCollider, &Mesh3d)>,
     mut commands: Commands,
     meshes: ResMut<Assets<Mesh>>
 ) {
@@ -191,44 +191,48 @@ pub fn generate_primitive_for_request(
 
         let indices = indices.iter().map(|i|  i as u16).collect::<Vec<u16>>();
 
-        println!("Generating from bevy_mesh");
+        // println!("Generating from bevy_mesh");
+
+
+        let mut farthest_x_positive = 0.0;
+        let mut farthest_x_negative= 0.0;
+        
+        let mut farthest_y_positive = 0.0;
+        let mut farthest_y_negative = 0.0;
+
+        let mut farthest_z_positive = 0.0;
+        let mut farthest_z_negative = 0.0;
+
+        for position in positions {
+
+            let x = position[0];
+            let y = position[1];
+            let z = position[2];
+            if x > farthest_x_positive {
+                farthest_x_positive = x;
+            }
+            if x < farthest_x_negative {
+                farthest_x_negative = x;
+            }
+
+            if y > farthest_y_positive {
+                farthest_y_positive = y;
+            }
+            if y < farthest_y_negative {
+                farthest_y_negative = y;
+            }
+            
+            if z > farthest_z_positive {
+                farthest_z_positive = z;
+            }
+            if z < farthest_z_negative {
+                farthest_z_negative = z;
+            }
+        }
+
+
         let performance_collider = match collider {
-            RequestPrimitiveCollider::Cuboid => {
-                let mut farthest_x_positive = 0.0;
-                let mut farthest_x_negative= 0.0;
-                
-                let mut farthest_y_positive = 0.0;
-                let mut farthest_y_negative = 0.0;
-
-                let mut farthest_z_positive = 0.0;
-                let mut farthest_z_negative = 0.0;
-
-                for position in positions {
-
-                    let x = position[0];
-                    let y = position[1];
-                    let z = position[2];
-                    if x > farthest_x_positive {
-                        farthest_x_positive = x;
-                    }
-                    if x < farthest_x_negative {
-                        farthest_x_negative = x;
-                    }
-
-                    if y > farthest_y_positive {
-                        farthest_y_positive = y;
-                    }
-                    if y < farthest_y_negative {
-                        farthest_y_negative = y;
-                    }
-                    
-                    if z > farthest_z_positive {
-                        farthest_z_positive = z;
-                    }
-                    if z < farthest_z_negative {
-                        farthest_z_negative = z;
-                    }
-                }
+            RequestCollider::Cuboid => {
                 let half_size = Vec3 {
                     x: (f32::abs(farthest_x_negative) + farthest_x_positive),
                     y: (f32::abs(farthest_y_negative) + farthest_y_positive),
@@ -237,24 +241,61 @@ pub fn generate_primitive_for_request(
                 let collider = Cuboid {
                     half_size
                 };
-                println!("half size for {:#?} is {:#}", e, half_size);
                 ColliderFlag::Prefab(MeshPrefab::from(collider))
-
+            },
+            //TODO: Until: https://github.com/dimforge/rapier/issues/778 is resolved
+            //This solution uses the sphere method for generating a primitive.
+            RequestCollider::Wheel => {
+                let mut largest = 0.0;
+                for candidate in [
+                    farthest_x_positive, 
+                    f32::abs(farthest_x_negative), 
+                    farthest_y_positive, 
+                    f32::abs(farthest_y_negative), 
+                    farthest_z_positive, 
+                    f32::abs(farthest_z_negative)
+                ] {
+                    if candidate > largest {
+                        largest = candidate;
+                    }
+                }
+                ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(largest)))
+            },
+            RequestCollider::Convex => {
+                commands.entity(e).insert(AsyncCollider(ComputedColliderShape::ConvexHull));
+                commands.entity(e).remove::<RequestCollider>();
+                return
+            },
+            RequestCollider::Sphere => {
+                let mut largest = 0.0;
+                for candidate in [
+                    farthest_x_positive, 
+                    f32::abs(farthest_x_negative), 
+                    farthest_y_positive, 
+                    f32::abs(farthest_y_negative), 
+                    farthest_z_positive, 
+                    f32::abs(farthest_z_negative)
+                ] {
+                    if candidate > largest {
+                        largest = candidate;
+                    }
+                }
+                ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(largest)))
             },
         };
         commands.entity(e).insert(
             performance_collider
         );
-        commands.entity(e).remove::<RequestPrimitiveCollider>();
+        commands.entity(e).remove::<RequestCollider>();
 
         // commands.entity(e).insert(
         //     Collider::from_bevy_mesh(mesh, &ComputedColliderShape::ConvexDecomposition(VHACDParameters::default())).unwrap()
         //     // Collider::convex_decomposition(vertices, indices)
         // );
         // println!("finished generating from bevy mesh");
-        // commands.entity(e).remove::<RequestPrimitiveCollider>();
+        // commands.entity(e).remove::<RequestCollider>();
         // let performance_collider = match collider {
-        //     RequestPrimitiveCollider::Cuboid => {
+        //     RequestCollider::Cuboid => {
         //         //PrimitiveColliderFlag(MeshPrefab::Cuboid(Cuboid::new()))
         //         commands.spawn(Collider::convex_decomposition(vertices, indices))
         //         //let farthest

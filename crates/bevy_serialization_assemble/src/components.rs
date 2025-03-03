@@ -32,7 +32,7 @@ pub fn disassemble_components<'a, T>(world: &mut DeferredWorld<'a>,  e: Entity, 
             assembly_id.0
         } 
         else {
-            println!("creating new id for {:#}", e);
+            // println!("creating new id for {:#}", e);
             let mut assemblies = world.get_resource_mut::<Assemblies>().unwrap();
             let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
                 

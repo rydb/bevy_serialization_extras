@@ -111,39 +111,39 @@ impl From<&Collider> for ColliderFlag {
     }
 }
 
-#[derive(Component, PartialEq, EnumIter, Reflect, Clone, Default, Debug)]
-#[reflect(Component)]
-#[require(CcdFlag, CollisionGroupsFlag, SolverGroupsFlag)]
-///Wrapper for mesh colliders
-pub enum AsyncColliderFlag {
-    /// laggy: no-internal geometry(will clip through things)
-    Trimesh,
-    #[default]
-    /// fast: accurate assuming mesh geometry is convex, inaccurate otherwise.
-    Convex,
-}
+// #[derive(Component, PartialEq, EnumIter, Reflect, Clone, Default, Debug)]
+// #[reflect(Component)]
+// #[require(CcdFlag, CollisionGroupsFlag, SolverGroupsFlag)]
+// ///Wrapper for mesh colliders
+// pub enum AsyncColliderFlag {
+//     /// laggy: no-internal geometry(will clip through things)
+//     Trimesh,
+//     #[default]
+//     /// fast: accurate assuming mesh geometry is convex, inaccurate otherwise.
+//     Convex,
+// }
 
-impl ComponentWrapper for AsyncColliderFlag {
-    type WrapperTarget = AsyncCollider;
-}
+// impl ComponentWrapper for AsyncColliderFlag {
+//     type WrapperTarget = AsyncCollider;
+// }
 
-impl From<&AsyncCollider> for AsyncColliderFlag {
-    fn from(_value: &AsyncCollider) -> Self {
-        // TODO: implement a way to choose between trimesh and Convex.
-        // In meantime, defaulting to convex to minimize lag.
-        Self::Convex
-    }
-}
+// impl From<&AsyncCollider> for AsyncColliderFlag {
+//     fn from(_value: &AsyncCollider) -> Self {
+//         // TODO: implement a way to choose between trimesh and Convex.
+//         // In meantime, defaulting to convex to minimize lag.
+//         Self::Convex
+//     }
+// }
 
-impl From<&AsyncColliderFlag> for AsyncCollider {
-    fn from(value: &AsyncColliderFlag) -> Self {
-        match value {
-            //TODO: double check this is correct
-            AsyncColliderFlag::Trimesh => AsyncCollider::default(),
-            //TODO: double check this is correct
-            AsyncColliderFlag::Convex => Self(
-                ComputedColliderShape::ConvexHull,
-            ),
-        }
-    }
-}
+// impl From<&AsyncColliderFlag> for AsyncCollider {
+//     fn from(value: &AsyncColliderFlag) -> Self {
+//         match value {
+//             //TODO: double check this is correct
+//             AsyncColliderFlag::Trimesh => AsyncCollider::default(),
+//             //TODO: double check this is correct
+//             AsyncColliderFlag::Convex => Self(
+//                 ComputedColliderShape::ConvexHull,
+//             ),
+//         }
+//     }
+// }

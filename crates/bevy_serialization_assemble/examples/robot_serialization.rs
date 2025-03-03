@@ -8,7 +8,7 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat}};
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
-use bevy_serialization_assemble::{components::{RequestAssetStructure, RollDown}, prelude::*};
+use bevy_serialization_assemble::{components::{RequestAssetStructure, RollDown}, gltf::RequestCollider, prelude::*};
 use bevy_serialization_core::{prelude::{mesh::Mesh3dFlag, *}};
 use bevy_serialization_physics::prelude::*;
 use bevy_state::commands;
@@ -162,8 +162,6 @@ pub fn control_robot(
     for (mut joint, wheel) in wheels.iter_mut() {
         for axis in joint.joint.motors.iter_mut() {
             if keys.pressed(forward_key) {
-                println!("driving wheel....");
-
                 axis.target_vel = target_speed
             } else if keys.pressed(backward_key) {
                 axis.target_vel = -target_speed
@@ -210,7 +208,7 @@ pub fn control_robot(
 
 
 pub fn select_robot(
-    robots: Query<Entity, (With<MassFlag>, With<AsyncColliderFlag>, With<Mesh3d>, Without<Selected>)>,
+    robots: Query<Entity, (With<MassFlag>, With<ColliderFlag>, With<Mesh3d>, Without<Selected>)>,
     mut commands: Commands
 ) {
     for robot in &robots {
@@ -260,7 +258,7 @@ fn setup(
         MeshMaterial3d(materials.add(Color::LinearRgba(LinearRgba::new(0.3, 0.5, 0.3, 1.0)))),
         Transform::from_xyz(0.0, -1.0, 0.0),
         RigidBodyFlag::Fixed,
-        AsyncColliderFlag::Convex,
+        RequestCollider::Convex,
         Name::new("plane"),
         BasePlate,
     ));

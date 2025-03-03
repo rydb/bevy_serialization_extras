@@ -10,7 +10,6 @@ use bevy_render::mesh::Mesh3d;
 use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::mesh::Mesh3dFlag;
-use bevy_serialization_physics::prelude::AsyncColliderFlag;
 use bevy_serialization_physics::prelude::JointInfo;
 use bevy_serialization_physics::prelude::{
     continous_collision::CcdFlag,
@@ -48,7 +47,6 @@ use derive_more::From;
 use bevy_ecs::{prelude::*, query::QueryData};
 
 use crate::components::Ids;
-use crate::gltf::RequestPrimitiveCollider;
 use crate::traits::AssembleParms;
 use crate::traits::Split;
 use crate::JointRequest;
@@ -117,9 +115,7 @@ impl Disassemble for LinksNJoints {
                 (
 
                     Name::new(link.name),
-                    //RequestNameWithId(link.name),
                     //TODO: for sanity, refactor will not include this on initial release.
-                    //RequestStructure(VisualWrapper(link.visual)),
                     RequestStructure(LinkColliders(link.collision)),
                     Maybe(joint),
                     Visibility::default(),
@@ -220,11 +216,11 @@ impl Disassemble for LinkColliders {
         };
         Structure::Root(
             (
-                SolverGroupsFlag {
-                    memberships: GroupWrapper::all(),
-                    filters: GroupWrapper::all(),
-                },
-                RequestPrimitiveCollider::Cuboid,
+                // SolverGroupsFlag {
+                //     memberships: GroupWrapper::all(),
+                //     filters: GroupWrapper::all(),
+                // },
+                //RequestCollider::Cuboid,
                 //AsyncColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
@@ -542,7 +538,8 @@ impl From<&UrdfJoint> for JointRequest {
                 limit_axes: JointAxesMaskWrapper::empty(),
                 motor_axes: JointAxesMaskWrapper::all(),
                 coupled_axes: JointAxesMaskWrapper::empty(),
-                contacts_enabled: true,
+                //TODO: Make this a user configurable setting. Setting to false in meantime
+                contacts_enabled: false,
                 enabled: true,
                 motors: [
                     motor_settings.clone(),
