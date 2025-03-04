@@ -36,15 +36,15 @@ impl From<&MeshWrapper> for Mesh {
                 MeshPrefab::Cone(cone) => cone.into(),
                 MeshPrefab::Unimplemented(_kind) => FALLBACK_MESH.into(),
             },
-            MeshWrapper::Procedural => FALLBACK_MESH.into(),
+            MeshWrapper::Procedural(mesh) => mesh.clone(),
         }
     }
 }
 
 //TODO: Implement properly when mesh -> mesh file conversion exists to use this.
 impl From<&Mesh> for MeshWrapper {
-    fn from(_value: &Mesh) -> Self {
-        Self::Procedural
+    fn from(value: &Mesh) -> Self {
+        Self::Procedural(value.clone())
     }
 }
 
@@ -54,7 +54,7 @@ impl Default for MeshPrefab {
     }
 }
 
-#[derive(Component, Reflect, PartialEq, From)]
+#[derive(Component, Reflect, From)]
 #[reflect(Component)]
 pub enum Mesh3dFlag {
     /// asset path to a model from bevy.
@@ -66,10 +66,10 @@ pub enum Mesh3dFlag {
     Pure(MeshWrapper),
 }
 
-#[derive(Component, Reflect, PartialEq, From)]
+#[derive(Reflect, From)]
 pub enum MeshWrapper {
     Prefab(MeshPrefab),
-    Procedural,
+    Procedural(Mesh),
 }
 
 impl AssetWrapper for Mesh3dFlag {
@@ -78,7 +78,10 @@ impl AssetWrapper for Mesh3dFlag {
     type PureVariant = MeshWrapper;
 
     fn asset_state(&self) -> AssetState<Self::PureVariant, String> {
-        todo!()
+        match self {
+            Self::Pure(material_wrapper) => AssetState::Pure(material_wrapper),
+            Self::Path(path) => AssetState::Path(path),
+        }
     }
 }
 
@@ -89,7 +92,7 @@ pub(crate) struct ProceduralMeshWrapper;
 
 impl Default for Mesh3dFlag {
     fn default() -> Self {
-        Self::Pure(MeshWrapper::Procedural)
+        Self::Pure(MeshWrapper::Procedural(FALLBACK_MESH.into()))
     }
 }
 

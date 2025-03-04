@@ -4,7 +4,7 @@
     4294967303: (
       components: {
         "bevy_core::name::Name": (
-          hash: 17134374621268170533,
+          hash: 6989348692474270526,
           name: "Cube",
         ),
         "bevy_render::primitives::Aabb": (
@@ -15,8 +15,8 @@
         "bevy_render::view::visibility::ViewVisibility": (true),
         "bevy_render::view::visibility::Visibility": Inherited,
         "bevy_serialization_core::wrappers::material::Material3dFlag": Pure(Color(Srgba((
-          red: 1.0,
-          green: 0.0,
+          red: 0.0,
+          green: 1.0,
           blue: 0.0,
           alpha: 1.0,
         )))),

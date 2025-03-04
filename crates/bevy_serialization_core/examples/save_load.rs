@@ -53,21 +53,16 @@ fn setup(
 
     let mesh_handle =
         asset_server.load(GltfAssetLabel::Primitive{mesh: 0, primitive: 0}.from_asset("root://cube.glb"))
-        //asset_server.load(GltfAssetLabel::Mesh(0).from_asset("../../../assets/cube.gltf"))
-        //meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()
     ;
 
     println!("mesh handle is {:#?}", mesh_handle);
     // // cube
     commands.spawn((
         Mesh3d(mesh_handle),
-        //MeshMaterial3d(materials.add(Color::Srgba(Srgba::GREEN))),
-        //WrapAsset::Pure(Material3dFlag::Color(Color::Srgba(Srgba::GREEN))),
         Material3dFlag::Pure(Color::Srgba(Srgba::GREEN).into()),
         Transform::from_xyz(0.0, 0.5, 0.0),
         Save,
         Name::new("Cube"),
-        //GltfTarget
     ));
     // light
     commands.spawn((
@@ -179,80 +174,3 @@ pub enum UtilityType {
 pub struct UtilitySelection {
     pub selected: UtilityType,
 }
-
-//TODO: Redesign this to not use egui_extras
-// pub fn serialization_widgets_ui(
-//     mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-//     mut utility_selection: ResMut<UtilitySelection>,
-//     saved_components: Res<ComponentsOnSave>,
-//     registered_types: Res<TypeRegistryOnSave>,
-//     mut refresh_counter: ResMut<RefreshCounter>,
-//     mut show_serializable: ResMut<ShowSerializable>,
-//     mut show_unserializable: ResMut<ShowUnserializable>,
-// ) {
-//     for mut context in primary_window.iter_mut() {
-//         egui::Window::new("debug widget window")
-//             //.title_bar(false)
-//             .show(context.get_mut(), |ui| {
-//                 // lay out the ui widget selection menu
-//                 ui.horizontal(|ui| {
-//                     for utility in UtilityType::iter() {
-//                         if ui.button(utility.to_string()).clicked() {
-//                             utility_selection.selected = utility;
-//                         }
-//                     }
-//                 });
-
-//                 match utility_selection.selected {
-//                     UtilityType::SerializableList => {
-//                         let table = TableBuilder::new(ui);
-//                         table
-//                             .striped(true)
-//                             .resizable(true)
-//                             .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-//                             .column(Column::auto())
-//                             .min_scrolled_height(0.0)
-//                             .header(20.0, |mut header| {
-//                                 header.col(|ui| {
-//                                     ui.horizontal(|ui| {
-//                                         ui.checkbox(&mut show_serializable.check, "show savable");
-//                                         ui.checkbox(
-//                                             &mut show_unserializable.check,
-//                                             "show unsavable",
-//                                         );
-//                                         if ui.button("refresh").clicked() {
-//                                             refresh_counter.counter += 1;
-//                                         }
-//                                     });
-//                                 });
-//                             })
-//                             .body(|mut body| {
-//                                 for (type_id, name) in saved_components.components.iter() {
-//                                     if registered_types.registry.contains_key(type_id) {
-//                                         if show_serializable.check == true {
-//                                             body.row(30.0, |mut row| {
-//                                                 row.col(|ui| {
-//                                                     ui.label(
-//                                                         RichText::new(name).color(Color32::GREEN),
-//                                                     );
-//                                                 });
-//                                             })
-//                                         }
-//                                     } else {
-//                                         if show_unserializable.check == true {
-//                                             body.row(30.0, |mut row| {
-//                                                 row.col(|ui| {
-//                                                     ui.label(
-//                                                         RichText::new(name).color(Color32::RED),
-//                                                     );
-//                                                 });
-//                                             })
-//                                         }
-//                                     }
-//                                 }
-//                             });
-//                     }
-//                 }
-//             });
-//     }
-// }

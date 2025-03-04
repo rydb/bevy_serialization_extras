@@ -6,8 +6,7 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_inspector_egui::{
     bevy_egui::EguiContext,
     egui::{
-        self, text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke,
-        TextFormat,
+        self, Align2, Color32, Frame, Margin, Rounding, Shadow, Stroke,
     },
 };
 use bevy_obj::ObjPlugin;
@@ -20,8 +19,6 @@ use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
 use moonshine_save::save::Save;
 
-use resources::CachedUrdf;
-use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
 fn main() {
@@ -53,12 +50,15 @@ fn main() {
         .add_plugins(SerializationBasePlugin)
         .add_plugins(UrdfSerializationPlugin)
         // // rapier physics plugins
-        .add_plugins(UiExtrasDebug::default())
+        .add_plugins(UiExtrasDebug {
+            menu_mode: bevy_ui_extras::states::DebugMenuState::Explain, 
+            ..default()
+        })
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
             ..default()
         })
-        .add_systems(Update, urdf_widgets_ui)
+        //.add_systems(Update, urdf_widgets_ui)
         .add_systems(
             Update,
             visualize_components_for::<Name>(bevy_ui_extras::Display::Side(
@@ -151,6 +151,7 @@ pub fn control_robot(
     for mut context in primary_window.iter_mut() {
         egui::Window::new("robot controls")
             .frame(DEBUG_FRAME_STYLE)
+            .anchor(Align2::LEFT_BOTTOM, [0.0, 0.0])
             .show(context.get_mut(), |ui| {
                 ui.label(format!("Freeze key: {:#?}", freeze_key));
                 ui.label(format!("unfreeze key {:#?}", unfreeze_key));
@@ -339,48 +340,6 @@ pub enum UtilityType {
 #[derive(Resource, Default)]
 pub struct UtilitySelection {
     pub selected: UtilityType,
-}
-
-pub fn urdf_widgets_ui(
-    mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-    mut utility_selection: ResMut<UtilitySelection>,
-    cached_urdf: Res<CachedUrdf>,
-    urdfs: Res<Assets<Urdf>>,
-) {
-    for mut context in primary_window.iter_mut() {
-        egui::Window::new("debug widget window")
-            //.title_bar(false)
-            .frame(DEBUG_FRAME_STYLE)
-            .show(context.get_mut(), |ui| {
-                // lay out the ui widget selection menu
-                ui.horizontal(|ui| {
-                    for utility in UtilityType::iter() {
-                        if ui.button(utility.to_string()).clicked() {
-                            utility_selection.selected = utility;
-                        }
-                    }
-                });
-
-                match utility_selection.selected {
-                    UtilityType::UrdfInfo => {
-                        if let Some(urdf) = urdfs.get(&cached_urdf.urdf) {
-                            let urdf_as_string = format!("{:#?}", urdf.0);
-
-                            if ui.button("Copy to clipboard").clicked() {
-                                ui.output_mut(|o| o.copied_text = urdf_as_string.to_string());
-                            }
-                            ScrollArea::vertical().show(ui, |ui| {
-                                let job = LayoutJob::single_section(
-                                    urdf_as_string,
-                                    TextFormat::default(),
-                                );
-                                ui.label(job);
-                            });
-                        }
-                    }
-                }
-            });
-    }
 }
 
 pub const ROOT: &str = "root";

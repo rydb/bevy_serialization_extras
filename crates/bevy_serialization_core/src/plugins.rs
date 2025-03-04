@@ -138,7 +138,14 @@ impl<T: AssetWrapper> Plugin for SerializeAssetFor<T> {
     fn build(&self, app: &mut App) {
         skip_serializing::<T::WrapperTarget>(app);
 
-        app.world_mut()
+        app.add_systems(
+            PreUpdate,
+            (try_serialize_asset_for::<T>, deserialize_asset_for::<T>).chain(),
+        );
+
+        app
+        .register_type::<T>()
+        .world_mut()
             .register_component_hooks::<T>()
             .on_add(|mut world, e, _id| {
                 let comp = {
@@ -178,10 +185,7 @@ impl<T: AssetWrapper> Plugin for SerializeAssetFor<T> {
                 world.commands().entity(e).insert(componentized_asset);
             });
 
-        app.register_type::<T>().add_systems(
-            PreUpdate,
-            (try_serialize_asset_for::<T>, deserialize_asset_for::<T>).chain(),
-        );
+
     }
 }
 
@@ -207,7 +211,6 @@ impl Plugin for SerializationPlugin {
             .register_type::<Camera3dDepthTextureUsage>()
             .register_type::<InheritedVisibility>()
             .register_type::<ScreenSpaceTransmissionQuality>()
-            //.register_type::<MeshFlag3d>()
             .register_type::<[[f32; 3]; 3]>()
             .register_type::<[Vec3; 3]>()
             .register_type::<CameraRenderGraph>()
@@ -221,6 +224,7 @@ impl Plugin for SerializationPlugin {
             .register_type::<Range<f32>>()
             .register_type_data::<Range<f32>, ReflectSerialize>()
             .register_type_data::<Range<f32>, ReflectDeserialize>()
+            .init_resource::<SerializeFilter>()
             .insert_resource(ShowSerializable::default())
             .insert_resource(ShowUnserializable::default())
             .insert_resource(ComponentsOnSave::default())
@@ -241,22 +245,12 @@ impl Plugin for SerializationPlugin {
             )
             .add_systems(
                 PreUpdate,
-                //save_default_with(save_filter).into_file_on_request::<SaveRequest>(),
                 save_default_with(save_filter).into(file_from_resource::<SaveRequest>()),
             )
-            // .add_systems(
-            //     Update,
-            //     add_inherieted_visibility.after(LoadSystem::PostLoad),
-            // )
-            // .add_systems(Update, add_view_visibility.after(LoadSystem::PostLoad))
             .init_resource::<WrapAssetSerializers>()
             .init_resource::<WrapAssetDeserializers>()
             .init_resource::<WrapCompSerializers>()
             .init_resource::<WrapCompDeserializers>()
-            // .add_systems(Update, run_proxy_system::<WrapAssetSerializers>)
-            // .add_systems(Update, run_proxy_system::<WrapAssetDeserializers>)
-            // .add_systems(Update, run_proxy_system::<WrapCompSerializers>)
-            // .add_systems(Update, run_proxy_system::<WrapCompDeserializers>)
             .add_systems(PreUpdate, load(file_from_resource::<LoadRequest>()));
     }
 }

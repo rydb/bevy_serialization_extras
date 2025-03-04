@@ -2,7 +2,6 @@ use bevy_asset::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_reflect::{FromReflect, GetTypeRegistration, Reflect, Typed};
 use std::ops::Deref;
-
 pub trait ComponentWrapper
 where
     Self: Component
@@ -26,7 +25,6 @@ pub enum AssetState<'a, T, U> {
 pub trait AssetWrapper
 where
     Self: Component
-        + PartialEq
         + Reflect
         + FromReflect
         + Typed
@@ -37,7 +35,7 @@ where
         + From<Handle<AssetType<Self>>>
         + AssetHandleComponent,
     AssetType<Self>: for<'a> From<&'a Self::PureVariant>,
-    Self::PureVariant: for<'a> From<&'a AssetType<Self>> + PartialEq,
+    Self::PureVariant: for<'a> From<&'a AssetType<Self>>
 {
     type WrapperTarget: Component + Deref;
     type PureVariant;

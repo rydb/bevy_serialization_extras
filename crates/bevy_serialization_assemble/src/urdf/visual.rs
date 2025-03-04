@@ -54,7 +54,8 @@ impl From<&Mesh3dFlag> for GeometryWrapper {
                 })
             }
             Mesh3dFlag::Pure(pure) => match pure {
-                MeshWrapper::Procedural => {
+                //TODO: Implement properly.
+                MeshWrapper::Procedural(_mesh) => {
                     warn!("procedural meshes not supported in urdf serialization(currently) defaulting to error mesh");
                     Self(FALLBACK_GEOMETRY)
                 }

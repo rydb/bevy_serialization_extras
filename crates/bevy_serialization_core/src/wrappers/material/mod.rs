@@ -5,11 +5,13 @@ use bevy_pbr::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_utils::prelude::*;
 use derive_more::derive::From;
+use bevy_ecs::prelude::ReflectComponent;
 
 use crate::traits::{AssetHandleComponent, AssetState, AssetWrapper};
 
 /// serializable wrapper for mesh materials
 #[derive(Component, Reflect, Clone, PartialEq, From)]
+#[reflect(Component)]
 pub enum Material3dFlag {
     Pure(MaterialWrapper),
     Path(String),
