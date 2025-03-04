@@ -1,15 +1,8 @@
 
 use bevy_derive::Deref;
-use bevy_ecs::{component::StorageType, prelude::*};
-use bevy_color::{Color, LinearRgba};
-use bevy_gltf::GltfNode;
-use bevy_hierarchy::BuildChildren;
-use bevy_serialization_core::prelude::{
-    material::Material3dFlag,
-    mesh::{Mesh3dFlag, MeshPrefab, MeshWrapper},
-};
+use bevy_ecs::prelude::*;
+use bevy_serialization_core::prelude::mesh::{Mesh3dFlag, MeshPrefab, MeshWrapper};
 use bevy_log::warn;
-use bevy_serialization_physics::prelude::{GroupWrapper, MassFlag, SolverGroupsFlag};
 use derive_more::From;
 use glam::Vec3;
 use nalgebra::Vector3;
@@ -17,7 +10,7 @@ use urdf_rs::{Geometry, Visual};
 
 use bevy_math::prelude::*;
 
-use crate::{components::{RequestAssetStructure, Resolve}, gltf::{GltfMeshWrapper, GltfNodeWrapper, GltfPhysicsMeshPrimitive, GltfPrimitiveWrapper}, traits::{Disassemble, Split, Structure}};
+use crate::{components::{RequestAssetStructure, Resolve}, gltf::GltfPhysicsMeshPrimitive, traits::{Disassemble, Split, Structure}};
 
 
 

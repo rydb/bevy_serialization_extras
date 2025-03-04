@@ -5,13 +5,12 @@ use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, TextEdit}};
 use bevy_serialization_core::{
     plugins::SerializationPlugin, prelude::{
-        material::Material3dFlag, ComponentsOnSave, RefreshCounter, SerializationBasePlugin, ShowSerializable, ShowUnserializable, TypeRegistryOnSave
+        material::Material3dFlag, SerializationBasePlugin
     }, resources::{LoadRequest, SaveRequest}
 };
 use bevy_ui_extras::UiExtrasDebug;
 use moonshine_save::save::Save;
 use std::{env, path::PathBuf};
-use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 const SAVES_LOCATION: &str = "crates/bevy_serialization_core/saves";
 

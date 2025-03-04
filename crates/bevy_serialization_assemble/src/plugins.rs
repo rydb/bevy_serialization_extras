@@ -1,13 +1,13 @@
 use std::marker::PhantomData;
 
 use bevy_app::prelude::*;
-use bevy_asset::{processor::InitializeError, Asset};
-use bevy_ecs::{prelude::*, query::QueryData};
+use bevy_asset::Asset;
+use bevy_ecs::prelude::*;
 use bevy_serialization_core::run_proxy_system;
-use moonshine_save::{load::LoadSystem, save::SaveSystem};
+use moonshine_save::save::SaveSystem;
 
 use crate::{
-    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers}, resources::AssetSpawnRequestQueue, systems::{bind_joint_request_to_parent, generate_primitive_for_request, save_asset}, traits::{Assemble, Disassemble, LazySerialize}, Assemblies, AssemblyId
+    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{bind_joint_request_to_parent, generate_primitive_for_request, save_asset}, traits::{Assemble, Disassemble, LazySerialize}, Assemblies, AssemblyId
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.

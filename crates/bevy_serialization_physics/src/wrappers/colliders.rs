@@ -1,10 +1,8 @@
 use bevy_log::warn;
 use bevy_math::primitives::{Capsule3d, Cone, Cuboid, Cylinder, Sphere};
-use bevy_rapier3d::{geometry::ComputedColliderShape, prelude::{shape_views::ConvexPolyhedronView, AsyncCollider, Collider, ColliderView}};
+use bevy_rapier3d::prelude::{Collider, ColliderView};
 use bevy_serialization_core::{prelude::mesh::{MeshPrefab, FALLBACK_MESH}, traits::ComponentWrapper};
 use derive_more::derive::From;
-use rapier3d::{parry::simba::scalar::SupersetOf, prelude::{ConvexPolyhedron, SharedShape, TriMesh}};
-use strum_macros::EnumIter;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;

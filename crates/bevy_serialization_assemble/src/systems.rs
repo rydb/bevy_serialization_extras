@@ -1,28 +1,22 @@
-use crate::components::{RequestAssetStructure, RollDown, RollDownIded};
+use crate::components::{RequestAssetStructure, RollDownIded};
 use crate::gltf::RequestCollider;
 use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage};
-use crate::resources::{AssetSpawnRequestQueue, RequestFrom};
 use crate::traits::{Assemble, Disassemble, LazySerialize};
-use crate::urdf::urdf::RequestIdFromName;
 use bevy_asset::prelude::*;
 use bevy_core::Name;
 use bevy_ecs::component::{Components};
-use bevy_ecs::system::{SystemId, SystemState};
-use bevy_ecs::{prelude::*, query::QueryData};
-use bevy_hierarchy::{BuildChildren, Children};
+use bevy_ecs::system::SystemState;
+use bevy_ecs::prelude::*;
+use bevy_hierarchy::Children;
 use bevy_log::prelude::*;
 use bevy_math::primitives::{Cuboid, Sphere};
-use bevy_rapier3d::prelude::{AsyncCollider, Collider, ComputedColliderShape, VHACDParameters};
+use bevy_rapier3d::prelude::{AsyncCollider, ComputedColliderShape};
 use bevy_render::mesh::{Mesh, Mesh3d};
 use bevy_serialization_core::prelude::mesh::MeshPrefab;
 use bevy_serialization_physics::prelude::{ColliderFlag, JointBounded, JointFlag, RigidBodyFlag};
 use bevy_transform::components::Transform;
 use glam::Vec3;
-use std::collections::VecDeque;
-use std::fmt::Debug;
-use std::marker::PhantomData;
 use std::ops::Deref;
-use crate::prelude::UrdfWrapper;
 
 
 // /// give entity a name from its entity id.
@@ -313,7 +307,7 @@ pub fn generate_primitive_for_request(
 
 // get joints and bind them to their named connection if it exists
 pub fn bind_joint_request_to_parent(
-    mut joints: Query<(Entity, &mut JointRequest, &AssemblyId), Without<JointBounded>>,
+    joints: Query<(Entity, &mut JointRequest, &AssemblyId), Without<JointBounded>>,
     link_names: Query<(Entity, &Name, &AssemblyId), (
         With<RigidBodyFlag>, 
         // JointFlag requires this to be initialized on the parent link to initialize properly        

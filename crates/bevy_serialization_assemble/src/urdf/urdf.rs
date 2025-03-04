@@ -1,57 +1,41 @@
 
 
 use bevy_core::Name;
-use bevy_ecs::query::QueryIter;
-use bevy_ecs::system::SystemParam;
-use bevy_ecs::system::SystemState;
 use bevy_log::warn;
-use bevy_math::Dir3;
-use bevy_render::mesh::Mesh3d;
-use bevy_render::prelude::InheritedVisibility;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::mesh::Mesh3dFlag;
 use bevy_serialization_physics::prelude::JointInfo;
 use bevy_serialization_physics::prelude::{
-    continous_collision::CcdFlag,
     link::{
-        Dynamics, GeometryShiftMarked, JointAxesMaskWrapper, JointFlag, JointLimitWrapper,
-        JointMotorWrapper, LinkFlag, StructureFlag,
+        Dynamics, JointAxesMaskWrapper, JointFlag, JointLimitWrapper,
+        JointMotorWrapper, LinkFlag,
     },
-    mass::MassFlag,
     rigidbodies::RigidBodyFlag,
-    solvergroupfilter::{GroupWrapper, SolverGroupsFlag},
 };
 use bevy_ecs::system::SystemParamItem;
 use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
-use glam::Mat3A;
-use glam::Vec3A;
 use glam::{EulerRot, Quat, Vec3};
 use nalgebra::Matrix3;
 use nalgebra::Vector3;
-use urdf_rs::Geometry;
 use urdf_rs::Inertial;
 use urdf_rs::JointType;
 use urdf_rs::LinkName;
-use std::any::type_name;
 // use nalgebra::{Matrix3, Vector3};
-use std::any::Any;
-use std::any::TypeId;
 use std::collections::HashMap;
 use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
-use visual::{GeometryWrapper, VisualWrapper};
+use visual::GeometryWrapper;
 
 use derive_more::From;
 
-use bevy_ecs::{prelude::*, query::QueryData};
+use bevy_ecs::prelude::*;
 
-use crate::components::Ids;
 use crate::traits::AssembleParms;
 use crate::traits::Split;
 use crate::JointRequest;
 use crate::JointRequestStage;
 use crate::{
-    components::{Maybe, RequestStructure, Resolve, RollDown}, traits::{Disassemble, Assemble, Structure}
+    components::{Maybe, RequestStructure, Resolve}, traits::{Disassemble, Assemble, Structure}
 };
 
 use super::*;

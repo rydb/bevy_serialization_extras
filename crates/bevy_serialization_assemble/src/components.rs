@@ -1,4 +1,4 @@
-use std::{any::{type_name, Any, TypeId}, collections::HashMap, fmt::Debug, marker::PhantomData, ops::Deref};
+use std::{any::{type_name, TypeId}, fmt::Debug, marker::PhantomData};
 
 use crate::{prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, Structure}, Assemblies, AssemblyId};
 use bevy_asset::prelude::*;
@@ -6,8 +6,6 @@ use bevy_derive::Deref;
 use bevy_ecs::{component::{ComponentHooks, ComponentId, StorageType}, prelude::*, world::DeferredWorld};
 use bevy_log::warn;
 use bevy_hierarchy::prelude::*;
-use bevy_reflect::{DynamicTypePath, Reflect};
-use bevy_state::commands;
 use bevy_transform::components::Transform;
 
 // /// The structure this entity belongs to 

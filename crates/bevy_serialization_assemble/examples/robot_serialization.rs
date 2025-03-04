@@ -1,6 +1,5 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use std::any::{type_name, TypeId};
 
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
@@ -8,12 +7,10 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat}};
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
-use bevy_serialization_assemble::{components::{RequestAssetStructure, RollDown}, gltf::RequestCollider, prelude::*};
-use bevy_serialization_core::{prelude::{mesh::Mesh3dFlag, *}};
+use bevy_serialization_assemble::{components::RequestAssetStructure, gltf::RequestCollider, prelude::*};
+use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
-use bevy_state::commands;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
-use glam::{Affine3A, Mat3A, Vec3A};
 use moonshine_save::save::Save;
 
 use resources::CachedUrdf;
@@ -117,7 +114,7 @@ pub struct WasFrozen;
 pub fn freeze_spawned_robots(
     mut robots: Query<
         (Entity, &mut RigidBodyFlag),
-        (Without<WasFrozen>),
+        Without<WasFrozen>,
     >,
     mut commands: Commands,
 ) {
