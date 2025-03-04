@@ -38,7 +38,6 @@ use std::any::type_name;
 use std::any::Any;
 use std::any::TypeId;
 use std::collections::HashMap;
-use std::f32::consts::PI;
 use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
 use visual::{GeometryWrapper, VisualWrapper};
 
@@ -56,36 +55,6 @@ use crate::{
 };
 
 use super::*;
-
-// pub struct RequestAssemblyId;
-
-
-
-
-// /// the collection of things that qualify as a "link", in the ROS 2 context.
-// #[derive(QueryData)]
-// pub struct LinkQuery {
-//     pub entity: Entity,
-//     pub name: Option<&'static Name>,
-//     pub structure: &'static StructureFlag,
-//     pub inertial: Option<&'static MassFlag>,
-//     //pub joint_target: 
-//     //pub visual: FileCheck<GeometryFlag, GeometryFile>,
-//     pub visual: &'static MeshFlag3d,
-//     pub collision: Option<&'static ColliderFlag>,
-//     pub joint: Option<&'static JointFlag>,
-// }
-
-// impl LazyDeserialize for Urdf {
-//     fn deserialize(absolute_path: String, world: &World) -> Result<Self, LoadError> {
-//         let res = urdf_rs::read_file(absolute_path);
-//         let urdf = match res {
-//             Ok(urdf) => urdf,
-//             Err(err) => return Err(LoadError::Error(err.to_string())),
-//         };
-//         Ok(Urdf { robot: urdf })
-//     }
-// }
 
 #[derive(Component)]
 pub struct RequestIdFromName;
@@ -115,7 +84,6 @@ impl Disassemble for LinksNJoints {
                 (
 
                     Name::new(link.name),
-                    //TODO: for sanity, refactor will not include this on initial release.
                     RequestStructure(LinkColliders(link.collision)),
                     Maybe(joint),
                     Visibility::default(),
@@ -144,54 +112,11 @@ pub struct UrdfJoint(Joint);
 impl Disassemble for UrdfJoint {
     fn components(value: Self)
     -> Structure<impl Bundle> {
-        // let axis = value.0.axis.xyz.0.map(|n| n as f32 );
-        // let axis = Vec3A::new(axis[0], axis[1], axis[2]);
-
-        // let rotation_matrix = Mat3A {
-        //     x_axis: Vec3A::new(0.0, 0.0, 1.0),
-        //     y_axis: Vec3A::new(0.0, 1.0, 0.0),
-        //     z_axis: Vec3A::new(1.0, 0.0, 0.0),
-        // };
-
-        // // not sure how to do vec3 * matrix3 in glam, soooo doing it like this instead. 
-        // let rot_partx = Vec3A::new(rotation_matrix.x_axis.x, rotation_matrix.y_axis.x, rotation_matrix.z_axis.x);
-        // let rot_party = Vec3A::new(rotation_matrix.x_axis.y, rotation_matrix.y_axis.y, rotation_matrix.z_axis.y);
-        // let rot_partz = Vec3A::new(rotation_matrix.x_axis.z, rotation_matrix.y_axis.z, rotation_matrix.z_axis.z);
-
-        // let rotx = axis * rot_partx;
-        // let roty = axis * rot_party;
-        // let rotz = axis * rot_partz;
-        // let rot = rotx + roty + rotz;
-        // // let urdf_axis_matrix = Mat3A {
-        // //     x_axis: Vec3A::new(axis[0], 0.0, 0.0),
-        // //     y_axis: Vec3A::new(0.0, axis[1], 0.0),
-        // //     z_axis: Vec3A::new(0.0, 0.0, axis[2]),
-        // // };
-        
-        // //println!("urdf axis matrix is {:#?}", urdf_axis_matrix);
-
-
-        // //let new_transform_matrix = urdf_axis_matrix * rotation_matrix;
-        // println!("new rot is: {:#?}", rot);
-        // let new_axis = Dir3::new_unchecked(rot.into());
-        Structure::Root(
-
-            (
-                JointRequest::from(&value),
-                //JointFlag::from(&JointWrapper(value.0.clone())),
-                //Transform::from(UrdfTransform(value.0.origin))
-                // .rotate_axis(new_axis, PI)
-                // ,
-                //Transform::from_rotation(Quat::from_axis_angle(rot.into(), PI/2.0))
-            )
-        )    
+        Structure::Root((
+            JointRequest::from(&value),
+        ))    
     }
 }
-
-// const MESHKINDS = [
-//     TypeId::of::<MeshFlag3d>(),
-    
-//     ]
 
 #[derive(Clone, Deref)]
 pub struct LinkColliders(pub Vec<Collision>);
@@ -216,34 +141,12 @@ impl Disassemble for LinkColliders {
         };
         Structure::Root(
             (
-                // SolverGroupsFlag {
-                //     memberships: GroupWrapper::all(),
-                //     filters: GroupWrapper::all(),
-                // },
-                //RequestCollider::Cuboid,
-                //AsyncColliderFlag::Convex,
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
                 Visibility::default()
             )
         )
     }
-    // fn components(value: Self) -> Structure<impl Bundle> {
-    //     let mut children = Vec::new();
-    //     for collider in value.0 {
-    //         children.push(
-    //             (
-    //                 ColliderFlag::Convex,
-    //                 RigidBodyFlag::Dynamic,
-    //                 Resolve::from(GeometryWrapper(collider.geometry)),
-    //                 Name::new("collider"),
-    //                 Transform::default(),
-    //                 Visibility::default(),
-    //             )
-    //         );
-    //     }
-    //     Structure::Children(children, Split(false))
-    // }
 }
 
 

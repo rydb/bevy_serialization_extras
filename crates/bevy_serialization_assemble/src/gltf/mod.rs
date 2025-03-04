@@ -1,21 +1,15 @@
-use std::{any::type_name, str::FromStr};
-
 use bevy_asset::Handle;
-use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_log::warn;
-use bevy_math::primitives::Cuboid;
 use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
 use bevy_gltf::{GltfExtras, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_render::prelude::*;
-use bevy_transform::components::{GlobalTransform, Transform};
 use derive_more::derive::From;
-use glam::{Affine3A, Mat3A, Mat4, Vec3, Vec3A, Vec4};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
-use crate::{components::{Maybe, RequestAssetStructure, RequestStructure, Resolve}, traits::{Disassemble, Split, Structure}};
+use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{Disassemble, Split, Structure}};
 
 
 #[derive(From, Clone, Deref)]
@@ -63,9 +57,7 @@ pub struct GltfNodeColliderVisualChilds(pub GltfNode);
 pub struct GltfNodeVisuals(pub Vec<Handle<GltfNode>>);
 
 impl Disassemble for GltfNodeVisuals {
-    fn components(value: Self) -> Structure<impl Bundle> {
-        //let mesh = value.0.mesh.map(|n| RequestAssetStructure::<GltfPhysicsPrimitiveOne>::Handle(n));
-        
+    fn components(value: Self) -> Structure<impl Bundle> {        
         let mut children = Vec::new();
 
         for handle in value.0 {
@@ -94,24 +86,6 @@ pub enum RequestCollider {
     Convex,
 }
 
-// impl Default for RequestCollider {
-//     fn default() -> Self {
-//         Self::Cuboid(Cuboid::default())
-//     }
-// }
-
-// impl FromStr for PerformancePrimitiveCollider {
-//     type Err;
-
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         let target = s
-//         .replace(" ", "")
-//         .to_lowercase();
-
-
-//     }
-// }
-
 impl From<GltfExtras> for RequestCollider {
     fn from(value: GltfExtras) -> Self {        
         if let Some(target) = value.value.replace(['}', '{', '"'], "").split(':').last() {
@@ -137,15 +111,6 @@ impl From<GltfExtras> for RequestCollider {
 impl Disassemble for GltfNodeColliderVisualChilds {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mesh = value.0.mesh.map(|n| RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Handle(n));
-        
-        // let collider = {
-        //     if let Some(gltf_extras) = value.0.extras {
-        //         let collider = RequestCollider::from(gltf_extras);
-        //         Resolve::One(collider)
-        //     } else {
-        //         RequestCollider::Mesh
-        //     }
-        // };
 
         let collider_request = {
             if let Some(gltf_extras) = value.0.extras {
@@ -157,7 +122,6 @@ impl Disassemble for GltfNodeColliderVisualChilds {
         Structure::Root(
             (
                 collider_request,
-                //ColliderFlag::Convex,
                 Maybe(mesh),
                 RequestStructure(GltfNodeVisuals(value.0.children))
             )
@@ -225,24 +189,8 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
         } else {
             RequestCollider::Convex
         };
-        // let collider = match value.0.extras.map(|n| RequestCollider::from(n)) {
-        //     Some(performance_collider) => Resolve::One(performance_collider),
-        //     None => Resolve::Other(AsyncColliderFlag::Convex),
-        // };
-        //let global_transform = GlobalTransform::from
         Structure::Root(
             (
-                // GlobalTransform::from(
-                //     Affine3A {
-                //         matrix3: Mat3A {
-                //             x_axis: Vec3A::new(1.0, 0.0, 0.0),
-                //             y_axis: Vec3A::new(0.0, 0.0, 1.0),
-                //             z_axis: Vec3A::new(0.0, -1.0, 0.0),
-                //         },
-                //         translation: Vec3A::new(0.0, 0.0, 0.0),
-                //     }
-                // ),
-                //collider,
                 collider_request,
                 Maybe(material),
                 Maybe(primitive),
@@ -273,7 +221,6 @@ impl Disassemble for GltfNodeWrapper {
         Structure::Root(
             (
                 Maybe(mesh),
-                //Name::new("NODE ROOT"),
             ),
         )
     }

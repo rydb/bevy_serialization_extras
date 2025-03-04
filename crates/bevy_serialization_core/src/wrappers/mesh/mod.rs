@@ -85,37 +85,6 @@ impl AssetWrapper for Mesh3dFlag {
     }
 }
 
-
-
-// //TOOD: Implement properly when a mesh serializer for this library exists.
-// impl From<&Mesh> for Mesh3dFlag {
-//     fn from(_value: &Mesh) -> Self {
-//         Mesh3dFlag::Procedural(ProceduralMeshWrapper)
-//     }
-// }
-
-// impl From<&Mesh3dFlag> for Mesh {
-//     fn from(value: &Mesh3dFlag) -> Self {
-//         match value {
-//             //TOOD: Implement properly when a mesh serializer for this library exists.
-//             Mesh3dFlag::Procedural(..) => FALLBACK_MESH.into(),
-//             Mesh3dFlag::Prefab(mesh_prefab) => (*mesh_prefab).into(),
-//         }
-//     }
-// }
-
-// impl From<Mesh> for Mesh3dFlag {
-//     fn from(value: Mesh) -> Self {
-//         value
-//     }
-// }
-
-// impl From<&Mesh3dFlag> for Mesh {
-//     fn from(value: &Mesh3dFlag) -> Self {
-//         todo!()
-//     }
-// }
-
 /// TODO: Implement this a bevy <-> mesh converter for this library exists.
 /// 
 #[derive(Reflect, Clone, PartialEq)]
@@ -135,49 +104,6 @@ pub const FALLBACK_MESH: Cuboid = Cuboid {
     }
 };
 
-// impl FromWrapper<Mesh3dFlag> for Mesh3d {
-//     fn from_wrapper(
-//         value: &Mesh3dFlag,
-//         asset_server: &Res<AssetServer>,
-//         assets: &mut ResMut<Assets<Self::AssetType>>,
-//     ) -> Self {
-//         let asset = match value {
-//             Mesh3dFlag::AssetPath(path) => asset_server.load(path),
-//             Mesh3dFlag::Procedural(_) => {
-//                 warn!("MeshFlag3d <--> Mesh conversion not implemented in bevy_serialization_core. Using fallback mesh.");
-//                 assets.add(FALLBACK_MESH)
-//             }
-//             Mesh3dFlag::Prefab(prefab) => match prefab {
-//                 MeshPrefab::Cuboid(cuboid) => assets.add(*cuboid),
-//                 MeshPrefab::Cylinder(cylinder) => assets.add(*cylinder),
-//                 MeshPrefab::Capsule(capsule3d) => assets.add(*capsule3d),
-//                 MeshPrefab::Sphere(sphere) => assets.add(*sphere),
-//                 MeshPrefab::Unimplemented => {
-//                     warn!("Attempted to convert unimplemented MeshPrefab kind to Mesh3d. Defaulting to fallback shape.");
-//                     assets.add(FALLBACK_MESH)
-//                 },
-//                 MeshPrefab::Cone(cone) => assets.add(*cone),
-//             },
-//             //MeshFlag3d::Handle(handle) => handle.clone(),
-//         };
-//         Mesh3d(asset)
-//     }
-// }
-
-// impl FromAsset<Mesh3d> for Mesh3dFlag {
-//     fn from_asset(value: &Mesh3d, _: &ResMut<Assets<<Mesh3d as AssetHandleComponent>::AssetType>>) -> Self {
-//         match value.0.path() {
-//             Some(path) => Self::AssetPath(path.to_string()),
-//             None => Self::Procedural(ProceduralMeshWrapper),
-//         }
-//     }
-// }
-
 impl AssetHandleComponent for Mesh3d {
     type AssetType = Mesh;
 }
-// /// THIS IS A DUMMY
-// ///
-// /// TODO: IMPLEMENT PROPERLY.
-// #[derive(Clone, Reflect, Default, PartialEq)]
-// pub struct Mesh3dFlag;
