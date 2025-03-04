@@ -1,8 +1,11 @@
-use bevy_ecs::{prelude::*, system::{SystemParam, SystemParamItem}};
+use bevy_ecs::{
+    prelude::*,
+    system::{SystemParam, SystemParamItem},
+};
 use std::ops::Deref;
 
 /// The trait for assembling a structure into its root asset.
-/// 
+///
 /// I.E: (Mesh, Material, Name) -> Assemble(FormatWrapper(Format)) -> model.format
 pub trait Assemble
 where
@@ -13,19 +16,19 @@ where
 
 pub trait AssembleParms {
     /// params to fetch world data to assemble(put queries/resource/etc.. like a traditional bevy system in here)
-     type Params: SystemParam;
+    type Params: SystemParam;
 }
 
 /// The trait for Disassembling structures into either:
-/// 
+///
 /// A) its sub components
-/// 
+///
 /// B) its children
-/// 
-/// I.E: model.format -> Disassemble(FormatWrapper(Format)) -> (Mesh, Material, Name) 
-pub trait Disassemble 
-    where
-        Self: Clone + Send + Sync + Deref + 'static,
+///
+/// I.E: model.format -> Disassemble(FormatWrapper(Format)) -> (Mesh, Material, Name)
+pub trait Disassemble
+where
+    Self: Clone + Send + Sync + Deref + 'static,
 {
     fn components(value: Self) -> Structure<impl Bundle>;
 }
@@ -35,7 +38,7 @@ pub struct Split(pub bool);
 
 pub enum Structure<T> {
     Root(T),
-    Children(Vec<T>, Split)
+    Children(Vec<T>, Split),
 }
 
 // /// deserialize trait that works by offloading deserialization to desired format's deserializer
@@ -53,13 +56,11 @@ where
     fn serialize(&self, name: String) -> Result<(), anyhow::Error>;
 }
 
-
 // #[non_exhaustive]
 // #[derive(Error, Debug)]
 // pub enum LoadError {
 //     Error(String),
 // }
-
 
 // /// Errors in saving assets.
 // #[non_exhaustive]
@@ -68,7 +69,6 @@ where
 //     File(#[from] std::io::Error),
 //     Other(#[from] Box<dyn std::error::Error>)
 // }
-
 
 // impl Display for SaveError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -79,4 +79,3 @@ where
 //         res
 //     }
 // }
-

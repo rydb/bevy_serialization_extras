@@ -17,7 +17,7 @@ pub struct InitializedStagers(pub HashMap<Entity, Vec<Entity>>);
 #[derive(Resource, Default)]
 pub struct AssembleRequest(pub Vec<Entity>);
 
-// /// registry of staging 
+// /// registry of staging
 // pub struct InitializedStagersEntities(pub HashMap<ComponentId, Vec<Entity>>);
 
 #[derive(Clone)]
@@ -54,11 +54,9 @@ pub struct AssetSpawnRequestQueue<T: Asset> {
 #[derive(Resource, Default, Deref)]
 pub struct AssetCheckers(pub HashMap<ComponentId, SystemId>);
 
-
 /// registry of components to be rolled down onto children.
 #[derive(Resource, Default, Deref)]
 pub struct RollDownCheckers(pub HashMap<ComponentId, SystemId>);
-
 
 /// spawn request for assets that are "all-in-one" rather then composed
 /// of seperate components.

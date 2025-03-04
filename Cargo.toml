@@ -1,7 +1,7 @@
 [package]
 name = "bevy_serialization_extras"
 version = "0.8.0"
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/rydb/bevy_serialization_extras"
 readme = "README.md"
 license = "MIT"

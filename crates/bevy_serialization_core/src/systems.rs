@@ -1,5 +1,6 @@
 use crate::{
-    prelude::{ComponentsOnSave, TypeRegistryOnSave}, traits::*
+    prelude::{ComponentsOnSave, TypeRegistryOnSave},
+    traits::*,
 };
 use std::any::{type_name, TypeId};
 
@@ -12,7 +13,13 @@ use moonshine_save::save::Save;
 
 /// takes a component, and spawns a serializable copy of it on its entity
 pub fn serialize_for<Wrapper>(
-    thing_query: Query<(Entity, &Wrapper::WrapperTarget), Or<(Added<Wrapper::WrapperTarget>, Changed<Wrapper::WrapperTarget>)>>,
+    thing_query: Query<
+        (Entity, &Wrapper::WrapperTarget),
+        Or<(
+            Added<Wrapper::WrapperTarget>,
+            Changed<Wrapper::WrapperTarget>,
+        )>,
+    >,
     wrappers: Query<Entity, Changed<Wrapper>>,
     mut commands: Commands,
 ) where
@@ -20,8 +27,6 @@ pub fn serialize_for<Wrapper>(
     // Echo<Wrapper>: From<Wrapper::Target>
 {
     for (e, f) in thing_query.iter() {
-
-        
         // prevent infinite change back and forth
         if wrappers.contains(e) == false {
             // entity may not exist when inserting component if entity is deleted in the same frame as this.
@@ -81,17 +86,14 @@ pub fn serialize_for<Wrapper>(
 //     }
 // }
 
-
-
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Wrapper>(
     assets: ResMut<Assets<AssetType<Wrapper>>>,
     things_query: Query<(Entity, &Wrapper::WrapperTarget), Changed<Wrapper::WrapperTarget>>,
     wrapper_things_query: Query<&Wrapper>,
     mut commands: Commands,
-)
-where
-    Wrapper: AssetWrapper
+) where
+    Wrapper: AssetWrapper,
 {
     for (e, thing_handle) in things_query.iter() {
         let mut insert = None;
@@ -102,15 +104,15 @@ where
                 AssetState::Path(old_path) => {
                     if let Some(new_path) = thing_handle.path() {
                         let new_path = new_path.to_string();
-                        if old_path != &new_path{
+                        if old_path != &new_path {
                             insert = Some(Wrapper::from(new_path))
                         }
                     }
-                },
+                }
                 AssetState::Pure(old_wrapper) => {
                     let Some(new_asset) = assets.get(&**thing_handle) else {
-                        //warn!("Attempted serialize non-file asset {:#} to {:#} while the asset was unloaded. Skipping attempt", type_name::<AssetType<Wrapper>>(), type_name::<Wrapper>());                        
-                        return
+                        //warn!("Attempted serialize non-file asset {:#} to {:#} while the asset was unloaded. Skipping attempt", type_name::<AssetType<Wrapper>>(), type_name::<Wrapper>());
+                        return;
                     };
                     let new_wrapper = Wrapper::PureVariant::from(new_asset);
                     // don't update wrapper unless asset changes would tangibly effect the wrapper
@@ -121,7 +123,7 @@ where
                 }
             };
         }
-        
+
         if let Some(insert) = insert {
             commands.entity(e).try_insert(insert);
         }
@@ -139,13 +141,13 @@ pub fn deserialize_asset_for<Wrapper>(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) where
-    Wrapper: AssetWrapper
+    Wrapper: AssetWrapper,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         log::trace!("converting wrapper thing {:#?}", e);
 
         let mut insert = None;
-    
+
         if let Ok(current_asset) = things_query.get(e) {
             match wrapper_thing.asset_state() {
                 AssetState::Path(wrapper_path) => {
@@ -155,14 +157,14 @@ pub fn deserialize_asset_for<Wrapper>(
                             insert = Some(Wrapper::WrapperTarget::from(handle))
                         }
                     }
-                },
+                }
                 AssetState::Pure(wrapper) => {
                     let Some(current_asset) = assets.get(&**current_asset) else {
-                        warn!("Attempted to deserialize non-file asset {:#} from {:#} while the asset was unloaded. Skipping attempt", type_name::<AssetType<Wrapper>>(), type_name::<Wrapper>());                        
-                        return
+                        warn!("Attempted to deserialize non-file asset {:#} from {:#} while the asset was unloaded. Skipping attempt", type_name::<AssetType<Wrapper>>(), type_name::<Wrapper>());
+                        return;
                     };
                     let current_asset_as_wrapper = Wrapper::PureVariant::from(current_asset);
-                    
+
                     // don't update wrapper unless asset changes would tangibly effect the wrapper
                     // (if part of the asset does not effect the wrapper, the wrapper wont update)
                     if wrapper != &current_asset_as_wrapper {
@@ -175,18 +177,20 @@ pub fn deserialize_asset_for<Wrapper>(
             if let Some(insert) = insert {
                 commands.entity(e).try_insert(insert);
             }
-        } 
+        }
     }
 }
 
 pub fn deserialize_for<Wrapper>(
-    wrapper_thing_query: Query<(Entity, &Wrapper), Or<(Added<Wrapper> ,Changed<Wrapper>)>>,
+    wrapper_thing_query: Query<(Entity, &Wrapper), Or<(Added<Wrapper>, Changed<Wrapper>)>>,
     mut commands: Commands,
 ) where
-    Wrapper: ComponentWrapper
+    Wrapper: ComponentWrapper,
 {
     for (e, f) in wrapper_thing_query.iter() {
-        commands.entity(e).try_insert(Wrapper::WrapperTarget::from(&f));
+        commands
+            .entity(e)
+            .try_insert(Wrapper::WrapperTarget::from(&f));
     }
 }
 

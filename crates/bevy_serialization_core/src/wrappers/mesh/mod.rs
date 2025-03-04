@@ -34,7 +34,7 @@ impl From<&MeshWrapper> for Mesh {
                 MeshPrefab::Capsule(capsule3d) => capsule3d.into(),
                 MeshPrefab::Sphere(sphere) => sphere.into(),
                 MeshPrefab::Cone(cone) => cone.into(),
-                MeshPrefab::Unimplemented(kind) => FALLBACK_MESH.into(),
+                MeshPrefab::Unimplemented(_kind) => FALLBACK_MESH.into(),
             },
             MeshWrapper::Procedural => FALLBACK_MESH.into(),
         }
@@ -48,14 +48,11 @@ impl From<&Mesh> for MeshWrapper {
     }
 }
 
-
-
 impl Default for MeshPrefab {
     fn default() -> Self {
         Self::Cuboid(Cuboid::from_length(0.1))
     }
 }
-
 
 #[derive(Component, Reflect, PartialEq, From)]
 #[reflect(Component)]
@@ -77,16 +74,16 @@ pub enum MeshWrapper {
 
 impl AssetWrapper for Mesh3dFlag {
     type WrapperTarget = Mesh3d;
-    
+
     type PureVariant = MeshWrapper;
-    
+
     fn asset_state(&self) -> AssetState<Self::PureVariant, String> {
         todo!()
     }
 }
 
 /// TODO: Implement this a bevy <-> mesh converter for this library exists.
-/// 
+///
 #[derive(Reflect, Clone, PartialEq)]
 pub(crate) struct ProceduralMeshWrapper;
 
@@ -101,7 +98,7 @@ pub const FALLBACK_MESH: Cuboid = Cuboid {
         x: 0.1,
         y: 0.1,
         z: 0.1,
-    }
+    },
 };
 
 impl AssetHandleComponent for Mesh3d {

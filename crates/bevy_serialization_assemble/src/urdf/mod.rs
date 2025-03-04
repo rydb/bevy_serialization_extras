@@ -27,11 +27,10 @@ pub const PACKAGE: &str = "package";
 #[derive(Asset, TypePath, From, Deref, Debug, Clone, Default)]
 pub struct UrdfWrapper(pub Urdf);
 
-
 impl LazySerialize for UrdfWrapper {
     fn serialize(&self, name: String) -> Result<(), anyhow::Error> {
         //let path = PathBuf::new()
-        let urdf_as_string = urdf_rs::write_to_string(&self.0.0)?;
+        let urdf_as_string = urdf_rs::write_to_string(&self.0 .0)?;
         let mut file = File::create(name + ".xml")?;
         let _ = file.write(urdf_as_string.as_bytes());
         Ok(())
@@ -44,12 +43,11 @@ pub struct Urdf(pub Robot);
 impl Default for Urdf {
     fn default() -> Self {
         Self(Robot {
-                name: "DEFAULT_IN_CASE_OF_ERROR".to_owned(),
-                links: Vec::new(),
-                joints: Vec::new(),
-                materials: Vec::new(),
-            },
-        )
+            name: "DEFAULT_IN_CASE_OF_ERROR".to_owned(),
+            links: Vec::new(),
+            joints: Vec::new(),
+            materials: Vec::new(),
+        })
     }
 }
 

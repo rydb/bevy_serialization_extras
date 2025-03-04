@@ -2,7 +2,10 @@ use bevy::{
     picking::pointer::{PointerInteraction, PointerPress},
     prelude::*,
 };
-use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, ScrollArea, TextFormat, Ui}};
+use bevy_inspector_egui::{
+    bevy_egui::EguiContext,
+    egui::{self, text::LayoutJob, ScrollArea, TextFormat, Ui},
+};
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -127,7 +130,7 @@ fn create_revolute_joints(
                     Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
                     Transform::from_translation(positions[k]),
                     MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
-                    Collider::cuboid(0.5, 0.5, 0.5)
+                    Collider::cuboid(0.5, 0.5, 0.5),
                 ))
                 .id();
         }

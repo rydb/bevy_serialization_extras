@@ -1,21 +1,21 @@
 use bevy_asset::Handle;
 use bevy_derive::{Deref, DerefMut};
-use bevy_log::warn;
-use bevy_pbr::MeshMaterial3d;
 use bevy_ecs::prelude::*;
 use bevy_gltf::{GltfExtras, GltfMesh, GltfNode, GltfPrimitive};
+use bevy_log::warn;
+use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
 use derive_more::derive::From;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
-use crate::{components::{Maybe, RequestAssetStructure, RequestStructure}, traits::{Disassemble, Split, Structure}};
-
+use crate::{
+    components::{Maybe, RequestAssetStructure, RequestStructure},
+    traits::{Disassemble, Split, Structure},
+};
 
 #[derive(From, Clone, Deref)]
-pub struct GltfNodeWrapper(
-    GltfNode
-);
+pub struct GltfNodeWrapper(GltfNode);
 
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
@@ -23,30 +23,22 @@ pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
 impl Disassemble for GltfPrimitiveWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mat = value.material.clone().map(|n| MeshMaterial3d(n));
-        Structure::Root(
-            (
-                Mesh3d(value.mesh.clone()),
-                Maybe(mat),
-            ),
-        )
+        Structure::Root((Mesh3d(value.mesh.clone()), Maybe(mat)))
     }
 }
 
 #[derive(Clone, Deref, From)]
 pub struct GltfNodeMeshOne(pub GltfNode);
 
-
 impl Disassemble for GltfNodeMeshOne {
     fn components(value: Self) -> Structure<impl Bundle> {
-        let mesh = value.0.mesh.map(|n| RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Handle(n));
-        Structure::Root(
-            (
-                Maybe(mesh),
-            )
-        )
+        let mesh = value
+            .0
+            .mesh
+            .map(|n| RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Handle(n));
+        Structure::Root((Maybe(mesh),))
     }
 }
-
 
 /// GltfNode wrapper for spawning gltf nodes with a parent collider mesh, and children visual meshes.
 /// This is for physics
@@ -57,21 +49,14 @@ pub struct GltfNodeColliderVisualChilds(pub GltfNode);
 pub struct GltfNodeVisuals(pub Vec<Handle<GltfNode>>);
 
 impl Disassemble for GltfNodeVisuals {
-    fn components(value: Self) -> Structure<impl Bundle> {        
+    fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
         for handle in value.0 {
-            children.push(
-                (
-                    RequestAssetStructure::<GltfNodeMeshOne>::Handle(handle),
-                )
-            )
+            children.push((RequestAssetStructure::<GltfNodeMeshOne>::Handle(handle),))
         }
 
-        Structure::Children(
-            children, 
-            Split(false)
-        )
+        Structure::Children(children, Split(false))
     }
 }
 
@@ -87,12 +72,11 @@ pub enum RequestCollider {
 }
 
 impl From<GltfExtras> for RequestCollider {
-    fn from(value: GltfExtras) -> Self {        
+    fn from(value: GltfExtras) -> Self {
         if let Some(target) = value.value.replace(['}', '{', '"'], "").split(':').last() {
             for variant in RequestCollider::iter() {
-            
                 if target == variant.to_string().to_lowercase() {
-                    return variant
+                    return variant;
                 }
             }
             warn!(
@@ -110,7 +94,10 @@ impl From<GltfExtras> for RequestCollider {
 
 impl Disassemble for GltfNodeColliderVisualChilds {
     fn components(value: Self) -> Structure<impl Bundle> {
-        let mesh = value.0.mesh.map(|n| RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Handle(n));
+        let mesh = value
+            .0
+            .mesh
+            .map(|n| RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Handle(n));
 
         let collider_request = {
             if let Some(gltf_extras) = value.0.extras {
@@ -119,13 +106,11 @@ impl Disassemble for GltfNodeColliderVisualChilds {
                 RequestCollider::Convex
             }
         };
-        Structure::Root(
-            (
-                collider_request,
-                Maybe(mesh),
-                RequestStructure(GltfNodeVisuals(value.0.children))
-            )
-        )
+        Structure::Root((
+            collider_request,
+            Maybe(mesh),
+            RequestStructure(GltfNodeVisuals(value.0.children)),
+        ))
     }
 }
 
@@ -155,13 +140,12 @@ impl Disassemble for GltfNodeColliderVisualChilds {
 // }
 
 /// [`GltfMesh`] that will throw a warning and not initialize if there is more then 1/no primitive
-/// 
-/// Tempory hot-fix for spawning singular primitives. 
+///
+/// Tempory hot-fix for spawning singular primitives.
 /// Necessary due to physics with child primitives being unsupported in rapier and avain.
 /// https://github.com/bevyengine/bevy/issues/17661
 #[derive(From, Deref, Clone)]
 pub struct GltfPhysicsMeshPrimitive(pub GltfMesh);
-
 
 impl Disassemble for GltfPhysicsMeshPrimitive {
     fn components(value: Self) -> Structure<impl Bundle> {
@@ -174,28 +158,20 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
                 value.0.primitives.first()
             }
         };
-        
+
         let material = mesh
-        .map(|n| n.material.clone())
-        .and_then(|n|n)
-        .and_then(|n| Some(MeshMaterial3d(n)));
+            .map(|n| n.material.clone())
+            .and_then(|n| n)
+            .and_then(|n| Some(MeshMaterial3d(n)));
 
-        let primitive = mesh
-        .map(|n| Mesh3d(n.mesh.clone()));
+        let primitive = mesh.map(|n| Mesh3d(n.mesh.clone()));
 
-        let collider_request = 
-        if let Some(collider_kind) = value.0.extras {
+        let collider_request = if let Some(collider_kind) = value.0.extras {
             RequestCollider::from(collider_kind)
         } else {
             RequestCollider::Convex
         };
-        Structure::Root(
-            (
-                collider_request,
-                Maybe(material),
-                Maybe(primitive),
-            )
-        )
+        Structure::Root((collider_request, Maybe(material), Maybe(primitive)))
     }
 }
 
@@ -206,9 +182,7 @@ impl Disassemble for GltfMeshWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for primitive in &value.0.primitives {
-            children.push(
-                RequestStructure(GltfPrimitiveWrapper(primitive.clone()))
-            )
+            children.push(RequestStructure(GltfPrimitiveWrapper(primitive.clone())))
         }
         Structure::Children(children, Split(false))
     }
@@ -216,13 +190,12 @@ impl Disassemble for GltfMeshWrapper {
 
 impl Disassemble for GltfNodeWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
-        let mesh = value.0.mesh.map(|n| RequestAssetStructure::Handle::<GltfMeshWrapper>(n));
-        
-        Structure::Root(
-            (
-                Maybe(mesh),
-            ),
-        )
+        let mesh = value
+            .0
+            .mesh
+            .map(|n| RequestAssetStructure::Handle::<GltfMeshWrapper>(n));
+
+        Structure::Root((Maybe(mesh),))
     }
 }
 
@@ -282,7 +255,7 @@ impl Disassemble for GltfNodeWrapper {
 //                 extras: todo!(),
 //             };
 //             let gltf_mesh_handle = gltf_meshes.add(gltf_mesh);
-//             gltf_map.insert(node.node.0, 
+//             gltf_map.insert(node.node.0,
 //                 GltfNodeWrapper(GltfNode {
 //                     // implement properly
 //                     index: 0,

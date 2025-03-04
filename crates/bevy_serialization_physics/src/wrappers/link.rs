@@ -225,7 +225,7 @@ impl From<&ImpulseJoint> for JointFlag {
                 },
                 locked_axes: JointAxesMaskWrapper::from_bits_truncate(joint.locked_axes.bits()),
                 limit_axes: JointAxesMaskWrapper::from_bits_truncate(joint.limit_axes.bits()),
-    
+
                 motor_axes: JointAxesMaskWrapper::from_bits_truncate(joint.motor_axes.bits()),
                 motors: [
                     (&joint.motors[0]).into(),
@@ -235,11 +235,11 @@ impl From<&ImpulseJoint> for JointFlag {
                     (&joint.motors[4]).into(),
                     (&joint.motors[5]).into(),
                 ],
-    
+
                 coupled_axes: JointAxesMaskWrapper::from_bits_truncate(joint.coupled_axes.bits()),
                 contacts_enabled: joint.contacts_enabled,
                 enabled: joint.is_enabled(),
-            }
+            },
         }
     }
 }
@@ -295,7 +295,6 @@ pub struct JointFlag {
     // pub parent_name: Option<String>,
     //the parent entity of this joint. Some joint parents may be referenced by name only, so this has have to be populated later down
     //the deserialization pipeline.
-    
     pub parent: Entity,
 
     pub joint: JointInfo,
@@ -304,7 +303,6 @@ pub struct JointFlag {
 impl ComponentWrapper for JointFlag {
     type WrapperTarget = ImpulseJoint;
 }
-
 
 #[derive(Debug, PartialEq, Reflect, Clone)]
 pub struct JointInfo {
@@ -342,7 +340,6 @@ impl Component for JointFlag {
     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
         // keeps joint and Transform consistent with eachother to stop parts from flying off
         _hooks.on_add(|mut world, e, _| {
-            
             // rapier joint positions affect transform, but do not affect transformation unless they're part of an active rigidbody.
             // to prevent rebound from joint being snapped on by joint, add transform onto this entity to automatically snap it to where its supposed to be
             let new_trans = {
@@ -350,17 +347,20 @@ impl Component for JointFlag {
                     Some(val) => val,
                     None => {
                         warn!("could not get {:#?} on: {:#}", type_name::<Self>(), e);
-                        return
-                    },
+                        return;
+                    }
                 };
                 let Some(parent_trans) = world.get::<Transform>(comp.parent) else {
                     warn!("parent {:#?} has no trans?", comp.parent);
-                    return
+                    return;
                 };
-                
-                let new_translation = parent_trans.translation + comp.joint.local_frame1.translation - comp.joint.local_frame2.translation;
-                
-                let new_result = Transform::from_translation(new_translation).with_rotation(parent_trans.rotation);
+
+                let new_translation = parent_trans.translation
+                    + comp.joint.local_frame1.translation
+                    - comp.joint.local_frame2.translation;
+
+                let new_result = Transform::from_translation(new_translation)
+                    .with_rotation(parent_trans.rotation);
                 //println!("new result: {:#?}", new_result);
                 new_result
                 //parent_trans.translation + comp.joint.local_frame1.translation
@@ -368,9 +368,9 @@ impl Component for JointFlag {
 
             world.commands().entity(e).insert(new_trans);
 
-            // let Some(parent) = 
+            // let Some(parent) =
             // let Some(parent_trans) = world.entity(comp.parent_id).get::<Tran
-            //world.commands().entity(e).insert()            
+            //world.commands().entity(e).insert()
         });
     }
 }

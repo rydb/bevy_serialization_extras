@@ -1,13 +1,20 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
-use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke, TextFormat}};
+use bevy_inspector_egui::{
+    bevy_egui::EguiContext,
+    egui::{
+        self, text::LayoutJob, Color32, Frame, Margin, Rounding, ScrollArea, Shadow, Stroke,
+        TextFormat,
+    },
+};
 use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
-use bevy_serialization_assemble::{components::RequestAssetStructure, gltf::RequestCollider, prelude::*};
+use bevy_serialization_assemble::{
+    components::RequestAssetStructure, gltf::RequestCollider, prelude::*,
+};
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
@@ -37,7 +44,6 @@ fn main() {
             }), //.set(bevy_mod_raycast::low_latency_window_plugin())
         )
         .add_plugins(RapierPhysicsPlugin::<()>::default())
-
         .add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(ObjPlugin)
         // // serialization plugins
@@ -98,8 +104,7 @@ pub fn bind_left_and_right_wheel(
         //println!("binding wheel");
         if split_up.contains(&Wheel::Left.to_string().to_lowercase().as_str()) {
             commands.entity(e).insert(Wheel::Left);
-        }
-        else if split_up.contains(&Wheel::Right.to_string().to_lowercase().as_str()) {
+        } else if split_up.contains(&Wheel::Right.to_string().to_lowercase().as_str()) {
             commands.entity(e).insert(Wheel::Right);
         } else {
             commands.entity(e).insert(Wheel::Passive);
@@ -112,10 +117,7 @@ pub struct WasFrozen;
 
 //FIXME: physics bodies fly out of control when spawned, this freezes them for the user to unpause until thats fixed.
 pub fn freeze_spawned_robots(
-    mut robots: Query<
-        (Entity, &mut RigidBodyFlag),
-        Without<WasFrozen>,
-    >,
+    mut robots: Query<(Entity, &mut RigidBodyFlag), Without<WasFrozen>>,
     mut commands: Commands,
 ) {
     for (e, mut body) in robots.iter_mut() {
@@ -135,8 +137,9 @@ pub fn control_robot(
     mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
     mut wheels: Query<(&mut JointFlag, &Wheel)>,
 ) {
-    let target_speed = 20.0;
+    let target_speed = 40.0;
 
+    let turn_speed_multiplier = 0.5;
     let leftward_key = KeyCode::ArrowLeft;
     let rightward_key = KeyCode::ArrowRight;
     let forward_key = KeyCode::ArrowUp;
@@ -170,24 +173,24 @@ pub fn control_robot(
             Wheel::Left => {
                 for axis in joint.joint.motors.iter_mut() {
                     if keys.pressed(leftward_key) {
-                        axis.target_vel = -target_speed
+                        axis.target_vel = -target_speed * turn_speed_multiplier;
                     }
                     if keys.pressed(rightward_key) {
-                        axis.target_vel = target_speed
+                        axis.target_vel = target_speed * turn_speed_multiplier;
                     }
                 }
             }
             Wheel::Right => {
                 for axis in joint.joint.motors.iter_mut() {
                     if keys.pressed(leftward_key) {
-                        axis.target_vel = target_speed
+                        axis.target_vel = target_speed * turn_speed_multiplier;
                     }
                     if keys.pressed(rightward_key) {
-                        axis.target_vel = -target_speed
+                        axis.target_vel = -target_speed * turn_speed_multiplier;
                     }
                 }
             }
-            Wheel::Passive => {},
+            Wheel::Passive => {}
         }
     }
 
@@ -203,10 +206,17 @@ pub fn control_robot(
     }
 }
 
-
 pub fn select_robot(
-    robots: Query<Entity, (With<MassFlag>, With<ColliderFlag>, With<Mesh3d>, Without<Selected>)>,
-    mut commands: Commands
+    robots: Query<
+        Entity,
+        (
+            With<MassFlag>,
+            With<ColliderFlag>,
+            With<Mesh3d>,
+            Without<Selected>,
+        ),
+    >,
+    mut commands: Commands,
 ) {
     for robot in &robots {
         commands.entity(robot).insert(Selected);
@@ -216,21 +226,19 @@ pub fn select_robot(
 #[derive(Resource)]
 pub struct AlreadyRan(bool);
 
-
 pub fn save_selected(
     selected: Query<Entity, With<Selected>>,
     mut assemble_request: ResMut<AssembleRequest>,
     mut already_ran: ResMut<AlreadyRan>,
 ) {
     if already_ran.0 == true {
-        return
+        return;
     }
     if selected.iter().len() > 0 {
         let entities = &mut selected.iter().collect::<Vec<_>>();
 
         assemble_request.0.append(entities);
         already_ran.0 = true;
-
     }
 }
 
@@ -260,19 +268,15 @@ fn setup(
         BasePlate,
     ));
     // Robot
-    commands.spawn(
-        (
-            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
-            Transform::from_xyz(-2.0, 0.0, 0.0)
-        )
-    );
+    commands.spawn((
+        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
+        Transform::from_xyz(-2.0, 0.0, 0.0),
+    ));
     // Robot2
-    commands.spawn(
-        (
-            RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
-            Transform::from_xyz(2.0, 0.0, 0.0)
-        )
-    );
+    commands.spawn((
+        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
+        Transform::from_xyz(2.0, 0.0, 0.0),
+    ));
 
     // light
     commands.spawn((

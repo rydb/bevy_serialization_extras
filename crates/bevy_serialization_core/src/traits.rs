@@ -3,14 +3,17 @@ use bevy_ecs::prelude::*;
 use bevy_reflect::{FromReflect, GetTypeRegistration, Reflect, Typed};
 use std::ops::Deref;
 
-
-pub trait ComponentWrapper 
-    where
-        Self: Component + Reflect + FromReflect + Typed + GetTypeRegistration + for <'a> From<&'a Self::WrapperTarget>,
-        Self::WrapperTarget: Clone + for <'a> From<&'a Self>
+pub trait ComponentWrapper
+where
+    Self: Component
+        + Reflect
+        + FromReflect
+        + Typed
+        + GetTypeRegistration
+        + for<'a> From<&'a Self::WrapperTarget>,
+    Self::WrapperTarget: Clone + for<'a> From<&'a Self>,
 {
     type WrapperTarget: Component + Clone;
-
 }
 
 pub type AssetType<T> = <<T as AssetWrapper>::WrapperTarget as AssetHandleComponent>::AssetType;
@@ -20,19 +23,26 @@ pub enum AssetState<'a, T, U> {
     Path(&'a U),
 }
 
-
 pub trait AssetWrapper
-    where
-        Self: Component + PartialEq + Reflect + FromReflect + Typed + GetTypeRegistration+ From<String> + From<Self::PureVariant>,
-        Self::WrapperTarget: Deref<Target = Handle<AssetType<Self>>> + From<Handle<AssetType<Self>>> + AssetHandleComponent,
-        AssetType<Self>: for <'a> From<&'a Self::PureVariant>,
-        Self::PureVariant: for<'a> From<&'a AssetType<Self>> + PartialEq,
+where
+    Self: Component
+        + PartialEq
+        + Reflect
+        + FromReflect
+        + Typed
+        + GetTypeRegistration
+        + From<String>
+        + From<Self::PureVariant>,
+    Self::WrapperTarget: Deref<Target = Handle<AssetType<Self>>>
+        + From<Handle<AssetType<Self>>>
+        + AssetHandleComponent,
+    AssetType<Self>: for<'a> From<&'a Self::PureVariant>,
+    Self::PureVariant: for<'a> From<&'a AssetType<Self>> + PartialEq,
 {
     type WrapperTarget: Component + Deref;
     type PureVariant;
 
     fn asset_state(&self) -> AssetState<Self::PureVariant, String>;
-
 }
 
 // component on a query that is checked for changes

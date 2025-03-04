@@ -23,7 +23,6 @@ pub struct WrapAssetSerializers(pub HashMap<ComponentId, SystemId>);
 #[derive(Resource, Default, Deref)]
 pub struct WrapAssetDeserializers(pub HashMap<ComponentId, SystemId>);
 
-
 #[derive(Resource, Default, Deref)]
 pub struct WrapCompSerializers(pub HashMap<ComponentId, SystemId>);
 

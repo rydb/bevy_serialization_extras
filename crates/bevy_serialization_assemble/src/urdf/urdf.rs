@@ -1,18 +1,15 @@
-
-
 use bevy_core::Name;
+use bevy_ecs::system::SystemParamItem;
 use bevy_log::warn;
 use bevy_render::prelude::Visibility;
 use bevy_serialization_core::prelude::mesh::Mesh3dFlag;
 use bevy_serialization_physics::prelude::JointInfo;
 use bevy_serialization_physics::prelude::{
     link::{
-        Dynamics, JointAxesMaskWrapper, JointFlag, JointLimitWrapper,
-        JointMotorWrapper, LinkFlag,
+        Dynamics, JointAxesMaskWrapper, JointFlag, JointLimitWrapper, JointMotorWrapper, LinkFlag,
     },
     rigidbodies::RigidBodyFlag,
 };
-use bevy_ecs::system::SystemParamItem;
 use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
@@ -35,7 +32,8 @@ use crate::traits::Split;
 use crate::JointRequest;
 use crate::JointRequestStage;
 use crate::{
-    components::{Maybe, RequestStructure, Resolve}, traits::{Disassemble, Assemble, Structure}
+    components::{Maybe, RequestStructure, Resolve},
+    traits::{Assemble, Disassemble, Structure},
 };
 
 use super::*;
@@ -44,7 +42,6 @@ use super::*;
 pub struct RequestIdFromName;
 
 pub struct Id(pub String);
-
 
 /// Links + Joints merged together.
 /// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
@@ -57,26 +54,23 @@ impl Disassemble for LinksNJoints {
         let mut children = Vec::new();
 
         for (link, joint) in value.0 {
-            let joint = joint
-            .map(|n| 
+            let joint = joint.map(
+                |n| 
                 //RollDown(
                     RequestStructure(UrdfJoint(n)),
-                    //vec![TypeId::of::<RigidBodyFlag>()]
+                //vec![TypeId::of::<RigidBodyFlag>()]
                 //)
             );
-            children.push(
-                (
-
-                    Name::new(link.name),
-                    RequestStructure(LinkColliders(link.collision)),
-                    Maybe(joint),
-                    Visibility::default(),
-                )
-            )
+            children.push((
+                Name::new(link.name),
+                RequestStructure(LinkColliders(link.collision)),
+                Maybe(joint),
+                Visibility::default(),
+            ))
         }
-        //TODO: figure out how to resolve root entity and children entity transform desync. 
+        //TODO: figure out how to resolve root entity and children entity transform desync.
         //robots can be spawned via Split(false), and they will be correct. Initially.
-        //but transform propagation and joint transform propagation are mutually exclusive(at least in rapier)(as of 0.15). 
+        //but transform propagation and joint transform propagation are mutually exclusive(at least in rapier)(as of 0.15).
         // This causes bevy transform and rapier joints to desync if you update root transform.
 
         // So, in order to prevent this desync, [`Split`] currently is set to true.
@@ -87,18 +81,12 @@ impl Disassemble for LinksNJoints {
 #[derive(Clone)]
 pub struct Visuals(pub Vec<Visual>);
 
-
-
-
 #[derive(Clone, Deref)]
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
-    fn components(value: Self)
-    -> Structure<impl Bundle> {
-        Structure::Root((
-            JointRequest::from(&value),
-        ))    
+    fn components(value: Self) -> Structure<impl Bundle> {
+        Structure::Root((JointRequest::from(&value),))
     }
 }
 
@@ -108,35 +96,28 @@ pub struct LinkColliders(pub Vec<Collision>);
 impl Disassemble for LinkColliders {
     fn components(value: Self) -> Structure<impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
-        let geometry =  {
+        let geometry = {
             if value.0.len() > 1 {
                 warn!("multi-collider robots not supported as multi-primitive physics joints not supported(as of this version) in either Rapier or Avian");
                 None
             } else {
-                value.0.first()
-                .map(|n| 
-                    {
+                value
+                    .0
+                    .first()
+                    .map(|n| {
                         //println!("transform for {:#?} is {:#?}", n.name, trans);
                         n.geometry.clone()
-                    }
-                )
-                .map(|n| Resolve::from(GeometryWrapper(n)))
+                    })
+                    .map(|n| Resolve::from(GeometryWrapper(n)))
             }
         };
-        Structure::Root(
-            (
-                RigidBodyFlag::Dynamic,
-                Maybe(geometry),
-                Visibility::default()
-            )
-        )
+        Structure::Root((
+            RigidBodyFlag::Dynamic,
+            Maybe(geometry),
+            Visibility::default(),
+        ))
     }
 }
-
-
-
-
-
 
 impl Disassemble for UrdfWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
@@ -158,20 +139,19 @@ impl Disassemble for UrdfWrapper {
 
         // let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
         let mut linkage = Vec::new();
-        for link in value.0.0.links {
+        for link in value.0 .0.links {
             linkage.push((
                 link.clone(),
                 structured_joint_map
-                .get_key_value(&link.name).map(|(_, joint)| joint.clone())
+                    .get_key_value(&link.name)
+                    .map(|(_, joint)| joint.clone()),
             ))
         }
-        Structure::Root(
-            (
-                Name::new(value.0.0.name),
-                RequestStructure(LinksNJoints(linkage)),
-                //Transform::default()
-            ),
-        )
+        Structure::Root((
+            Name::new(value.0 .0.name),
+            RequestStructure(LinksNJoints(linkage)),
+            //Transform::default()
+        ))
     }
 }
 
@@ -184,39 +164,36 @@ impl AssembleParms for UrdfWrapper {
 
 impl Assemble for UrdfWrapper {
     fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self {
-        let (links_query, 
-            joints_query,) = value;
-        
+        let (links_query, joints_query) = value;
+
         let mut links = Vec::new();
         let mut joints = Vec::new();
-        for (rigid_body, name, mesh) in links_query.iter_many(selected.clone()) {
-            
-            links.push(
-                Link {
-                    name: name.to_string(),
-                    //TODO: implement properly
-                    inertial: Inertial::default(),
-                    //FIXME: not-implemented. Cannot be implemented until other blockers are fixed.
-                    visual: Vec::new(),
-                    //FIXME: only implemented for singular primitive robots. fix when blockers fixed.
-                    collision: vec![
-                        Collision {
-                            name: Some(name.to_string()),
-                            origin: Pose {
-                                // TODO: implement properly.
-                                xyz: urdf_rs::Vec3([0.0, 0.0, 0.0]),
-                                // TODO: implement properly
-                                rpy: urdf_rs::Vec3([0.0, 0.0, 0.0]),
-                            },
-                            geometry: GeometryWrapper::from(mesh).0
-                        }
-                    ],
-                }
-            )
+        for (_rigid_body, name, mesh) in links_query.iter_many(selected.clone()) {
+            links.push(Link {
+                name: name.to_string(),
+                //TODO: implement properly
+                inertial: Inertial::default(),
+                //FIXME: not-implemented. Cannot be implemented until other blockers are fixed.
+                visual: Vec::new(),
+                //FIXME: only implemented for singular primitive robots. fix when blockers fixed.
+                collision: vec![Collision {
+                    name: Some(name.to_string()),
+                    origin: Pose {
+                        // TODO: implement properly.
+                        xyz: urdf_rs::Vec3([0.0, 0.0, 0.0]),
+                        // TODO: implement properly
+                        rpy: urdf_rs::Vec3([0.0, 0.0, 0.0]),
+                    },
+                    geometry: GeometryWrapper::from(mesh).0,
+                }],
+            })
         }
         for (joint, name) in joints_query.iter_many(selected) {
             let Ok((_, parent_name, ..)) = links_query.get(joint.parent) else {
-                warn!("joint cannot find: {:#?} in links_query. Skipping Joint", joint.parent);
+                warn!(
+                    "joint cannot find: {:#?} in links_query. Skipping Joint",
+                    joint.parent
+                );
                 continue;
             };
             joints.push(
@@ -279,16 +256,14 @@ impl Assemble for UrdfWrapper {
                 }
             )
         }
-        let robot = Urdf(
-            Robot {
-                // TODO: give proper name source post testing
-                name: "test_robot".to_string(),
-                links: links,
-                joints: joints,
-                // TODO: implement
-                materials: Vec::default()
-            }
-        );
+        let robot = Urdf(Robot {
+            // TODO: give proper name source post testing
+            name: "test_robot".to_string(),
+            links: links,
+            joints: joints,
+            // TODO: implement
+            materials: Vec::default(),
+        });
         UrdfWrapper(robot)
     }
 }
@@ -322,18 +297,10 @@ impl From<UrdfTransform> for Transform {
     fn from(value: UrdfTransform) -> Self {
         // based on this explanation
         //https://towardsdatascience.com/change-of-basis-3909ef4bed43
-        let urdf_cord_flip = Matrix3::new(
-            1.0, 0.0, 0.0, 
-            0.0, 0.0, 1.0, 
-            0.0, 1.0, 0.0
-        );
+        let urdf_cord_flip = Matrix3::new(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0);
         // based on this explanation
         //https://stackoverflow.com/questions/31191752/right-handed-euler-angles-xyz-to-left-handed-euler-angles-xyz
-        let urdf_rotation_flip = Matrix3::new(
-            -1.0, 0.0, 0.0, 
-            0.0, -1.0, 0.0, 
-            0.0, 0.0, 1.0
-        );
+        let urdf_rotation_flip = Matrix3::new(-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0);
         let pos = value.0;
 
         let compliant_trans =
@@ -408,7 +375,7 @@ impl From<&UrdfJoint> for JointRequest {
                             .0
                             .map(|n| n.abs().clamp(0.0, 1.0))
                             .map(|n| n as u8);
-    
+
                         //println!("unit axis is !!! {:#?}", unit_axis);
                         let mut x = default_locked_axes.bits();
                         x ^= unit_axis[0] << 3;
@@ -418,7 +385,7 @@ impl From<&UrdfJoint> for JointRequest {
                     } else {
                         default_locked_axes
                     }
-    
+
                     //FIXME: Replace with proper "axis-alignment" metod for converting from urdf -> bevy
                     //JointAxesMaskWrapper::LOCKED_FIXED_AXES.difference(JointAxesMaskWrapper::ANG_Y)
                 },
@@ -436,7 +403,7 @@ impl From<&UrdfJoint> for JointRequest {
                     motor_settings.clone(),
                     motor_settings.clone(),
                 ],
-            }
+            },
         }
     }
 }

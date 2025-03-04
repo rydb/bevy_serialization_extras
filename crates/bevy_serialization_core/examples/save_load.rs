@@ -2,11 +2,14 @@
 
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::FileAssetReader, AssetSource};
-use bevy_inspector_egui::{bevy_egui::EguiContext, egui::{self, TextEdit}};
+use bevy_inspector_egui::{
+    bevy_egui::EguiContext,
+    egui::{self, TextEdit},
+};
 use bevy_serialization_core::{
-    plugins::SerializationPlugin, prelude::{
-        material::Material3dFlag, SerializationBasePlugin
-    }, resources::{LoadRequest, SaveRequest}
+    plugins::SerializationPlugin,
+    prelude::{material::Material3dFlag, SerializationBasePlugin},
+    resources::{LoadRequest, SaveRequest},
 };
 use bevy_ui_extras::UiExtrasDebug;
 use moonshine_save::save::Save;
@@ -54,7 +57,6 @@ fn setup(
         //meshes.add(Cuboid::new(1.0, 1.0, 1.0)).into()
     ;
 
-    
     println!("mesh handle is {:#?}", mesh_handle);
     // // cube
     commands.spawn((

@@ -6,13 +6,13 @@ use crate::traits::*;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph};
 use log::warn;
-use std::any::type_name;
 use moonshine_save::file_from_resource;
 use moonshine_save::load::load;
 use moonshine_save::load::LoadPlugin;
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::save::SaveInput;
 use moonshine_save::save::SavePlugin;
+use std::any::type_name;
 use std::ops::Range;
 use std::{any::TypeId, marker::PhantomData};
 
@@ -23,8 +23,6 @@ use bevy_math::prelude::*;
 use bevy_pbr::prelude::*;
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 use bevy_render::prelude::*;
-
-
 
 /// adds the given type to the skipped types list when serializing
 pub fn skip_serializing<SkippedType: 'static>(app: &mut App) {
@@ -39,7 +37,6 @@ pub fn skip_serializing<SkippedType: 'static>(app: &mut App) {
         .components
         .deny_by_id(TypeId::of::<SkippedType>());
 }
-
 
 // /// plugin for converting a query result of something(s) into a singular component.
 // pub struct SerializeQueryFor<S, T, U>
@@ -100,11 +97,13 @@ pub struct SerializeComponentFor<T: ComponentWrapper> {
 
 impl<T: ComponentWrapper> Default for SerializeComponentFor<T> {
     fn default() -> Self {
-        Self { thing: Default::default() }
+        Self {
+            thing: Default::default(),
+        }
     }
 }
 
-impl<T: ComponentWrapper> Plugin for SerializeComponentFor<T>{
+impl<T: ComponentWrapper> Plugin for SerializeComponentFor<T> {
     fn build(&self, app: &mut App) {
         skip_serializing::<T::WrapperTarget>(app);
         app.world_mut();
@@ -119,9 +118,9 @@ impl<T: ComponentWrapper> Plugin for SerializeComponentFor<T>{
         //             }
         //         };
         //         let target = T::WrapperTarget::from(&comp);
-        //         world.commands().entity(e).insert(target);    
+        //         world.commands().entity(e).insert(target);
         //     });
-        
+
         app.register_type::<T>().add_systems(
             PreUpdate,
             (serialize_for::<T>, deserialize_for::<T>).chain(),
@@ -135,57 +134,53 @@ pub struct SerializeAssetFor<T: AssetWrapper> {
     thing: PhantomData<fn() -> T>,
 }
 
-impl<T: AssetWrapper> Plugin for SerializeAssetFor<T>{
+impl<T: AssetWrapper> Plugin for SerializeAssetFor<T> {
     fn build(&self, app: &mut App) {
         skip_serializing::<T::WrapperTarget>(app);
 
-
-        app.world_mut().register_component_hooks::<T>().on_add(|mut world, e, _id| {
-            let comp = {
-                match world.entity(e).get::<T>() {
-                    Some(val) => val,
-                    None => {
-                        warn!("could not get {:#?} on: {:#}", type_name::<Self>(), e);
-                        return
-                    },
-                }
-            };
-
-            let handle = {
-                match comp.asset_state() {
-                    AssetState::Path(path) => {
-                        let Some(asset_server) = world.get_resource::<AssetServer>() else {
-                            warn!("could not get asset server?");
+        app.world_mut()
+            .register_component_hooks::<T>()
+            .on_add(|mut world, e, _id| {
+                let comp = {
+                    match world.entity(e).get::<T>() {
+                        Some(val) => val,
+                        None => {
+                            warn!("could not get {:#?} on: {:#}", type_name::<Self>(), e);
                             return;
-                        };
-                        asset_server.load(path)
-                    },
-                    AssetState::Pure(pure) => {
-                        let Some(assets) = world.get_resource::<AssetServer>() else {
-                            warn!("no mut Assets<T> found for {:#}", type_name::<Assets<AssetType<T>>>());
-                            return;
-                        };
-                        let asset = AssetType::<T>::from(pure);
-                        assets.add(asset)
-                    },
-                }
+                        }
+                    }
+                };
 
-            };
+                let handle = {
+                    match comp.asset_state() {
+                        AssetState::Path(path) => {
+                            let Some(asset_server) = world.get_resource::<AssetServer>() else {
+                                warn!("could not get asset server?");
+                                return;
+                            };
+                            asset_server.load(path)
+                        }
+                        AssetState::Pure(pure) => {
+                            let Some(assets) = world.get_resource::<AssetServer>() else {
+                                warn!(
+                                    "no mut Assets<T> found for {:#}",
+                                    type_name::<Assets<AssetType<T>>>()
+                                );
+                                return;
+                            };
+                            let asset = AssetType::<T>::from(pure);
+                            assets.add(asset)
+                        }
+                    }
+                };
 
+                let componentized_asset = T::WrapperTarget::from(handle);
+                world.commands().entity(e).insert(componentized_asset);
+            });
 
-            let componentized_asset = T::WrapperTarget::from(handle);
-            world.commands().entity(e).insert(componentized_asset);
-        });
-
-        app
-        .register_type::<T>()
-        .add_systems(
+        app.register_type::<T>().add_systems(
             PreUpdate,
-            (
-                try_serialize_asset_for::<T>,
-                deserialize_asset_for::<T>,
-            )
-                .chain(),
+            (try_serialize_asset_for::<T>, deserialize_asset_for::<T>).chain(),
         );
     }
 }
@@ -195,10 +190,8 @@ pub struct SerializationBasePlugin;
 
 impl Plugin for SerializationBasePlugin {
     fn build(&self, app: &mut App) {
-        app
-        .add_plugins(SerializeAssetFor::<Material3dFlag>::default())
-        .add_plugins(SerializeAssetFor::<Mesh3dFlag>::default())
-        ;
+        app.add_plugins(SerializeAssetFor::<Material3dFlag>::default())
+            .add_plugins(SerializeAssetFor::<Mesh3dFlag>::default());
     }
 }
 
@@ -260,12 +253,10 @@ impl Plugin for SerializationPlugin {
             .init_resource::<WrapAssetDeserializers>()
             .init_resource::<WrapCompSerializers>()
             .init_resource::<WrapCompDeserializers>()
-
             // .add_systems(Update, run_proxy_system::<WrapAssetSerializers>)
             // .add_systems(Update, run_proxy_system::<WrapAssetDeserializers>)
             // .add_systems(Update, run_proxy_system::<WrapCompSerializers>)
             // .add_systems(Update, run_proxy_system::<WrapCompDeserializers>)
-
             .add_systems(PreUpdate, load(file_from_resource::<LoadRequest>()));
     }
 }

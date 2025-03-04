@@ -1,5 +1,3 @@
-
-
 use bevy_asset::Asset;
 use bevy_color::prelude::*;
 use bevy_ecs::component::Component;
@@ -12,20 +10,20 @@ use crate::traits::{AssetHandleComponent, AssetState, AssetWrapper};
 
 /// serializable wrapper for mesh materials
 #[derive(Component, Reflect, Clone, PartialEq, From)]
-pub enum Material3dFlag{
+pub enum Material3dFlag {
     Pure(MaterialWrapper),
     Path(String),
 }
 
 #[derive(Clone, From, PartialEq, Reflect)]
 pub enum MaterialWrapper {
-    Color(Color)
+    Color(Color),
 }
 
 impl AssetWrapper for Material3dFlag {
-    type WrapperTarget = MeshMaterial3d<StandardMaterial>; 
+    type WrapperTarget = MeshMaterial3d<StandardMaterial>;
     type PureVariant = MaterialWrapper;
-        
+
     fn asset_state(&self) -> AssetState<Self::PureVariant, String> {
         match self {
             Material3dFlag::Pure(material_wrapper) => AssetState::Pure(material_wrapper),
@@ -44,7 +42,7 @@ impl AssetWrapper for Material3dFlag {
 //     }
 // }
 
-// impl<'a, 'b> From<&'a Material3dFlag> for AssetState<'b, <Material3dFlag as AssetWrapper>::PureVariant, <Material3dFlag as AssetWrapper>::PathVariant> 
+// impl<'a, 'b> From<&'a Material3dFlag> for AssetState<'b, <Material3dFlag as AssetWrapper>::PureVariant, <Material3dFlag as AssetWrapper>::PathVariant>
 //     where
 //         'a: 'b
 // {
@@ -93,7 +91,6 @@ impl From<&StandardMaterial> for MaterialWrapper {
 //     }
 // }
 
-
 // impl From<&Material3dFlag> for AssetState<StandardMaterial> {
 //     fn from(value: &Material3dFlag) -> Self {
 //         match value {
@@ -119,12 +116,9 @@ impl From<&StandardMaterial> for Material3dFlag {
     }
 }
 
-
 impl<T: Asset + Material> AssetHandleComponent for MeshMaterial3d<T> {
     type AssetType = T;
 }
-
-
 
 impl Default for Material3dFlag {
     fn default() -> Self {

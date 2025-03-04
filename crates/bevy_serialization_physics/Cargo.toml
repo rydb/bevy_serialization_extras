@@ -1,7 +1,7 @@
 [package]
 name = "bevy_serialization_physics"
 version = "0.6.0"
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/rydb/bevy_serialization_extras"
 license = "MIT"
 description = "A crate for adding physics wrappers for bevy_serialization_extras"

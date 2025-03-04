@@ -1,4 +1,3 @@
-
 use bevy_serialization_core::prelude::SerializeComponentFor;
 
 use crate::{
@@ -35,9 +34,8 @@ impl Plugin for SerializationPhysicsPlugin {
             .add_plugins(SerializeComponentFor::<CcdFlag>::default())
             .add_plugins(SerializeComponentFor::<ColliderFlag>::default())
             //.add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
-            .add_plugins(SerializeComponentFor::<JointFlag>::default())
-            ;
-            // post processing
-            //.add_systems(Update, local_frame2_shift)
+            .add_plugins(SerializeComponentFor::<JointFlag>::default());
+        // post processing
+        //.add_systems(Update, local_frame2_shift)
     }
 }
