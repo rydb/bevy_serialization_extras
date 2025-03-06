@@ -1,8 +1,12 @@
 use crate::components::{RequestAssetStructure, RollDownIded};
 use crate::gltf::RequestCollider;
 use crate::traits::{Assemble, Disassemble, LazySerialize};
+use crate::urdf::loader::UrdfSaver;
 use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage};
-use bevy_asset::prelude::*;
+use bevy_asset::io::file::{FileAssetReader, FileAssetWriter};
+use bevy_asset::io::{AssetSource, AssetSourceId, AssetWriter};
+use bevy_asset::{prelude::*, ErasedLoadedAsset, LoadedAsset};
+use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_core::Name;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
@@ -14,8 +18,10 @@ use bevy_render::mesh::{Mesh, Mesh3d};
 use bevy_serialization_core::prelude::mesh::MeshPrefab;
 use bevy_serialization_physics::prelude::{ColliderFlag, JointBounded, JointFlag, RigidBodyFlag};
 use bevy_transform::components::Transform;
+use bevy_utils::default;
 use glam::Vec3;
 use std::ops::Deref;
+use std::path::Path;
 
 // /// give entity a name from its entity id.
 // pub fn name_from_id(
@@ -93,41 +99,49 @@ pub fn initialize_asset_structure<T>(
     }
 }
 
-pub fn save_asset<T>(world: &mut World)
+pub async fn save_asset<AssetWrapper>(world: &mut World)
 where
-    T: Assemble + LazySerialize + 'static,
+    AssetWrapper: Assemble + Clone + 'static + Default,
 {
-    // let Some(selected) = world.get_resource::<AssembleRequest>().map(|n| n.0.clone()) else {
-    //     //warn!("no assemble request");
-    //     return
-    // };
-    let selected = world.resource::<AssembleRequest>().0.clone();
+    while let Some(request) = world.resource_mut::<AssembleRequests<AssetWrapper>>().0.pop() {
+        let mut system_state = SystemState::<AssetWrapper::Params>::new(world);
+    
 
-    if selected.iter().len() <= 0 {
-        return;
+    
+        println!("assembling {:#?}", request.selected);
+
+
+        let asset = {
+            let params = system_state.get_mut(world);
+            AssetWrapper::assemble(request.selected.clone(), params)
+        };
+
+        let asset_source = {
+            let Ok(asset_source) = world.resource::<AssetServer>().get_source(request.path_keyword.clone()) else {
+                warn!("request path keyword {:#} not found in AssetServer. Aborting assemble attempt", request.path_keyword);
+                return;
+            };
+            asset_source.to_owned()
+        };
+
+        let loaded: LoadedAsset<AssetWrapper::Target> = asset.into();
+        let erased = ErasedLoadedAsset::from(loaded);
+        let saved: SavedAsset<AssetWrapper::Target> = SavedAsset::from_loaded(&erased).unwrap();
+        // let x = writer.map(|n|)
+
+        let saver = AssetWrapper::Saver::default();
+
+        let asset_writer = asset_source.writer().unwrap();
+        let mut async_writer = asset_writer.write(Path::new(&request.file_name)).await.unwrap();
+
+        let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
+        // println!("full path to path is {:#?}", full_path);
+        // let save_status = asset_target.serialize(file_name.clone(), request.save_path);
+        // match save_status {
+        //     Ok(_) => println!("saved {:#?}", file_name),
+        //     Err(err) => println!("failed to save {:#?}. Reason: {:#?}", file_name, err),
+        // }
     }
-    let mut system_state = SystemState::<T::Params>::new(world);
-
-    let fetched = system_state.get_mut(world);
-
-    println!("assembling {:#?}", selected);
-    let asset_target = T::assemble(selected, fetched);
-
-    let asset_name = "test_urdf".to_string();
-
-    let save_status = asset_target.serialize(asset_name.clone());
-    match save_status {
-        Ok(_) => println!("saved {:#?}", asset_name),
-        Err(err) => println!("failed to save {:#?}. Reason: {:#?}", asset_name, err),
-    }
-
-    world.resource_mut::<AssembleRequest>().0.clear();
-    // let assets_list: HashMap<String, AssetType> = IntoHashMap::into_hashmap(thing_query);
-    // //println!("assets list is {:#?}", assets_list.keys());
-    // for (name, uncached_asset) in assets_list.iter() {
-    //     asset_server.add(uncached_asset.clone());
-    //     //LazyDeserialize::deserialize(uncached_asset.clone(), asset_handle.path());
-    // }
 }
 
 // pub struct MeshProperties<'a> {

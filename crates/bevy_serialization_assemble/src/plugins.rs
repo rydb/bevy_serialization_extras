@@ -7,23 +7,20 @@ use bevy_serialization_core::run_proxy_system;
 use moonshine_save::save::SaveSystem;
 
 use crate::{
-    prelude::{AssembleRequest, AssetCheckers, InitializedStagers, RollDownCheckers},
-    systems::{bind_joint_request_to_parent, generate_primitive_for_request, save_asset},
-    traits::{Assemble, Disassemble, LazySerialize},
-    Assemblies, AssemblyId,
+    prelude::{AssembleRequest, AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{bind_joint_request_to_parent, generate_primitive_for_request, save_asset}, traits::{Assemble, Disassemble, LazySerialize}, urdf::UrdfWrapper, Assemblies, AssemblyId
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
 pub struct SerializeManyAsOneFor<U>
 where
-    U: 'static + Asset + Default + Clone + Assemble + Disassemble, //+ LazyDeserialize, //+ LazySerialize,
+    U: 'static + Default + Clone + Assemble + Disassemble, //+ LazyDeserialize, //+ LazySerialize,
 {
     composed_things_resource: PhantomData<fn() -> U>,
 }
 
 impl<U> Default for SerializeManyAsOneFor<U>
 where
-    U: 'static + Asset + Default + Clone + Assemble + Disassemble, //+ LazyDeserialize, //+ LazySerialize,
+    U: 'static + Default + Clone + Assemble + Disassemble, //+ LazyDeserialize, //+ LazySerialize,
 {
     fn default() -> Self {
         Self {
@@ -34,14 +31,12 @@ where
 
 impl<'v, T> Plugin for SerializeManyAsOneFor<T>
 where
-    T: 'static + Asset + Default + Clone + Assemble + Disassemble + LazySerialize, //+ LazyDeserialize, //+ LazySerialize,
+    T: 'static + Default + Clone + Assemble + Disassemble + LazySerialize, //+ LazyDeserialize, //+ LazySerialize,
 {
     fn build(&self, app: &mut App) {
-        // app.world_mut()
-        //     .get_resource_or_insert_with::<AssetSpawnRequestQueue<U>>(|| {
-        //         AssetSpawnRequestQueue::<U>::default()
-        //     });
-        app.add_systems(PreUpdate, (save_asset::<T>,).before(SaveSystem::Save));
+        app.insert_resource(AssembleRequests::<T>::default())
+        //.add_systems(PreUpdate, (save_asset::<T>,).before(SaveSystem::Save));
+        ;
     }
 }
 
@@ -50,10 +45,10 @@ pub struct SerializationAssembleBasePlugin;
 impl Plugin for SerializationAssembleBasePlugin {
     fn build(&self, app: &mut App) {
         app
+        .add_plugins(SerializeManyAsOneFor::<UrdfWrapper>::default())
         .insert_resource(AssetCheckers::default())
         .insert_resource(InitializedStagers::default())
         .insert_resource(RollDownCheckers::default())
-        .insert_resource(AssembleRequest::default())
         .insert_resource(Assemblies::default())
         .register_type::<AssemblyId>()
         .add_systems(Update, run_proxy_system::<AssetCheckers>)

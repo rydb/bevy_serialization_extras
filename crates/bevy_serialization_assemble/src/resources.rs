@@ -1,10 +1,12 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, marker::PhantomData};
 
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
 use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
 use bevy_utils::HashMap;
+
+use crate::traits::Assemble;
 
 // /// registry of initialized structures + their children.
 // #[derive(Resource, Default)]
@@ -14,8 +16,29 @@ use bevy_utils::HashMap;
 #[derive(Resource, Default)]
 pub struct InitializedStagers(pub HashMap<Entity, Vec<Entity>>);
 
-#[derive(Resource, Default)]
-pub struct AssembleRequest(pub Vec<Entity>);
+#[derive(Default, Clone)]
+pub struct AssembleRequest<T> {
+    pub file_name: String,
+    /// path:// keyword path to folder. E.g if a folder is in {ROOT}/assets/models, setting this to `root` will result in root://assets/models
+    /// being the looked up path. 
+    pub path_keyword: String,
+    pub selected: Vec<Entity>,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> AssembleRequest<T> {
+    pub fn new(file_name: String, path_keyword: String, selected: Vec<Entity>) -> Self {
+        Self {
+            path_keyword,
+            selected,
+            file_name,
+            _phantom: PhantomData::default(),
+        }
+    }
+}
+
+#[derive(Default, Clone, Resource)]
+pub struct AssembleRequests<T>(pub Vec<AssembleRequest<T>>);
 
 // /// registry of staging
 // pub struct InitializedStagersEntities(pub HashMap<ComponentId, Vec<Entity>>);

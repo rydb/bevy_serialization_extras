@@ -36,6 +36,7 @@ use crate::{
     traits::{Assemble, Disassemble, Structure},
 };
 
+use super::loader::{UrdfSaver, UrdfSettings};
 use super::*;
 
 #[derive(Component)]
@@ -121,23 +122,12 @@ impl Disassemble for LinkColliders {
 
 impl Disassemble for UrdfWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
-        //let robot = value.robot;
-
-        // let mut structured_link_map = HashMap::new();
         let mut structured_joint_map = HashMap::new();
-        // let mut structured_material_map = HashMap::new();
 
         for joint in &value.0.joints {
             structured_joint_map.insert(joint.child.link.clone(), joint.clone());
         }
-        // for material in &robot.materials {
-        //     structured_material_map.insert(material.name.clone(), material.clone());
-        // }
-        // for link in &robot.links {
-        //     structured_link_map.insert(link.name.clone(), link.clone());
-        // }
 
-        // let mut structured_entities_map: HashMap<String, Entity> = HashMap::new();
         let mut linkage = Vec::new();
         for link in value.0 .0.links {
             linkage.push((
@@ -150,7 +140,6 @@ impl Disassemble for UrdfWrapper {
         Structure::Root((
             Name::new(value.0 .0.name),
             RequestStructure(LinksNJoints(linkage)),
-            //Transform::default()
         ))
     }
 }
@@ -162,8 +151,11 @@ impl AssembleParms for UrdfWrapper {
     );
 }
 
-impl Assemble for UrdfWrapper {
-    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self {
+impl Assemble for UrdfWrapper{
+    type Saver = UrdfSaver;
+    type Settings = ();
+
+    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self::Target {
         let (links_query, joints_query) = value;
 
         let mut links = Vec::new();
@@ -264,8 +256,9 @@ impl Assemble for UrdfWrapper {
             // TODO: implement
             materials: Vec::default(),
         });
-        UrdfWrapper(robot)
+        robot
     }
+    
 }
 
 #[derive(From)]

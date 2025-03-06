@@ -2,7 +2,7 @@
 //! unique urdf resource for models to read from.
 
 use bevy_app::prelude::*;
-use bevy_asset::{io::Reader, prelude::*, AssetLoader, LoadContext};
+use bevy_asset::{io::Reader, prelude::*, saver::AssetSaver, transformer::AssetTransformer, AssetLoader, AsyncWriteExt, LoadContext};
 use bevy_state::prelude::States;
 use thiserror::Error;
 
@@ -13,7 +13,9 @@ pub struct UrdfLoaderPlugin;
 
 impl Plugin for UrdfLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.init_asset::<Urdf>().init_asset_loader::<UrdfLoader>();
+        app.init_asset::<Urdf>().init_asset_loader::<UrdfLoader>()
+        // app.register_asset_saver
+        ;
     }
 }
 
@@ -85,4 +87,44 @@ pub enum LoadState {
     #[default]
     Unloaded,
     // Loaded,
+}
+
+/// Possible errors that can be produced by [`UrdfLoaderError`]
+#[non_exhaustive]
+#[derive(Error, Debug)]
+pub enum UrdfSaveError {
+    #[error("Failed to save Urdf")]
+    Io(#[from] std::io::Error),
+    #[error("erorr saving urdf")]
+    UrdfError(#[from] urdf_rs::UrdfError)
+
+}
+
+#[derive(Default)]
+pub struct UrdfSaver;
+
+#[derive(Default)]
+pub struct UrdfSettings;
+
+impl AssetSaver for UrdfSaver {
+    type Asset = Urdf;
+    type Settings = ();
+    type OutputLoader = UrdfLoader;
+    type Error = UrdfSaveError;
+
+    fn save(
+        &self,
+        writer: &mut bevy_asset::io::Writer,
+        asset: bevy_asset::saver::SavedAsset<'_, Self::Asset>,
+        _settings: &Self::Settings,
+    ) -> impl bevy_utils::ConditionalSendFuture<Output = Result<(), Self::Error>> {
+        async move {
+            let urdf_as_string = urdf_rs::write_to_string(&asset.0)?;
+            let bytes = urdf_as_string.as_bytes();
+            
+            writer.write_all(bytes).await?;
+            
+            Ok(())
+        }
+    }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "bevy_serialization_assemble"
-version = "0.1.0"
+version = "0.2.0-beta.0"
 edition = "2024"
 repository = "https://github.com/rydb/bevy_serialization_extras"
 license = "MIT"
@@ -20,6 +20,7 @@ bevy_utils = {workspace = true}
 bevy_state = {workspace = true}
 bevy_asset = {workspace = true}
 bevy_app = {workspace = true}
+bevy_internal = {workspace = true}
 bevy_pbr = {workspace = true}
 bevy_log = {workspace = true}
 bevy_derive = {workspace = true}

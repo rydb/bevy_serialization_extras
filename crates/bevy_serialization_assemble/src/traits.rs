@@ -1,3 +1,4 @@
+use bevy_asset::{saver::AssetSaver, Asset};
 use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
@@ -9,9 +10,11 @@ use std::ops::Deref;
 /// I.E: (Mesh, Material, Name) -> Assemble(FormatWrapper(Format)) -> model.format
 pub trait Assemble
 where
-    Self: Sized + AssembleParms,
+    Self: Sized + AssembleParms + Send + Sync + LazySerialize + Deref<Target: Asset + Sized>,
 {
-    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self;
+    type Saver: Default + AssetSaver<Asset = Self::Target> + AssetSaver<Settings = Self::Settings>;
+    type Settings: Default;
+    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self::Target;
 }
 
 pub trait AssembleParms {
@@ -41,41 +44,9 @@ pub enum Structure<T> {
     Children(Vec<T>, Split),
 }
 
-// /// deserialize trait that works by offloading deserialization to desired format's deserializer
-// pub trait LazyDeserialize
-// where
-//     Self: Sized,
-// {
-//     fn deserialize(absolute_path: String, world: &World) -> Result<Self, LoadError>;
-// }
-
 pub trait LazySerialize
 where
     Self: Sized,
 {
-    fn serialize(&self, name: String) -> Result<(), anyhow::Error>;
+    fn serialize(&self, name: String, folder_path: String) -> Result<(), anyhow::Error>;
 }
-
-// #[non_exhaustive]
-// #[derive(Error, Debug)]
-// pub enum LoadError {
-//     Error(String),
-// }
-
-// /// Errors in saving assets.
-// #[non_exhaustive]
-// #[derive(Error, Debug)]
-// pub enum SaveError {
-//     File(#[from] std::io::Error),
-//     Other(#[from] Box<dyn std::error::Error>)
-// }
-
-// impl Display for SaveError {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         let res = match self {
-//             SaveError::Other(err) => write!(f, "Error: {:#}", err),
-//             SaveError::File(error) => write!(f, "Error: {:#}", error),
-//         };
-//         res
-//     }
-// }

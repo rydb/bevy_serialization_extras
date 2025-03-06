@@ -24,14 +24,7 @@ pub struct IgnoredCollider(#[reflect(ignore)] Option<Collider>, String);
 pub enum ColliderFlag {
     Prefab(MeshPrefab),
     /// ignored variant of collider for unimplemented collider kinds.
-    Ignore(IgnoredCollider), // TriMesh(
-                             //     #[reflect(ignore)]
-                             //     Option<TriMesh>
-                             // ),
-                             // ConvexPolyHedron(
-                             //     #[reflect(ignore)]
-                             //     Option<Collider>
-                             // )
+    Ignore(IgnoredCollider), 
 }
 impl Default for ColliderFlag {
     fn default() -> Self {

@@ -21,6 +21,9 @@ use moonshine_save::save::Save;
 
 use strum_macros::{Display, EnumIter};
 
+const SAVES_LOCATION: &str = "crates/bevy_serialization_assemble/saves";
+
+
 fn main() {
     App::new()
         .add_plugins(AppSourcesPlugin::CRATE)
@@ -71,9 +74,9 @@ fn main() {
         .add_systems(Update, control_robot)
         .add_systems(Update, bind_left_and_right_wheel)
         .add_systems(Update, freeze_spawned_robots)
-        // .add_systems(Update, select_robot)
-        // .add_systems(Update, save_selected)
-        // .insert_resource(AlreadyRan(false))
+        .add_systems(Update, select_robot)
+        .add_systems(Update, save_selected)
+        .insert_resource(AlreadyRan(false))
         // .register_type::<WasFrozen>()
         // .register_type::<Selected>()
         .run();
@@ -214,6 +217,8 @@ pub fn select_robot(
             With<MassFlag>,
             With<ColliderFlag>,
             With<Mesh3d>,
+            With<RigidBodyFlag>,
+            Without<BasePlate>,
             Without<Selected>,
         ),
     >,
@@ -229,7 +234,7 @@ pub struct AlreadyRan(bool);
 
 pub fn save_selected(
     selected: Query<Entity, With<Selected>>,
-    mut assemble_request: ResMut<AssembleRequest>,
+    mut assemble_requests: ResMut<AssembleRequests<UrdfWrapper>>,
     mut already_ran: ResMut<AlreadyRan>,
 ) {
     if already_ran.0 == true {
@@ -238,7 +243,12 @@ pub fn save_selected(
     if selected.iter().len() > 0 {
         let entities = &mut selected.iter().collect::<Vec<_>>();
 
-        assemble_request.0.append(entities);
+        let request = AssembleRequest::<UrdfWrapper>::new(
+            "test_urdf".into(),
+            SAVES.to_string(),
+            entities.clone()
+        );
+        assemble_requests.0.push(request);
         already_ran.0 = true;
     }
 }
@@ -268,16 +278,17 @@ fn setup(
         Name::new("plane"),
         BasePlate,
     ));
+    let robot = "diff_bot.xml";
     // Robot
     commands.spawn((
-        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
+        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/".to_owned() + robot),
         Transform::from_xyz(-2.0, 0.0, 0.0),
     ));
-    // Robot2
-    commands.spawn((
-        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/diff_bot.xml".to_owned()),
-        Transform::from_xyz(2.0, 0.0, 0.0),
-    ));
+    // // Robot2
+    // commands.spawn((
+    //     RequestAssetStructure::<UrdfWrapper>::Path(SAVES_LOCATION.to_owned() + "/" + robot),
+    //     Transform::from_xyz(2.0, 0.0, 0.0),
+    // ));
 
     // light
     commands.spawn((
@@ -344,6 +355,8 @@ pub struct UtilitySelection {
 
 pub const ROOT: &str = "root";
 
+pub const SAVES: &str = "saves";
+
 /// Whether this is a crate or `main.rs`.
 pub enum AppSourcesPlugin {
     CRATE,
@@ -352,14 +365,20 @@ pub enum AppSourcesPlugin {
 
 impl Plugin for AppSourcesPlugin {
     fn build(&self, app: &mut App) {
-        let asset_folder_location = match *self {
-            Self::CRATE => "../../assets",
-            Self::MAIN => "assets",
+        let executor_location = match *self {
+            Self::CRATE => "../../",
+            Self::MAIN => "./",
         };
         app.register_asset_source(
             ROOT,
             AssetSource::build()
-                .with_reader(move || Box::new(FileAssetReader::new(asset_folder_location))),
+                .with_reader(move || Box::new(FileAssetReader::new(executor_location.to_owned() + "assets"))),
+        );
+        app.register_asset_source(
+            SAVES,
+            AssetSource::build()
+                .with_reader(move || Box::new(FileAssetReader::new("./saves")))
+                //.with_writer(move || Box::new(FileAssetReader::new("./saves"))),
         );
     }
 }

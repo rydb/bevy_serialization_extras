@@ -28,13 +28,20 @@ pub const PACKAGE: &str = "package";
 pub struct UrdfWrapper(pub Urdf);
 
 impl LazySerialize for UrdfWrapper {
-    fn serialize(&self, name: String) -> Result<(), anyhow::Error> {
+    fn serialize(&self, name: String, folder_path: String) -> Result<(), anyhow::Error> {
         //let path = PathBuf::new()
         let urdf_as_string = urdf_rs::write_to_string(&self.0 .0)?;
-        let mut file = File::create(name + ".xml")?;
+        let mut file = File::create(folder_path + &name + ".xml")?;
         let _ = file.write(urdf_as_string.as_bytes());
         Ok(())
     }
+    // fn serialize(&self, name: String) -> Result<(), anyhow::Error> {
+    //     //let path = PathBuf::new()
+    //     let urdf_as_string = urdf_rs::write_to_string(&self.0 .0)?;
+    //     let mut file = File::create(name + ".xml")?;
+    //     let _ = file.write(urdf_as_string.as_bytes());
+    //     Ok(())
+    // }
 }
 
 #[derive(Asset, TypePath, From, Deref, Debug, Clone)]
@@ -80,7 +87,7 @@ impl Plugin for UrdfSerializationPlugin {
         // .register_type::<CachedUrdf>()
         .add_plugins(UrdfLoaderPlugin)
         .insert_resource(CachedUrdf::default())
-        .add_plugins(SerializeManyAsOneFor::<UrdfWrapper>::default())
+        //.add_plugins(SerializeManyAsOneFor::<UrdfWrapper>::default())
         //.add_plugins(SerializeManyAsOneFor::<LinkQuery, UrdfWrapper>::default())
         // .add_systems(Update, split_open_self_children::<LinksNJoints>)
         // .add_systems(Update, split_open_self::<UrdfJoint>)
