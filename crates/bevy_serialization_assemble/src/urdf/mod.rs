@@ -6,7 +6,6 @@ pub mod visual;
 use std::fs::File;
 use std::io::Write;
 
-use crate::plugins::SerializeManyAsOneFor;
 use crate::traits::LazySerialize;
 // use crate::systems::split_open_self;
 // use crate::systems::split_open_self_children;

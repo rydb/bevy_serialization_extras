@@ -6,7 +6,6 @@ use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
 use bevy_utils::HashMap;
 
-use crate::traits::Assemble;
 
 // /// registry of initialized structures + their children.
 // #[derive(Resource, Default)]

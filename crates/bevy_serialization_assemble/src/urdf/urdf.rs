@@ -36,7 +36,7 @@ use crate::{
     traits::{Assemble, Disassemble, Structure},
 };
 
-use super::loader::{UrdfSaver, UrdfSettings};
+use super::loader::UrdfSaver;
 use super::*;
 
 #[derive(Component)]

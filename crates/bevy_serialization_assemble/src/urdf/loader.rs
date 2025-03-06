@@ -2,7 +2,7 @@
 //! unique urdf resource for models to read from.
 
 use bevy_app::prelude::*;
-use bevy_asset::{io::Reader, prelude::*, saver::AssetSaver, transformer::AssetTransformer, AssetLoader, AsyncWriteExt, LoadContext};
+use bevy_asset::{io::Reader, prelude::*, saver::AssetSaver, AssetLoader, AsyncWriteExt, LoadContext};
 use bevy_state::prelude::States;
 use thiserror::Error;
 
