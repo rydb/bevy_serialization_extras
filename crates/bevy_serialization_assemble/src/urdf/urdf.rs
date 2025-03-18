@@ -19,7 +19,7 @@ use urdf_rs::Inertial;
 use urdf_rs::JointType;
 use urdf_rs::LinkName;
 // use nalgebra::{Matrix3, Vector3};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use urdf_rs::{Collision, Joint, Link, Pose, Robot, Visual};
 use visual::GeometryWrapper;
 
@@ -36,7 +36,7 @@ use crate::{
     traits::{Assemble, Disassemble, Structure},
 };
 
-use super::loader::UrdfSaver;
+use super::loader::{UrdfLoader, UrdfSaver};
 use super::*;
 
 #[derive(Component)]
@@ -153,9 +153,11 @@ impl AssembleParms for UrdfWrapper {
 
 impl Assemble for UrdfWrapper{
     type Saver = UrdfSaver;
+    type Loader = UrdfLoader;
+
     type Settings = ();
 
-    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self::Target {
+    fn assemble(selected: HashSet<Entity>, value: SystemParamItem<Self::Params>) -> Self::Target {
         let (links_query, joints_query) = value;
 
         let mut links = Vec::new();
@@ -256,8 +258,10 @@ impl Assemble for UrdfWrapper{
             // TODO: implement
             materials: Vec::default(),
         });
+        println!("link count: {:#?}", robot.links.len());
         robot
     }
+    
     
 }
 

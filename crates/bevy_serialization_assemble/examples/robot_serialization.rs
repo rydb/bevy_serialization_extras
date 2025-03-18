@@ -1,7 +1,9 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
+use std::collections::HashSet;
+
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_asset::io::{file::FileAssetReader, AssetSource};
+use bevy_asset::io::{file::{FileAssetReader, FileAssetWriter}, AssetSource};
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
 use bevy_inspector_egui::{
     bevy_egui::EguiContext,
@@ -9,19 +11,23 @@ use bevy_inspector_egui::{
         self, Align2, Color32, Frame, Margin, Rounding, Shadow, Stroke,
     },
 };
-use bevy_obj::ObjPlugin;
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::RequestAssetStructure, gltf::RequestCollider, prelude::*,
+    components::{RequestAssetStructure, RollDown}, prelude::*,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
+use const_format::formatcp;
 use moonshine_save::save::Save;
 
 use strum_macros::{Display, EnumIter};
 
-const SAVES_LOCATION: &str = "crates/bevy_serialization_assemble/saves";
+pub const SAVES: &str = "saves";
+pub const ROBOT: &str = "diff_bot";
+
+// const SAVES_LOCATION: String = "crates/bevy_serialization_assemble/"..concat!(SAVES);
+// const SAVES_LOCATION: &'static str = formatcp!("{:#}://" );
 
 
 fn main() {
@@ -31,6 +37,7 @@ fn main() {
             //TODO: This should be unified under `ROOT`
             assets_folder_local_path: "../../assets".to_owned(),
         })
+        .insert_state(InitializationStage::Select)
         //.add_schedule(Schedule::new(AssetCheckSchedule))
         .insert_resource(SetSaveFile {
             name: "blue".to_owned(),
@@ -45,7 +52,6 @@ fn main() {
         )
         .add_plugins(RapierPhysicsPlugin::<()>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
-        .add_plugins(ObjPlugin)
         // // serialization plugins
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationAssembleBasePlugin)
@@ -74,12 +80,21 @@ fn main() {
         .add_systems(Update, control_robot)
         .add_systems(Update, bind_left_and_right_wheel)
         .add_systems(Update, freeze_spawned_robots)
-        .add_systems(Update, select_robot)
-        .add_systems(Update, save_selected)
-        .insert_resource(AlreadyRan(false))
+        .add_systems(OnEnter(InitializationStage::Select), select_robot)
+        .add_systems(OnEnter(InitializationStage::Save), save_selected)
+        .add_systems(OnEnter(InitializationStage::LoadSaved), load_saved_robot)
+        .add_systems(Startup, load_saved_robot.after(save_selected))
         // .register_type::<WasFrozen>()
         // .register_type::<Selected>()
         .run();
+}
+
+#[derive(States, Debug, PartialEq, PartialOrd, Hash, Eq, Clone)]
+pub enum InitializationStage {
+    Select,
+    Save,
+    AwaitSaveConfirmation,
+    LoadSaved
 }
 
 #[derive(Component)]
@@ -229,35 +244,37 @@ pub fn select_robot(
     }
 }
 
-#[derive(Resource)]
-pub struct AlreadyRan(bool);
-
 pub fn save_selected(
     selected: Query<Entity, With<Selected>>,
     mut assemble_requests: ResMut<AssembleRequests<UrdfWrapper>>,
-    mut already_ran: ResMut<AlreadyRan>,
-) {
-    if already_ran.0 == true {
-        return;
-    }
-    if selected.iter().len() > 0 {
-        let entities = &mut selected.iter().collect::<Vec<_>>();
+    mut initialization_stage: ResMut<NextState<InitializationStage>>,
 
+) {
+    if selected.iter().len() > 0 {
+        let entities = &mut selected.iter().collect::<HashSet<_>>();
+
+        println!("selected entities: {:#?}", entities);
         let request = AssembleRequest::<UrdfWrapper>::new(
-            "test_urdf".into(),
+            ROBOT.into(),
             SAVES.to_string(),
             entities.clone()
         );
         assemble_requests.0.push(request);
-        already_ran.0 = true;
+        initialization_stage.set(InitializationStage::AwaitSaveConfirmation)
     }
 }
 
-// pub fn queue_urdf_save_request(
-//     loading: Query<Entity, With<
-// ) {
-
-// }
+pub fn load_saved_robot(
+    mut commands: Commands,
+) {
+    // // Robot2
+    commands.spawn((
+        RequestAssetStructure::<UrdfWrapper>::Path("saves://".to_owned() + ROBOT + ".xml"),
+        //RequestAssetStructure::<UrdfWrapper>::Path(SAVES.to_owned() + "" + ROBOT + ".xml"),
+        Transform::from_xyz(2.0, 0.0, 0.0),
+    ));
+    
+}
 
 /// set up a simple 3D scene
 fn setup(
@@ -278,17 +295,13 @@ fn setup(
         Name::new("plane"),
         BasePlate,
     ));
-    let robot = "diff_bot.xml";
+    // let robot = "diff_bot.xml";
     // Robot
     commands.spawn((
-        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/".to_owned() + robot),
+        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/".to_owned() + ROBOT + ".xml"),
         Transform::from_xyz(-2.0, 0.0, 0.0),
     ));
-    // // Robot2
-    // commands.spawn((
-    //     RequestAssetStructure::<UrdfWrapper>::Path(SAVES_LOCATION.to_owned() + "/" + robot),
-    //     Transform::from_xyz(2.0, 0.0, 0.0),
-    // ));
+
 
     // light
     commands.spawn((
@@ -355,7 +368,6 @@ pub struct UtilitySelection {
 
 pub const ROOT: &str = "root";
 
-pub const SAVES: &str = "saves";
 
 /// Whether this is a crate or `main.rs`.
 pub enum AppSourcesPlugin {
@@ -377,8 +389,8 @@ impl Plugin for AppSourcesPlugin {
         app.register_asset_source(
             SAVES,
             AssetSource::build()
-                .with_reader(move || Box::new(FileAssetReader::new("./saves")))
-                //.with_writer(move || Box::new(FileAssetReader::new("./saves"))),
+                .with_reader(move || Box::new(FileAssetReader::new(SAVES)))
+                .with_writer(move |create_root| Some(Box::new(FileAssetWriter::new(SAVES, create_root)))),
         );
     }
 }

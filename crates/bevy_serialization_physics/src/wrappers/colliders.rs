@@ -9,6 +9,22 @@ use derive_more::derive::From;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
+use strum_macros::{Display, EnumIter};
+use strum::IntoEnumIterator;
+
+/// Component for requesting a collider to be processed from a mesh.
+/// If a (non) mesh collider is selected, This will cause collider primitive to be generated to fit around a meshes's geoemtry.
+#[derive(EnumIter, Debug, Default, Display, PartialEq, Component, Clone)]
+pub enum RequestCollider {
+    #[default]
+    Cuboid,
+    Wheel,
+    Sphere,
+    Convex,
+}
+
+#[derive(Component, From)]
+pub struct RequestColliderFromChildren(pub RequestCollider);
 
 use super::{
     collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag,

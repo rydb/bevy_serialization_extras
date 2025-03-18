@@ -26,22 +26,22 @@ pub const PACKAGE: &str = "package";
 #[derive(Asset, TypePath, From, Deref, Debug, Clone, Default)]
 pub struct UrdfWrapper(pub Urdf);
 
-impl LazySerialize for UrdfWrapper {
-    fn serialize(&self, name: String, folder_path: String) -> Result<(), anyhow::Error> {
-        //let path = PathBuf::new()
-        let urdf_as_string = urdf_rs::write_to_string(&self.0 .0)?;
-        let mut file = File::create(folder_path + &name + ".xml")?;
-        let _ = file.write(urdf_as_string.as_bytes());
-        Ok(())
-    }
-    // fn serialize(&self, name: String) -> Result<(), anyhow::Error> {
-    //     //let path = PathBuf::new()
-    //     let urdf_as_string = urdf_rs::write_to_string(&self.0 .0)?;
-    //     let mut file = File::create(name + ".xml")?;
-    //     let _ = file.write(urdf_as_string.as_bytes());
-    //     Ok(())
-    // }
-}
+// impl LazySerialize for UrdfWrapper {
+//     fn serialize(&self, name: String, folder_path: String) -> Result<(), anyhow::Error> {
+//         //let path = PathBuf::new()
+//         let urdf_as_string = urdf_rs::write_to_string(&self.0 .0)?;
+//         let mut file = File::create(folder_path + &name + ".xml")?;
+//         let _ = file.write(urdf_as_string.as_bytes());
+//         Ok(())
+//     }
+//     // fn serialize(&self, name: String) -> Result<(), anyhow::Error> {
+//     //     //let path = PathBuf::new()
+//     //     let urdf_as_string = urdf_rs::write_to_string(&self.0 .0)?;
+//     //     let mut file = File::create(name + ".xml")?;
+//     //     let _ = file.write(urdf_as_string.as_bytes());
+//     //     Ok(())
+//     // }
+// }
 
 #[derive(Asset, TypePath, From, Deref, Debug, Clone)]
 pub struct Urdf(pub Robot);

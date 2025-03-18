@@ -304,7 +304,7 @@ impl ComponentWrapper for JointFlag {
     type WrapperTarget = ImpulseJoint;
 }
 
-#[derive(Debug, PartialEq, Reflect, Clone)]
+#[derive(Default, Debug, PartialEq, Reflect, Clone)]
 pub struct JointInfo {
     pub limit: JointLimitWrapper,
     pub dynamics: Dynamics,

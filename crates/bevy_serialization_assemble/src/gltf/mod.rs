@@ -5,6 +5,7 @@ use bevy_gltf::{GltfExtras, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_log::warn;
 use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
+use bevy_serialization_physics::prelude::RequestCollider;
 use derive_more::derive::From;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
@@ -19,6 +20,47 @@ pub struct GltfNodeWrapper(GltfNode);
 
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
+
+
+pub fn gltf_collider_request(extras: GltfExtras) -> RequestCollider{
+        if let Some(target) = extras.value.replace(['}', '{', '"'], "").split(':').last() {
+            for variant in RequestCollider::iter() {
+                if target == variant.to_string().to_lowercase() {
+                    return variant.into();
+                }
+            }
+            warn!(
+                "
+                provided GltfExtra attribute did not match any valid primitive colliders. reverting to default
+                valid variants: {:#?}
+                parsed value: {:#}
+                ", RequestCollider::iter().map(|n| n.to_string()).collect::<Vec<_>>(), target
+            );
+        };
+
+        RequestCollider::default()
+}
+
+// impl From<GltfExtras> for RequestColliderWrapper {
+//     fn from(value: GltfExtras) -> Self {
+//         if let Some(target) = value.value.replace(['}', '{', '"'], "").split(':').last() {
+//             for variant in RequestCollider::iter() {
+//                 if target == variant.to_string().to_lowercase() {
+//                     return variant.into();
+//                 }
+//             }
+//             warn!(
+//                 "
+//                 provided GltfExtra attribute did not match any valid primitive colliders. reverting to default
+//                 valid variants: {:#?}
+//                 parsed value: {:#}
+//                 ", RequestCollider::iter().map(|n| n.to_string()).collect::<Vec<_>>(), target
+//             );
+//         };
+
+//         RequestCollider::default()
+//     }
+// }
 
 impl Disassemble for GltfPrimitiveWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
@@ -42,10 +84,10 @@ impl Disassemble for GltfNodeMeshOne {
 
 /// GltfNode wrapper for spawning gltf nodes with a parent collider mesh, and children visual meshes.
 /// This is for physics
-#[derive(Clone, Deref)]
+#[derive(Clone, Deref, From)]
 pub struct GltfNodeColliderVisualChilds(pub GltfNode);
 
-#[derive(Clone, Deref)]
+#[derive(Clone, Deref, From)]
 pub struct GltfNodeVisuals(pub Vec<Handle<GltfNode>>);
 
 impl Disassemble for GltfNodeVisuals {
@@ -60,37 +102,6 @@ impl Disassemble for GltfNodeVisuals {
     }
 }
 
-/// Component for requesting a collider to be processed from a mesh.
-/// If a (non) mesh collider is selected, This will cause collider primitive to be generated to fit around a meshes's geoemtry.
-#[derive(EnumIter, Debug, Default, Display, PartialEq, Component, Clone)]
-pub enum RequestCollider {
-    #[default]
-    Cuboid,
-    Wheel,
-    Sphere,
-    Convex,
-}
-
-impl From<GltfExtras> for RequestCollider {
-    fn from(value: GltfExtras) -> Self {
-        if let Some(target) = value.value.replace(['}', '{', '"'], "").split(':').last() {
-            for variant in RequestCollider::iter() {
-                if target == variant.to_string().to_lowercase() {
-                    return variant;
-                }
-            }
-            warn!(
-                "
-                provided GltfExtra attribute did not match any valid primitive colliders. reverting to default
-                valid variants: {:#?}
-                parsed value: {:#}
-                ", Self::iter().map(|n| n.to_string()).collect::<Vec<_>>(), target
-            );
-        };
-
-        Self::default()
-    }
-}
 
 impl Disassemble for GltfNodeColliderVisualChilds {
     fn components(value: Self) -> Structure<impl Bundle> {
@@ -101,7 +112,7 @@ impl Disassemble for GltfNodeColliderVisualChilds {
 
         let collider_request = {
             if let Some(gltf_extras) = value.0.extras {
-                RequestCollider::from(gltf_extras)
+                RequestCollider::from(gltf_collider_request(gltf_extras))
             } else {
                 RequestCollider::Convex
             }
@@ -167,7 +178,7 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
         let primitive = mesh.map(|n| Mesh3d(n.mesh.clone()));
 
         let collider_request = if let Some(collider_kind) = value.0.extras {
-            RequestCollider::from(collider_kind)
+            RequestCollider::from(gltf_collider_request(collider_kind))
         } else {
             RequestCollider::Convex
         };

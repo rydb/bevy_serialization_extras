@@ -1,20 +1,24 @@
-use bevy_asset::{saver::AssetSaver, Asset};
+use bevy_asset::{saver::AssetSaver, Asset, AssetLoader};
 use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
 };
-use std::ops::Deref;
+use std::{collections::HashSet, ops::Deref};
 
 /// The trait for assembling a structure into its root asset.
 ///
 /// I.E: (Mesh, Material, Name) -> Assemble(FormatWrapper(Format)) -> model.format
 pub trait Assemble
 where
-    Self: Sized + AssembleParms + Send + Sync + LazySerialize + Deref<Target: Asset + Sized>,
+    Self: Sized + AssembleParms + Send + Sync
+     + 
+     //LazySerialize + 
+     Deref<Target: Asset + Sized>,
 {
-    type Saver: Default + AssetSaver<Asset = Self::Target> + AssetSaver<Settings = Self::Settings>;
-    type Settings: Default;
-    fn assemble(selected: Vec<Entity>, value: SystemParamItem<Self::Params>) -> Self::Target;
+    type Saver: Send + Default + AssetSaver<Asset = Self::Target> + AssetSaver<Settings = Self::Settings>;
+    type Loader: Send + Default + AssetLoader<Asset = Self::Target>;
+    type Settings: Send + Default;
+    fn assemble(selected: HashSet<Entity>, value: SystemParamItem<Self::Params>) -> Self::Target;
 }
 
 pub trait AssembleParms {

@@ -1,13 +1,14 @@
 use crate::components::{RequestAssetStructure, RollDownIded};
-use crate::gltf::RequestCollider;
 use crate::traits::{Assemble, Disassemble};
 use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage};
 use bevy_asset::io::AssetWriter;
-use bevy_asset::{prelude::*, ErasedLoadedAsset, LoadedAsset};
+use bevy_asset::{prelude::*, AssetLoader, ErasedLoadedAsset, LoadedAsset};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_core::Name;
+use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
+use bevy_ecs::world::CommandQueue;
 use bevy_hierarchy::Children;
 use bevy_log::prelude::*;
 use bevy_math::primitives::{Cuboid, Sphere};
@@ -15,7 +16,10 @@ use bevy_rapier3d::prelude::{AsyncCollider, ComputedColliderShape};
 use bevy_render::mesh::{Mesh, Mesh3d};
 use bevy_serialization_core::prelude::mesh::MeshPrefab;
 use bevy_serialization_physics::prelude::{ColliderFlag, JointBounded, JointFlag, RigidBodyFlag};
+use bevy_tasks::futures_lite::future;
+use bevy_tasks::{block_on, AsyncComputeTaskPool, IoTaskPool, Task};
 use bevy_transform::components::Transform;
+use bevy_utils::default;
 use glam::Vec3;
 use std::ops::Deref;
 use std::path::Path;
@@ -96,48 +100,170 @@ pub fn initialize_asset_structure<T>(
     }
 }
 
-pub async fn save_asset<AssetWrapper>(world: &mut World)
+
+
+// /// take assets, and save them into their save file format.
+// pub async fn process_save_requests<AssetWrapper>(
+//     asset_server: Res<AssetServer>,
+//     mut assembled_assets: ResMut<SaveAssembledRequests<AssetWrapper>>
+// ) 
+// where
+//     AssetWrapper: Assemble + Clone + 'static + Default,
+// {
+//     let thread_pool = AsyncComputeTaskPool::get();
+//     while let Some(request) = assembled_assets.0.pop() {
+//         // convert asset to loaded asset
+//         let loaded: LoadedAsset<AssetWrapper::Target> = request.asset.into();
+//         // convert loaded asset to erased loaded asset
+//         let erased = ErasedLoadedAsset::from(loaded);
+//         // convert erased loaded asset into saved asset
+//         let saved: SavedAsset<AssetWrapper::Target> = SavedAsset::from_loaded(&erased).unwrap();
+
+//         let saver = AssetWrapper::Saver::default();
+
+//         let asset_writer = request.asset_source.writer().unwrap();
+//         let mut async_writer = asset_writer.write(Path::new(&request.file_name)).await.unwrap();
+
+//         let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
+//     }
+// }
+
+#[derive(Deref, DerefMut, Resource)]
+pub struct SaveAssembledRequests<T>(pub Vec<SaveAssembledRequest<T>>);
+
+impl<T> Default for SaveAssembledRequests<T> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+pub fn stage_save_asset_request<AssetWrapper>(
+    mut commands: Commands, 
+    mut requests: ResMut<AssembleRequests<AssetWrapper>>, 
+    // asset_server: Res<AssetServer>,
+    //mut save_assembly_requests: ResMut<SaveAssembledRequests<AssetWrapper::Target>>
+) 
 where
     AssetWrapper: Assemble + Clone + 'static + Default,
 {
-    while let Some(request) = world.resource_mut::<AssembleRequests<AssetWrapper>>().0.pop() {
-        let mut system_state = SystemState::<AssetWrapper::Params>::new(world);
+    while let Some(request) = requests.pop() {
+            let mut command_queue = CommandQueue::default();            
+
+            command_queue.push(move | world: &mut World| {
+                let Ok(_) = world.resource::<AssetServer>().get_source(request.path_keyword.clone()) else {
+                    warn!("request path keyword {:#} not found in AssetServer. Aborting assemble attempt", request.path_keyword);
+                    return;
+                };
+                
+                let mut system_state = SystemState::<AssetWrapper::Params>::new(world);
     
+                println!("assembling {:#?}", request.selected);
+        
+        
+                let asset = {
+                    let params = system_state.get_mut(world);
+                    AssetWrapper::assemble(request.selected.clone(), params)
+                };
+                let mut save_assembly_requests = world.resource_mut::<SaveAssembledRequests<AssetWrapper::Target>>();
+                save_assembly_requests.0.push(SaveAssembledRequest {
+                    asset,
+                    path_keyword: request.path_keyword,
+                    file_name: request.file_name
+                });
+                
+            });
+            commands.append(&mut command_queue);
 
-    
-        println!("assembling {:#?}", request.selected);
+    }
+}
+
+#[derive(Resource, Deref, DerefMut)]
+pub struct StagedAssembleRequestTasks(pub Vec<Task<Result<String, String>>>);
+
+// pub fn process_save_requests(mut commands: Commands, mut staged_save_tasks: Query<&mut SaveAssembledRequests<>>) {
+//     for mut task in &mut staged_save_tasks {
+//         if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
+//             // append the returned command queue to have it execute later
+//             commands.append(&mut commands_queue);
+//         }
+//     }
+// }
+
+// /// take assets, and save them into their save file format.
+// pub async fn process_save_requests<AssetWrapper>(
+//     asset_server: Res<AssetServer>,
+//     mut assembled_assets: ResMut<SaveAssembledRequests<AssetWrapper>>
+// ) 
+// where
+//     AssetWrapper: Assemble + Clone + 'static + Default,
+// {
+//     while let Some(request) = assembled_assets.0.pop() {
+//         // convert asset to loaded asset
+//         let loaded: LoadedAsset<AssetWrapper::Target> = request.asset.into();
+//         // convert loaded asset to erased loaded asset
+//         let erased = ErasedLoadedAsset::from(loaded);
+//         // convert erased loaded asset into saved asset
+//         let saved: SavedAsset<AssetWrapper::Target> = SavedAsset::from_loaded(&erased).unwrap();
+
+//         let saver = AssetWrapper::Saver::default();
+
+//         let asset_writer = request.asset_source.writer().unwrap();
+//         let task = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default());
+
+//         AsyncComputeTaskPool::get().spawn(task);
+
+//         // Handle task polling here if you need output
+//     }
+// }
+
+pub fn handle_save_tasks(mut tasks: ResMut<StagedAssembleRequestTasks>, ) {
+    while let Some(mut task) = tasks.pop() {
+        block_on(future::poll_once(&mut task));
+
+    }
+}
+
+pub fn save_asset<AssetWrapper>(
+    mut requests: ResMut<SaveAssembledRequests<AssetWrapper::Target>>, 
+    asset_server: Res<AssetServer>,
+    mut save_tasks: ResMut<StagedAssembleRequestTasks>
+)
+where
+    AssetWrapper: Assemble + Clone + 'static + Default,
+{
+    while let Some(request) = requests.pop() {
+        let asset_server = asset_server.clone();
+        // let task_pool = IoTaskPool::get();
 
 
-        let asset = {
-            let params = system_state.get_mut(world);
-            AssetWrapper::assemble(request.selected.clone(), params)
-        };
-
-        let asset_source = {
-            let Ok(asset_source) = world.resource::<AssetServer>().get_source(request.path_keyword.clone()) else {
-                warn!("request path keyword {:#} not found in AssetServer. Aborting assemble attempt", request.path_keyword);
-                return;
+        let task= IoTaskPool::get().spawn(async move {
+            let Ok(asset_source) = asset_server.get_source(request.path_keyword.clone()) else {
+                return Err(format!("request path keyword {:#} not found in AssetServer. Aborting save attempt", request.path_keyword));
             };
-            asset_source.to_owned()
-        };
+            let loaded: LoadedAsset<AssetWrapper::Target> = request.asset.into();
+            let erased = ErasedLoadedAsset::from(loaded);
 
-        let loaded: LoadedAsset<AssetWrapper::Target> = asset.into();
-        let erased = ErasedLoadedAsset::from(loaded);
-        let saved: SavedAsset<AssetWrapper::Target> = SavedAsset::from_loaded(&erased).unwrap();
-        // let x = writer.map(|n|)
+            
+            let saved = SavedAsset::<AssetWrapper::Target>::from_loaded(&erased).unwrap();
 
-        let saver = AssetWrapper::Saver::default();
+            let saver = AssetWrapper::Saver::default();
+        
+            let binding = <AssetWrapper::Loader>::default();
+            let file_extensions = binding.extensions();
+            if file_extensions.len() > 1 {
+                warn!("save request for {:#} contains multiple file extensions. Defaulting to first one available. All extensions {:#?}", request.file_name, file_extensions)
+            }
+            let Some(extension) = file_extensions.first() else {
+                return Err(format!("Asset for {:#} has no file extensions. Exiting early", request.file_name))
+            };
 
-        let asset_writer = asset_source.writer().unwrap();
-        let mut async_writer = asset_writer.write(Path::new(&request.file_name)).await.unwrap();
-
-        let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
-        // println!("full path to path is {:#?}", full_path);
-        // let save_status = asset_target.serialize(file_name.clone(), request.save_path);
-        // match save_status {
-        //     Ok(_) => println!("saved {:#?}", file_name),
-        //     Err(err) => println!("failed to save {:#?}. Reason: {:#?}", file_name, err),
-        // }
+            let asset_writer = asset_source.writer().unwrap();
+            let mut async_writer = asset_writer.write(Path::new(&(request.file_name.to_owned() + "." + extension))).await.unwrap();
+    
+            let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
+            Ok(request.file_name)
+        });
+        save_tasks.push(task);
     }
 }
 
@@ -147,155 +273,7 @@ where
 //     indices: Vec<u16>,
 // }
 
-/// generate a collider primitive from a primitive request
-pub fn generate_primitive_for_request(
-    requests: Query<(Entity, &RequestCollider, &Mesh3d)>,
-    mut commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-) {
-    for (e, collider, mesh) in requests.iter() {
-        let Some(mesh) = meshes.get(&mesh.0) else {
-            return;
-        };
-        let Some(positions) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) else {
-            warn!("Expected positions. Exiting");
-            return;
-        };
-        let Some(positions) = positions.as_float3() else {
-            warn!("Expected positions ot be float3. Exiting");
-            return;
-        };
 
-        // let Some(normals) = mesh.attribute(Mesh::ATTRIBUTE_NORMAL) else {
-        //     warn!("Expected normals. Exiting");
-        //     return;
-        // };
-        // let Some(normals) = normals.as_float3() else {
-        //     warn!("normals not float3. Exiting");
-        //     return;
-        // };
-
-        // let Some(indices) = mesh.indices() else {
-        //     warn!("Expected indices. Exiting");
-        //     return;
-        // };
-
-        // let indices = indices.iter().map(|i|  i as u16).collect::<Vec<u16>>();
-
-        // println!("Generating from bevy_mesh");
-
-        let mut farthest_x_positive = 0.0;
-        let mut farthest_x_negative = 0.0;
-
-        let mut farthest_y_positive = 0.0;
-        let mut farthest_y_negative = 0.0;
-
-        let mut farthest_z_positive = 0.0;
-        let mut farthest_z_negative = 0.0;
-
-        for position in positions {
-            let x = position[0];
-            let y = position[1];
-            let z = position[2];
-            if x > farthest_x_positive {
-                farthest_x_positive = x;
-            }
-            if x < farthest_x_negative {
-                farthest_x_negative = x;
-            }
-
-            if y > farthest_y_positive {
-                farthest_y_positive = y;
-            }
-            if y < farthest_y_negative {
-                farthest_y_negative = y;
-            }
-
-            if z > farthest_z_positive {
-                farthest_z_positive = z;
-            }
-            if z < farthest_z_negative {
-                farthest_z_negative = z;
-            }
-        }
-
-        let performance_collider = match collider {
-            RequestCollider::Cuboid => {
-                let half_size = Vec3 {
-                    x: (f32::abs(farthest_x_negative) + farthest_x_positive),
-                    y: (f32::abs(farthest_y_negative) + farthest_y_positive),
-                    z: (f32::abs(farthest_z_negative) + farthest_z_positive),
-                };
-                let collider = Cuboid { half_size };
-                ColliderFlag::Prefab(MeshPrefab::from(collider))
-            }
-            //TODO: Until: https://github.com/dimforge/rapier/issues/778 is resolved
-            //This solution uses the sphere method for generating a primitive.
-            RequestCollider::Wheel => {
-                let mut largest = 0.0;
-                for candidate in [
-                    farthest_x_positive,
-                    f32::abs(farthest_x_negative),
-                    farthest_y_positive,
-                    f32::abs(farthest_y_negative),
-                    farthest_z_positive,
-                    f32::abs(farthest_z_negative),
-                ] {
-                    if candidate > largest {
-                        largest = candidate;
-                    }
-                }
-                ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(largest)))
-            }
-            RequestCollider::Convex => {
-                commands
-                    .entity(e)
-                    .insert(AsyncCollider(ComputedColliderShape::ConvexHull));
-                commands.entity(e).remove::<RequestCollider>();
-                return;
-            }
-            RequestCollider::Sphere => {
-                let mut largest = 0.0;
-                for candidate in [
-                    farthest_x_positive,
-                    f32::abs(farthest_x_negative),
-                    farthest_y_positive,
-                    f32::abs(farthest_y_negative),
-                    farthest_z_positive,
-                    f32::abs(farthest_z_negative),
-                ] {
-                    if candidate > largest {
-                        largest = candidate;
-                    }
-                }
-                ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(largest)))
-            }
-        };
-        commands.entity(e).insert(performance_collider);
-        commands.entity(e).remove::<RequestCollider>();
-
-        // commands.entity(e).insert(
-        //     Collider::from_bevy_mesh(mesh, &ComputedColliderShape::ConvexDecomposition(VHACDParameters::default())).unwrap()
-        //     // Collider::convex_decomposition(vertices, indices)
-        // );
-        // println!("finished generating from bevy mesh");
-        // commands.entity(e).remove::<RequestCollider>();
-        // let performance_collider = match collider {
-        //     RequestCollider::Cuboid => {
-        //         //PrimitiveColliderFlag(MeshPrefab::Cuboid(Cuboid::new()))
-        //         commands.spawn(Collider::convex_decomposition(vertices, indices))
-        //         //let farthest
-        //         // commands.entity(e).insert(
-        //         //     PrimitiveColliderFlag(
-        //         //         Cuboid {
-
-        //         //         }
-        //         //     )
-        //         // )
-        //     },
-        // }
-    }
-}
 
 // get joints and bind them to their named connection if it exists
 pub fn bind_joint_request_to_parent(

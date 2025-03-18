@@ -1,8 +1,9 @@
-use std::{collections::VecDeque, marker::PhantomData};
+use std::{collections::{HashSet, VecDeque}, marker::PhantomData};
 
-use bevy_asset::prelude::*;
-use bevy_derive::Deref;
-use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
+use bevy_asset::{io::{AssetSource, AssetSourceId}, prelude::*};
+use bevy_derive::{Deref, DerefMut};
+use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId, world::CommandQueue};
+use bevy_tasks::Task;
 use bevy_transform::prelude::*;
 use bevy_utils::HashMap;
 
@@ -21,12 +22,21 @@ pub struct AssembleRequest<T> {
     /// path:// keyword path to folder. E.g if a folder is in {ROOT}/assets/models, setting this to `root` will result in root://assets/models
     /// being the looked up path. 
     pub path_keyword: String,
-    pub selected: Vec<Entity>,
+    pub selected: HashSet<Entity>,
     _phantom: PhantomData<T>,
 }
 
+
+
+/// Processed asset + asset source for that asset to be saved to.
+pub struct SaveAssembledRequest<T> {
+    pub path_keyword: String,
+    pub asset: T,
+    pub file_name: String,
+}
+
 impl<T> AssembleRequest<T> {
-    pub fn new(file_name: String, path_keyword: String, selected: Vec<Entity>) -> Self {
+    pub fn new(file_name: String, path_keyword: String, selected: HashSet<Entity>) -> Self {
         Self {
             path_keyword,
             selected,
@@ -36,8 +46,14 @@ impl<T> AssembleRequest<T> {
     }
 }
 
-#[derive(Default, Clone, Resource)]
+#[derive(Default, Clone, Resource, Deref, DerefMut)]
 pub struct AssembleRequests<T>(pub Vec<AssembleRequest<T>>);
+
+// #[derive(Default, Resource)]
+// pub struct SaveAssembledRequests<T>(pub Vec<SaveAssembledRequest<T>>);
+
+
+
 
 // /// registry of staging
 // pub struct InitializedStagersEntities(pub HashMap<ComponentId, Vec<Entity>>);

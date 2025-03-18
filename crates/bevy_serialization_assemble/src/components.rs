@@ -10,12 +10,14 @@ use crate::{
     traits::{Disassemble, Structure},
     Assemblies, AssemblyId,
 };
+use bevy_reflect::Reflect;
+use bevy_tasks::Task;
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
 use bevy_ecs::{
     component::{ComponentHooks, ComponentId, StorageType},
     prelude::*,
-    world::DeferredWorld,
+    world::{CommandQueue, DeferredWorld},
 };
 use bevy_hierarchy::prelude::*;
 use bevy_log::warn;
@@ -269,6 +271,8 @@ pub enum Resolve<T: Component, U: Component> {
     Other(U),
 }
 
+
+
 struct ResolveCommand<T, U> {
     entity: Entity,
     _phantom: PhantomData<(T, U)>,
@@ -320,7 +324,7 @@ pub enum Ids {
 }
 
 /// staging component to roll down component to all children.
-#[derive(Clone)]
+#[derive(Reflect, Clone)]
 pub struct RollDown<T: Clone + Component>(
     pub T,
     /// components to check for roll down.
