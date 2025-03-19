@@ -22,7 +22,7 @@ pub struct SerializationPhysicsPlugin;
 impl Plugin for SerializationPhysicsPlugin {
     fn build(&self, app: &mut App) {
         app
-        // .register_type::<StructureFlag>()
+            // .register_type::<StructureFlag>()
             .register_type::<LinkFlag>()
             .register_type::<JointRecieverFlag>()
             .register_type::<CollisionGroupsFlag>()

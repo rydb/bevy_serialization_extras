@@ -26,8 +26,6 @@ use strum_macros::{Display, EnumIter};
 pub const SAVES: &str = "saves";
 pub const ROBOT: &str = "diff_bot";
 
-// const SAVES_LOCATION: String = "crates/bevy_serialization_assemble/"..concat!(SAVES);
-// const SAVES_LOCATION: &'static str = formatcp!("{:#}://" );
 
 fn main() {
     App::new()
@@ -65,7 +63,6 @@ fn main() {
             cursor_grabbed_by_default: true,
             ..default()
         })
-        //.add_systems(Update, urdf_widgets_ui)
         .add_systems(
             Update,
             visualize_components_for::<Name>(bevy_ui_extras::Display::Side(
@@ -90,8 +87,6 @@ fn main() {
             Update,
             load_saved_robot.run_if(in_state(InitializationStage::LoadSaved)),
         )
-        // .register_type::<WasFrozen>()
-        // .register_type::<Selected>()
         .run();
 }
 

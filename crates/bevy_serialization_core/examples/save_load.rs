@@ -59,7 +59,7 @@ fn setup(
         .from_asset("root://cube.glb"),
     );
 
-    println!("mesh handle is {:#?}", mesh_handle);
+    // println!("mesh handle is {:#?}", mesh_handle);
     // // cube
     commands.spawn((
         Mesh3d(mesh_handle),

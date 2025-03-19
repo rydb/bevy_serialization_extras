@@ -32,7 +32,7 @@ use crate::JointRequestStage;
 use crate::traits::AssembleParms;
 use crate::traits::Split;
 use crate::{
-    components::{Maybe, DisassembleRequest, Resolve},
+    components::{DisassembleRequest, Maybe, Resolve},
     traits::{Assemble, Disassemble, Structure},
 };
 
@@ -270,7 +270,6 @@ impl Assemble for UrdfWrapper {
             // TODO: implement
             materials: Vec::default(),
         });
-        println!("link count: {:#?}", robot.links.len());
         robot
     }
 }

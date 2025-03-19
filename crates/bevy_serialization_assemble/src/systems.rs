@@ -1,9 +1,8 @@
 use crate::components::{DisassembleAssetRequest, RollDownIded};
 use crate::traits::{Assemble, Disassemble};
 use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
-use bevy_asset::io::AssetWriter;
 use bevy_asset::saver::{AssetSaver, SavedAsset};
-use bevy_asset::{AssetContainer, AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
+use bevy_asset::{AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
@@ -37,7 +36,7 @@ pub fn check_roll_down<T: Component + Clone>(
             if rolldown.1.iter().any(|n| check_list.contains(n)) {
                 commands.entity(*child).insert(rolldown.0.clone());
                 commands.entity(e).remove::<RollDownIded<T>>();
-                println!("finished rolling down");
+                // println!("finished rolling down");
             }
         }
     }
@@ -116,7 +115,7 @@ pub fn stage_save_asset_request<AssetWrapper>(
 
             let mut system_state = SystemState::<AssetWrapper::Params>::new(world);
 
-            println!("assembling {:#?}", request.selected);
+            // println!("assembling {:#?}", request.selected);
 
             let asset = {
                 let params = system_state.get_mut(world);
@@ -142,14 +141,14 @@ pub fn handle_save_tasks(
     mut event_writer: EventWriter<SaveSuccess>,
 ) {
     while let Some(mut task) = tasks.pop() {
-        println!("attempt to run save task");
+        // println!("attempt to run save task");
 
         let task_attempt = block_on(future::poll_once(&mut task));
-        println!("ran save task");
+        // println!("ran save task");
         if let Some(task_result) = task_attempt {
             match task_result {
                 Ok((success, id)) => {
-                    println!("successfully saved {:#}", success);
+                    // println!("successfully saved {:#}", success);
                     event_writer.send(SaveSuccess {
                         file_name: success,
                         asset_type_id: id,
@@ -201,16 +200,10 @@ pub fn save_asset<AssetWrapper>(
             let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
             Ok((request.file_name, TypeId::of::<AssetWrapper::Target>()))
         });
-        println!("finished adding save task");
+        // println!("finished adding save task");
         save_tasks.push(task);
     }
 }
-
-// pub struct MeshProperties<'a> {
-//     positions: &'a [[f32; 3]],
-//     normals: &'a [[f32; 3]],
-//     indices: Vec<u16>,
-// }
 
 // get joints and bind them to their named connection if it exists
 pub fn bind_joint_request_to_parent(

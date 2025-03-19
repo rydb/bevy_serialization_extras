@@ -9,7 +9,6 @@ use derive_more::derive::From;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
-use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter};
 
 /// Component for requesting a collider to be processed from a mesh.

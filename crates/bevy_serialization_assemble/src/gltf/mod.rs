@@ -10,7 +10,7 @@ use derive_more::derive::From;
 use strum::IntoEnumIterator;
 
 use crate::{
-    components::{Maybe, DisassembleAssetRequest, DisassembleRequest},
+    components::{DisassembleAssetRequest, DisassembleRequest, Maybe},
     traits::{Disassemble, Split, Structure},
 };
 
