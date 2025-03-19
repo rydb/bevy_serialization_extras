@@ -215,7 +215,6 @@ pub fn load_saved_robot(mut commands: Commands, mut event_reader: EventReader<Sa
                 DisassembleAssetRequest::<UrdfWrapper>::Path(
                     "saves://".to_owned() + &event.file_name + ".xml",
                 ),
-                //DisassembleAssetRequest::<UrdfWrapper>::Path(SAVES.to_owned() + "" + ROBOT + ".xml"),
                 Transform::from_xyz(2.0, 0.0, 0.0),
             ));
         }
@@ -396,7 +395,6 @@ pub fn bind_left_and_right_wheel(
 #[derive(Component, Reflect)]
 pub struct WasFrozen;
 
-//FIXME: physics bodies fly out of control when spawned, this freezes them for the user to unpause until thats fixed.
 pub fn freeze_spawned_robots(
     mut robots: Query<(Entity, &mut RigidBodyFlag), Without<WasFrozen>>,
     mut commands: Commands,

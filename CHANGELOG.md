@@ -91,11 +91,23 @@ So on and so forth untill all `DisassembleRequest`s and `DisassembleAssetRequest
 
 ### Assset saving systems implemented, and IntoHashMap renamed into [`Assemble`]
 
-IntoHashMap is now [`Assemble`], and Assembling assets is now properly implemented!
+- 
+    IntoHashMap is now [`Assemble`], and Assembling assets is now properly implemented!
 
-Previously, the systems in charge for this were skeletons, but they have now been properly implemented to allow asset saving! Implement [`Assemble`] on an asset wrapper around your asset, and you can save into that asset's file format!
+    Previously, the systems in charge for this were skeletons, but they have now been properly implemented to allow asset saving! Implement [`Assemble`] on an asset wrapper around your asset, and you can save into that asset's file format!
 
-See crate's `/urdf` module for example impl
+    See crate's `/urdf` module for example impl
+
+
+- 
+    Post impl, assets can now be saved via the [`AssembleRequest<T>`] resource on `Assemble` implementing asset wrappers E.G to serialize a urdf:
+    ```rust
+    let request = AssembleRequest::<UrdfWrapper>::new(
+        ROBOT.into(),
+        SAVES.to_string(),
+        entities.clone(),
+    );
+    ```
 
 ### bevy_serialization_core refactors:
 
