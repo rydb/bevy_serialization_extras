@@ -1,14 +1,14 @@
 //! This is a demo showcasing save/load functionality of bevy_serialization_core.
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_asset::io::{file::FileAssetReader, AssetSource};
+use bevy_asset::io::{AssetSource, file::FileAssetReader};
 use bevy_inspector_egui::{
     bevy_egui::EguiContext,
     egui::{self, TextEdit},
 };
 use bevy_serialization_core::{
     plugins::SerializationPlugin,
-    prelude::{material::Material3dFlag, SerializationBasePlugin},
+    prelude::{SerializationBasePlugin, material::Material3dFlag},
     resources::{LoadRequest, SaveRequest},
 };
 use bevy_ui_extras::UiExtrasDebug;
@@ -51,9 +51,13 @@ fn setup(
         MeshMaterial3d(materials.add(Color::srgb(0.4, 0.5, 0.3))),
     ));
 
-    let mesh_handle =
-        asset_server.load(GltfAssetLabel::Primitive{mesh: 0, primitive: 0}.from_asset("root://cube.glb"))
-    ;
+    let mesh_handle = asset_server.load(
+        GltfAssetLabel::Primitive {
+            mesh: 0,
+            primitive: 0,
+        }
+        .from_asset("root://cube.glb"),
+    );
 
     println!("mesh handle is {:#?}", mesh_handle);
     // // cube

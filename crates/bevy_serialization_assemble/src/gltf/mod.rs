@@ -8,7 +8,6 @@ use bevy_render::prelude::*;
 use bevy_serialization_physics::prelude::RequestCollider;
 use derive_more::derive::From;
 use strum::IntoEnumIterator;
-use strum_macros::{Display, EnumIter};
 
 use crate::{
     components::{Maybe, RequestAssetStructure, RequestStructure},
@@ -21,24 +20,23 @@ pub struct GltfNodeWrapper(GltfNode);
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
 
-
-pub fn gltf_collider_request(extras: GltfExtras) -> RequestCollider{
-        if let Some(target) = extras.value.replace(['}', '{', '"'], "").split(':').last() {
-            for variant in RequestCollider::iter() {
-                if target == variant.to_string().to_lowercase() {
-                    return variant.into();
-                }
+pub fn gltf_collider_request(extras: GltfExtras) -> RequestCollider {
+    if let Some(target) = extras.value.replace(['}', '{', '"'], "").split(':').last() {
+        for variant in RequestCollider::iter() {
+            if target == variant.to_string().to_lowercase() {
+                return variant.into();
             }
-            warn!(
+        }
+        warn!(
                 "
                 provided GltfExtra attribute did not match any valid primitive colliders. reverting to default
                 valid variants: {:#?}
                 parsed value: {:#}
                 ", RequestCollider::iter().map(|n| n.to_string()).collect::<Vec<_>>(), target
             );
-        };
+    };
 
-        RequestCollider::default()
+    RequestCollider::default()
 }
 
 // impl From<GltfExtras> for RequestColliderWrapper {
@@ -102,7 +100,6 @@ impl Disassemble for GltfNodeVisuals {
     }
 }
 
-
 impl Disassemble for GltfNodeColliderVisualChilds {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mesh = value
@@ -138,7 +135,11 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
         let mesh = {
             if value.0.primitives.len() > 1 {
                 //TODO: maybe replace this with some kind of mesh condenser system?
-                warn!("Multiple primitives found for: {:#}. GltfMeshPrimtiveOne only supports one. Current count: {:#}", value.0.name, value.0.primitives.len());
+                warn!(
+                    "Multiple primitives found for: {:#}. GltfMeshPrimtiveOne only supports one. Current count: {:#}",
+                    value.0.name,
+                    value.0.primitives.len()
+                );
                 None
             } else {
                 value.0.primitives.first()

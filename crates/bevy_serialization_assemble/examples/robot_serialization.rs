@@ -1,25 +1,24 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use std::{any::TypeId, collections::HashSet, f32::consts::PI};
+use std::{any::TypeId, collections::HashSet};
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_asset::io::{file::{FileAssetReader, FileAssetWriter}, AssetSource};
+use bevy_asset::io::{
+    AssetSource,
+    file::{FileAssetReader, FileAssetWriter},
+};
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
 use bevy_inspector_egui::{
     bevy_egui::EguiContext,
-    egui::{
-        self, Align2, Color32, Frame, Margin, Rounding, Shadow, Stroke,
-    },
+    egui::{self, Align2, Color32, Frame, Margin, Rounding, Shadow, Stroke},
 };
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::{RequestAssetStructure, RollDown}, prelude::*, JointRequest, SaveSuccess
+    JointRequest, SaveSuccess, components::RequestAssetStructure, prelude::*,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
-use bevy_state::app::StatesPlugin;
-use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
-use const_format::formatcp;
+use bevy_ui_extras::{UiExtrasDebug, visualize_components_for};
 use moonshine_save::save::Save;
 
 use strum_macros::{Display, EnumIter};
@@ -30,10 +29,8 @@ pub const ROBOT: &str = "diff_bot";
 // const SAVES_LOCATION: String = "crates/bevy_serialization_assemble/"..concat!(SAVES);
 // const SAVES_LOCATION: &'static str = formatcp!("{:#}://" );
 
-
 fn main() {
     App::new()
-        
         .add_plugins(AppSourcesPlugin::CRATE)
         .add_plugins(AssetSourcesUrdfPlugin {
             //TODO: This should be unified under `ROOT`
@@ -51,7 +48,6 @@ fn main() {
             name: "blue".to_owned(),
         })
         .insert_resource(UtilitySelection::default())
-
         .add_plugins(RapierPhysicsPlugin::<()>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
         // // serialization plugins
@@ -62,7 +58,7 @@ fn main() {
         .add_plugins(UrdfSerializationPlugin)
         // // rapier physics plugins
         .add_plugins(UiExtrasDebug {
-            menu_mode: bevy_ui_extras::states::DebugMenuState::Explain, 
+            menu_mode: bevy_ui_extras::states::DebugMenuState::Explain,
             ..default()
         })
         .add_plugins(CameraExtrasPlugin {
@@ -82,9 +78,18 @@ fn main() {
         .add_systems(Update, control_robot)
         .add_systems(Update, bind_left_and_right_wheel)
         // .add_systems(Update, freeze_spawned_robots)
-        .add_systems(Update, select_robot.run_if(in_state(InitializationStage::Select)))
-        .add_systems(Update, save_selected_robot.run_if(in_state(InitializationStage::Save)))
-        .add_systems(Update, load_saved_robot.run_if(in_state(InitializationStage::LoadSaved)))
+        .add_systems(
+            Update,
+            select_robot.run_if(in_state(InitializationStage::Select)),
+        )
+        .add_systems(
+            Update,
+            save_selected_robot.run_if(in_state(InitializationStage::Save)),
+        )
+        .add_systems(
+            Update,
+            load_saved_robot.run_if(in_state(InitializationStage::LoadSaved)),
+        )
         // .register_type::<WasFrozen>()
         // .register_type::<Selected>()
         .run();
@@ -94,7 +99,7 @@ fn main() {
 pub enum InitializationStage {
     Select,
     Save,
-    LoadSaved
+    LoadSaved,
 }
 
 #[derive(Component)]
@@ -132,10 +137,11 @@ fn setup(
     // let robot = "diff_bot.xml";
     // Robot
     commands.spawn((
-        RequestAssetStructure::<UrdfWrapper>::Path("root://model_pkg/urdf/".to_owned() + ROBOT + ".xml"),
+        RequestAssetStructure::<UrdfWrapper>::Path(
+            "root://model_pkg/urdf/".to_owned() + ROBOT + ".xml",
+        ),
         Transform::from_xyz(-2.0, 0.0, 0.0),
     ));
-
 
     // light
     commands.spawn((
@@ -158,7 +164,6 @@ fn setup(
     ));
 }
 
-
 pub fn select_robot(
     parts: Query<
         Entity,
@@ -180,7 +185,6 @@ pub fn select_robot(
         }
         initialization_stage.set(InitializationStage::Save)
     }
-
 }
 
 pub fn save_selected_robot(
@@ -198,36 +202,30 @@ pub fn save_selected_robot(
             let request = AssembleRequest::<UrdfWrapper>::new(
                 ROBOT.into(),
                 SAVES.to_string(),
-                entities.clone()
+                entities.clone(),
             );
             assemble_requests.0.push(request);
             initialization_stage.set(InitializationStage::LoadSaved)
         }
-        
     }
 }
 
-pub fn load_saved_robot(
-    mut commands: Commands,
-    mut event_reader: EventReader<SaveSuccess>
-) {
+pub fn load_saved_robot(mut commands: Commands, mut event_reader: EventReader<SaveSuccess>) {
     for event in event_reader.read() {
         if event.asset_type_id == TypeId::of::<Urdf>() {
             println!("Loading saved robot: {:#}", event.file_name);
 
             // Robot2
             commands.spawn((
-                RequestAssetStructure::<UrdfWrapper>::Path("saves://".to_owned() + &event.file_name + ".xml"),
+                RequestAssetStructure::<UrdfWrapper>::Path(
+                    "saves://".to_owned() + &event.file_name + ".xml",
+                ),
                 //RequestAssetStructure::<UrdfWrapper>::Path(SAVES.to_owned() + "" + ROBOT + ".xml"),
                 Transform::from_xyz(2.0, 0.0, 0.0),
             ));
-    
         }
     }
-
 }
-
-
 
 #[derive(Resource, Default)]
 pub struct SetSaveFile {
@@ -273,7 +271,6 @@ pub struct UtilitySelection {
 
 pub const ROOT: &str = "root";
 
-
 /// Whether this is a crate or `main.rs`.
 pub enum AppSourcesPlugin {
     CRATE,
@@ -288,14 +285,19 @@ impl Plugin for AppSourcesPlugin {
         };
         app.register_asset_source(
             ROOT,
-            AssetSource::build()
-                .with_reader(move || Box::new(FileAssetReader::new(executor_location.to_owned() + "assets"))),
+            AssetSource::build().with_reader(move || {
+                Box::new(FileAssetReader::new(
+                    executor_location.to_owned() + "assets",
+                ))
+            }),
         );
         app.register_asset_source(
             SAVES,
             AssetSource::build()
                 .with_reader(move || Box::new(FileAssetReader::new(SAVES)))
-                .with_writer(move |create_root| Some(Box::new(FileAssetWriter::new(SAVES, create_root)))),
+                .with_writer(move |create_root| {
+                    Some(Box::new(FileAssetWriter::new(SAVES, create_root)))
+                }),
         );
     }
 }

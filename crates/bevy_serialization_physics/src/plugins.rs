@@ -2,14 +2,16 @@ use bevy_serialization_core::prelude::SerializeComponentFor;
 
 use crate::{
     prelude::{
-        collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag,
-        friction::FrictionFlag, link::JointRecieverFlag, ColliderFlag,
-    }, systems::{generate_collider_from_children, generate_primitive_for_request}, wrappers::{
+        ColliderFlag, collisiongroupfilter::CollisionGroupsFlag, continous_collision::CcdFlag,
+        friction::FrictionFlag, link::JointRecieverFlag,
+    },
+    systems::{generate_collider_from_children, generate_primitive_for_request},
+    wrappers::{
         link::{JointFlag, LinkFlag, StructureFlag},
         mass::MassFlag,
         rigidbodies::RigidBodyFlag,
         solvergroupfilter::SolverGroupsFlag,
-    }
+    },
 };
 
 use bevy_app::prelude::*;
@@ -34,9 +36,7 @@ impl Plugin for SerializationPhysicsPlugin {
             .add_plugins(SerializeComponentFor::<ColliderFlag>::default())
             //.add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
             .add_plugins(SerializeComponentFor::<JointFlag>::default())
-            
             .add_systems(Update, generate_primitive_for_request)
-            .add_systems(Update, generate_collider_from_children)
-            ;
+            .add_systems(Update, generate_collider_from_children);
     }
 }

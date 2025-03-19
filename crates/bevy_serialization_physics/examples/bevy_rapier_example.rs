@@ -4,14 +4,14 @@ use bevy::{
 };
 use bevy_inspector_egui::{
     bevy_egui::EguiContext,
-    egui::{self, text::LayoutJob, ScrollArea, TextFormat, Ui},
+    egui::{self, ScrollArea, TextFormat, Ui, text::LayoutJob},
 };
 use bevy_rapier3d::prelude::*;
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 
 use bevy::prelude::Vec3;
-use bevy_ui_extras::{systems::visualize_components_for, UiExtrasDebug};
+use bevy_ui_extras::{UiExtrasDebug, systems::visualize_components_for};
 use bevy_window::PrimaryWindow;
 use bitvec::{field::BitField, order::Msb0, view::BitView};
 // use egui::{text::LayoutJob, ScrollArea, TextFormat, Ui};

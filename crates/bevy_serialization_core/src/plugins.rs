@@ -7,8 +7,8 @@ use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmis
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph};
 use log::warn;
 use moonshine_save::file_from_resource;
-use moonshine_save::load::load;
 use moonshine_save::load::LoadPlugin;
+use moonshine_save::load::load;
 use moonshine_save::prelude::save_default_with;
 use moonshine_save::save::SaveInput;
 use moonshine_save::save::SavePlugin;
@@ -143,9 +143,8 @@ impl<T: AssetWrapper> Plugin for SerializeAssetFor<T> {
             (try_serialize_asset_for::<T>, deserialize_asset_for::<T>).chain(),
         );
 
-        app
-        .register_type::<T>()
-        .world_mut()
+        app.register_type::<T>()
+            .world_mut()
             .register_component_hooks::<T>()
             .on_add(|mut world, e, _id| {
                 let comp = {
@@ -184,8 +183,6 @@ impl<T: AssetWrapper> Plugin for SerializeAssetFor<T> {
                 let componentized_asset = T::WrapperTarget::from(handle);
                 world.commands().entity(e).insert(componentized_asset);
             });
-
-
     }
 }
 

@@ -32,7 +32,9 @@ impl From<&RigidBody> for RigidBodyFlag {
         match *value {
             RigidBody::Fixed => Self::Fixed,
             RigidBody::Dynamic => Self::Dynamic,
-            _ => panic!("Rigidbody serialization only implemented for fixed and dynamic. populate wrapper for more types")
+            _ => panic!(
+                "Rigidbody serialization only implemented for fixed and dynamic. populate wrapper for more types"
+            ),
         }
     }
 }

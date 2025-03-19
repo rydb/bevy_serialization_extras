@@ -1,12 +1,17 @@
 use std::marker::PhantomData;
 
 use bevy_app::prelude::*;
-use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_serialization_core::run_proxy_system;
-use moonshine_save::save::SaveSystem;
 
 use crate::{
-    components::RollDown, prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{bind_joint_request_to_parent, handle_save_tasks, save_asset, stage_save_asset_request, SaveAssembledRequests, StagedAssembleRequestTasks}, traits::{Assemble, Disassemble, LazySerialize}, urdf::UrdfWrapper, Assemblies, AssemblyId, SaveSuccess
+    Assemblies, AssemblyId, SaveSuccess,
+    prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers},
+    systems::{
+        SaveAssembledRequests, StagedAssembleRequestTasks, bind_joint_request_to_parent,
+        handle_save_tasks, save_asset, stage_save_asset_request,
+    },
+    traits::{Assemble, Disassemble},
+    urdf::UrdfWrapper,
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -30,7 +35,7 @@ where
 
 impl<'v, T> Plugin for SerializeManyAsOneFor<T>
 where
-    T: 'static + Default + Clone + Assemble + Disassemble, 
+    T: 'static + Default + Clone + Assemble + Disassemble,
 {
     fn build(&self, app: &mut App) {
         app

@@ -2,7 +2,7 @@ use crate::{
     prelude::{ComponentsOnSave, TypeRegistryOnSave},
     traits::*,
 };
-use std::any::{type_name, TypeId};
+use std::any::{TypeId, type_name};
 
 use bevy_asset::prelude::*;
 use bevy_ecs::prelude::*;
@@ -39,7 +39,13 @@ pub fn serialize_for<Wrapper>(
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 pub fn try_serialize_asset_for<Wrapper>(
     assets: ResMut<Assets<AssetType<Wrapper>>>,
-    things_query: Query<(Entity, &Wrapper::WrapperTarget), Or<(Changed<Wrapper::WrapperTarget>, Added<Wrapper::WrapperTarget>)>>,
+    things_query: Query<
+        (Entity, &Wrapper::WrapperTarget),
+        Or<(
+            Changed<Wrapper::WrapperTarget>,
+            Added<Wrapper::WrapperTarget>,
+        )>,
+    >,
     changed_wrapper: Query<Entity, Changed<Wrapper>>,
     mut commands: Commands,
 ) where
@@ -52,16 +58,20 @@ pub fn try_serialize_asset_for<Wrapper>(
                 Wrapper::from(path.to_string())
             } else {
                 let Some(asset) = assets.get(&**thing_handle) else {
-                    warn!("Attempted serialize non-file asset {:#} to {:#} while the asset was unloaded. Skipping attempt", type_name::<AssetType<Wrapper>>(), type_name::<Wrapper>());
+                    warn!(
+                        "Attempted serialize non-file asset {:#} to {:#} while the asset was unloaded. Skipping attempt",
+                        type_name::<AssetType<Wrapper>>(),
+                        type_name::<Wrapper>()
+                    );
                     return;
                 };
                 let pure = Wrapper::PureVariant::from(asset);
-    
+
                 Wrapper::from(pure)
             };
-    
+
             commands.entity(e).try_insert(new_wrapper);
-        }      
+        }
     }
 }
 

@@ -1,12 +1,13 @@
-use std::{collections::{HashSet, VecDeque}, marker::PhantomData};
+use std::{
+    collections::{HashSet, VecDeque},
+    marker::PhantomData,
+};
 
-use bevy_asset::{io::{AssetSource, AssetSourceId}, prelude::*};
+use bevy_asset::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId, world::CommandQueue};
-use bevy_tasks::Task;
+use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
 use bevy_utils::HashMap;
-
 
 // /// registry of initialized structures + their children.
 // #[derive(Resource, Default)]
@@ -20,13 +21,11 @@ pub struct InitializedStagers(pub HashMap<Entity, Vec<Entity>>);
 pub struct AssembleRequest<T> {
     pub file_name: String,
     /// path:// keyword path to folder. E.g if a folder is in {ROOT}/assets/models, setting this to `root` will result in root://assets/models
-    /// being the looked up path. 
+    /// being the looked up path.
     pub path_keyword: String,
     pub selected: HashSet<Entity>,
     _phantom: PhantomData<T>,
 }
-
-
 
 /// Processed asset + asset source for that asset to be saved to.
 pub struct SaveAssembledRequest<T> {
@@ -51,9 +50,6 @@ pub struct AssembleRequests<T>(pub Vec<AssembleRequest<T>>);
 
 // #[derive(Default, Resource)]
 // pub struct SaveAssembledRequests<T>(pub Vec<SaveAssembledRequest<T>>);
-
-
-
 
 // /// registry of staging
 // pub struct InitializedStagersEntities(pub HashMap<ComponentId, Vec<Entity>>);

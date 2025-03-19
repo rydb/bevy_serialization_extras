@@ -27,10 +27,10 @@ use derive_more::From;
 
 use bevy_ecs::prelude::*;
 
-use crate::traits::AssembleParms;
-use crate::traits::Split;
 use crate::JointRequest;
 use crate::JointRequestStage;
+use crate::traits::AssembleParms;
+use crate::traits::Split;
 use crate::{
     components::{Maybe, RequestStructure, Resolve},
     traits::{Assemble, Disassemble, Structure},
@@ -99,7 +99,9 @@ impl Disassemble for LinkColliders {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry = {
             if value.0.len() > 1 {
-                warn!("multi-collider robots not supported as multi-primitive physics joints not supported(as of this version) in either Rapier or Avian");
+                warn!(
+                    "multi-collider robots not supported as multi-primitive physics joints not supported(as of this version) in either Rapier or Avian"
+                );
                 None
             } else {
                 value
@@ -129,7 +131,7 @@ impl Disassemble for UrdfWrapper {
         }
 
         let mut linkage = Vec::new();
-        for link in value.0 .0.links {
+        for link in value.0.0.links {
             linkage.push((
                 link.clone(),
                 structured_joint_map
@@ -138,7 +140,7 @@ impl Disassemble for UrdfWrapper {
             ))
         }
         Structure::Root((
-            Name::new(value.0 .0.name),
+            Name::new(value.0.0.name),
             RequestStructure(LinksNJoints(linkage)),
         ))
     }
@@ -151,7 +153,7 @@ impl AssembleParms for UrdfWrapper {
     );
 }
 
-impl Assemble for UrdfWrapper{
+impl Assemble for UrdfWrapper {
     type Saver = UrdfSaver;
     type Loader = UrdfLoader;
 
@@ -271,8 +273,6 @@ impl Assemble for UrdfWrapper{
         println!("link count: {:#?}", robot.links.len());
         robot
     }
-    
-    
 }
 
 #[derive(From)]

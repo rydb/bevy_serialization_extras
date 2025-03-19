@@ -1,4 +1,4 @@
-use bevy_asset::{saver::AssetSaver, Asset, AssetLoader};
+use bevy_asset::{Asset, AssetLoader, saver::AssetSaver};
 use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
@@ -10,12 +10,18 @@ use std::{collections::HashSet, ops::Deref};
 /// I.E: (Mesh, Material, Name) -> Assemble(FormatWrapper(Format)) -> model.format
 pub trait Assemble
 where
-    Self: Sized + AssembleParms + Send + Sync
-     + 
-     //LazySerialize + 
-     Deref<Target: Asset + Sized>,
+    Self: Sized
+        + AssembleParms
+        + Send
+        + Sync
+        +
+        //LazySerialize +
+        Deref<Target: Asset + Sized>,
 {
-    type Saver: Send + Default + AssetSaver<Asset = Self::Target> + AssetSaver<Settings = Self::Settings>;
+    type Saver: Send
+        + Default
+        + AssetSaver<Asset = Self::Target>
+        + AssetSaver<Settings = Self::Settings>;
     type Loader: Send + Default + AssetLoader<Asset = Self::Target>;
     type Settings: Send + Default;
     fn assemble(selected: HashSet<Entity>, value: SystemParamItem<Self::Params>) -> Self::Target;
@@ -46,11 +52,4 @@ pub struct Split(pub bool);
 pub enum Structure<T> {
     Root(T),
     Children(Vec<T>, Split),
-}
-
-pub trait LazySerialize
-where
-    Self: Sized,
-{
-    fn serialize(&self, name: String, folder_path: String) -> Result<(), anyhow::Error>;
 }

@@ -1,14 +1,11 @@
-use std::cmp;
-
 use bevy_asset::Assets;
 use bevy_ecs::prelude::*;
 use bevy_hierarchy::Children;
 use bevy_log::warn;
 use bevy_math::primitives::{Cuboid, Sphere};
 use bevy_rapier3d::prelude::{AsyncCollider, ComputedColliderShape};
-use bevy_render::{prelude::*};
+use bevy_render::prelude::*;
 use bevy_serialization_core::prelude::mesh::MeshPrefab;
-use derive_more::From;
 use glam::Vec3;
 use rapier3d::parry::either::Either;
 
@@ -20,7 +17,7 @@ pub struct FarthestPoints {
     pub negative: Vec3,
 }
 
-pub fn farthest_points(positions: &[[f32; 3]]) -> FarthestPoints{
+pub fn farthest_points(positions: &[[f32; 3]]) -> FarthestPoints {
     let mut farthest_x_positive = 0.0;
     let mut farthest_x_negative = 0.0;
 
@@ -56,13 +53,23 @@ pub fn farthest_points(positions: &[[f32; 3]]) -> FarthestPoints{
         }
     }
     FarthestPoints {
-        positive: Vec3::new(farthest_x_positive, farthest_y_positive, farthest_z_positive),
-        negative: Vec3::new(farthest_x_negative, farthest_y_negative, farthest_z_negative),
+        positive: Vec3::new(
+            farthest_x_positive,
+            farthest_y_positive,
+            farthest_z_positive,
+        ),
+        negative: Vec3::new(
+            farthest_x_negative,
+            farthest_y_negative,
+            farthest_z_negative,
+        ),
     }
-
 }
 
-pub fn collider_from_farthest_points(request_kind: &RequestCollider, farthest_points: FarthestPoints) -> Either<ColliderFlag, AsyncCollider> {
+pub fn collider_from_farthest_points(
+    request_kind: &RequestCollider,
+    farthest_points: FarthestPoints,
+) -> Either<ColliderFlag, AsyncCollider> {
     match request_kind {
         RequestCollider::Cuboid => {
             let half_size = Vec3 {
@@ -89,11 +96,11 @@ pub fn collider_from_farthest_points(request_kind: &RequestCollider, farthest_po
                     largest = candidate;
                 }
             }
-            Either::Left(ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(largest))))
+            Either::Left(ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(
+                largest,
+            ))))
         }
-        RequestCollider::Convex => {
-            Either::Right(AsyncCollider(ComputedColliderShape::ConvexHull))
-        }
+        RequestCollider::Convex => Either::Right(AsyncCollider(ComputedColliderShape::ConvexHull)),
         RequestCollider::Sphere => {
             let mut largest = 0.0;
             for candidate in [
@@ -108,7 +115,9 @@ pub fn collider_from_farthest_points(request_kind: &RequestCollider, farthest_po
                     largest = candidate;
                 }
             }
-            Either::Left(ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(largest))))
+            Either::Left(ColliderFlag::Prefab(MeshPrefab::Sphere(Sphere::new(
+                largest,
+            ))))
         }
     }
 }
@@ -121,9 +130,9 @@ pub fn generate_collider_from_children(
 ) {
     let mut points = FarthestPoints {
         positive: Vec3::ZERO,
-        negative: Vec3::ZERO
+        negative: Vec3::ZERO,
     };
-    
+
     for (e, request, children) in &requests {
         for child in children {
             let Ok(mesh) = meshes.get(*child) else {
@@ -134,11 +143,11 @@ pub fn generate_collider_from_children(
                 return;
             };
             let Some(positions) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) else {
-                warn!("Expected positions. Skipping {:#}", child );
+                warn!("Expected positions. Skipping {:#}", child);
                 continue;
             };
             let Some(positions) = positions.as_float3() else {
-                warn!("Expected positions ot be float3. Skipping {:#}", child );
+                warn!("Expected positions ot be float3. Skipping {:#}", child);
                 continue;
             };
             let farthest_points = farthest_points(positions);
@@ -151,7 +160,6 @@ pub fn generate_collider_from_children(
             Either::Right(n) => commands.entity(e).insert(n),
         };
         commands.entity(e).remove::<RequestColliderFromChildren>();
-
     }
 }
 

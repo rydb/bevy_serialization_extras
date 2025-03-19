@@ -1,9 +1,9 @@
 use crate::components::{RequestAssetStructure, RollDownIded};
 use crate::traits::{Assemble, Disassemble};
-use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage, SaveSuccess};
+use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
 use bevy_asset::io::AssetWriter;
-use bevy_asset::{prelude::*, AssetContainer, AssetLoader, ErasedLoadedAsset, LoadedAsset, UntypedAssetId};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
+use bevy_asset::{AssetContainer, AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
@@ -11,16 +11,10 @@ use bevy_ecs::system::SystemState;
 use bevy_ecs::world::CommandQueue;
 use bevy_hierarchy::Children;
 use bevy_log::prelude::*;
-use bevy_math::primitives::{Cuboid, Sphere};
-use bevy_rapier3d::prelude::{AsyncCollider, ComputedColliderShape};
-use bevy_render::mesh::{Mesh, Mesh3d};
-use bevy_serialization_core::prelude::mesh::MeshPrefab;
-use bevy_serialization_physics::prelude::{ColliderFlag, JointBounded, JointFlag, RigidBodyFlag};
+use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
 use bevy_tasks::futures_lite::future;
-use bevy_tasks::{block_on, AsyncComputeTaskPool, IoTaskPool, Task};
+use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;
-use bevy_utils::default;
-use glam::Vec3;
 use std::any::TypeId;
 use std::ops::Deref;
 use std::path::Path;
@@ -88,8 +82,6 @@ pub fn initialize_asset_structure<T>(
     }
 }
 
-
-
 #[derive(Deref, DerefMut, Resource)]
 pub struct SaveAssembledRequests<T>(pub Vec<SaveAssembledRequest<T>>);
 
@@ -100,51 +92,55 @@ impl<T> Default for SaveAssembledRequests<T> {
 }
 
 pub fn stage_save_asset_request<AssetWrapper>(
-    mut commands: Commands, 
-    mut requests: ResMut<AssembleRequests<AssetWrapper>>, 
+    mut commands: Commands,
+    mut requests: ResMut<AssembleRequests<AssetWrapper>>,
     // asset_server: Res<AssetServer>,
     //mut save_assembly_requests: ResMut<SaveAssembledRequests<AssetWrapper::Target>>
-) 
-where
+) where
     AssetWrapper: Assemble + Clone + 'static + Default,
 {
     while let Some(request) = requests.pop() {
-            let mut command_queue = CommandQueue::default();            
+        let mut command_queue = CommandQueue::default();
 
-            command_queue.push(move | world: &mut World| {
-                let Ok(_) = world.resource::<AssetServer>().get_source(request.path_keyword.clone()) else {
-                    warn!("request path keyword {:#} not found in AssetServer. Aborting assemble attempt", request.path_keyword);
-                    return;
-                };
-                
-                let mut system_state = SystemState::<AssetWrapper::Params>::new(world);
-    
-                println!("assembling {:#?}", request.selected);
-        
-        
-                let asset = {
-                    let params = system_state.get_mut(world);
-                    AssetWrapper::assemble(request.selected.clone(), params)
-                };
-                let mut save_assembly_requests = world.resource_mut::<SaveAssembledRequests<AssetWrapper::Target>>();
-                save_assembly_requests.0.push(SaveAssembledRequest {
-                    asset,
-                    path_keyword: request.path_keyword,
-                    file_name: request.file_name
-                });
-                
+        command_queue.push(move |world: &mut World| {
+            let Ok(_) = world
+                .resource::<AssetServer>()
+                .get_source(request.path_keyword.clone())
+            else {
+                warn!(
+                    "request path keyword {:#} not found in AssetServer. Aborting assemble attempt",
+                    request.path_keyword
+                );
+                return;
+            };
+
+            let mut system_state = SystemState::<AssetWrapper::Params>::new(world);
+
+            println!("assembling {:#?}", request.selected);
+
+            let asset = {
+                let params = system_state.get_mut(world);
+                AssetWrapper::assemble(request.selected.clone(), params)
+            };
+            let mut save_assembly_requests =
+                world.resource_mut::<SaveAssembledRequests<AssetWrapper::Target>>();
+            save_assembly_requests.0.push(SaveAssembledRequest {
+                asset,
+                path_keyword: request.path_keyword,
+                file_name: request.file_name,
             });
-            commands.append(&mut command_queue);
-
+        });
+        commands.append(&mut command_queue);
     }
 }
-
-
 
 #[derive(Default, Resource, Deref, DerefMut)]
 pub struct StagedAssembleRequestTasks(pub Vec<Task<Result<(String, TypeId), String>>>);
 
-pub fn handle_save_tasks(mut tasks: ResMut<StagedAssembleRequestTasks>, mut event_writer: EventWriter<SaveSuccess>) {
+pub fn handle_save_tasks(
+    mut tasks: ResMut<StagedAssembleRequestTasks>,
+    mut event_writer: EventWriter<SaveSuccess>,
+) {
     while let Some(mut task) = tasks.pop() {
         println!("attempt to run save task");
 
@@ -154,12 +150,11 @@ pub fn handle_save_tasks(mut tasks: ResMut<StagedAssembleRequestTasks>, mut even
             match task_result {
                 Ok((success, id)) => {
                     println!("successfully saved {:#}", success);
-                    event_writer.send(SaveSuccess { 
-                        file_name: success, 
-                        asset_type_id: id
-                    });   
+                    event_writer.send(SaveSuccess {
+                        file_name: success,
+                        asset_type_id: id,
+                    });
                 }
-                    ,
                 Err(err) => warn!("Could not save due to: {:#}", err),
             }
         } else {
@@ -169,17 +164,15 @@ pub fn handle_save_tasks(mut tasks: ResMut<StagedAssembleRequestTasks>, mut even
 }
 
 pub fn save_asset<AssetWrapper>(
-    mut requests: ResMut<SaveAssembledRequests<AssetWrapper::Target>>, 
+    mut requests: ResMut<SaveAssembledRequests<AssetWrapper::Target>>,
     asset_server: Res<AssetServer>,
-    mut save_tasks: ResMut<StagedAssembleRequestTasks>
-)
-where
+    mut save_tasks: ResMut<StagedAssembleRequestTasks>,
+) where
     AssetWrapper: Assemble + Clone + 'static + Default,
 {
     while let Some(request) = requests.pop() {
         let asset_server = asset_server.clone();
         // let task_pool = IoTaskPool::get();
-
 
         let task= IoTaskPool::get().spawn(async move {
             let Ok(asset_source) = asset_server.get_source(request.path_keyword.clone()) else {
@@ -218,8 +211,6 @@ where
 //     normals: &'a [[f32; 3]],
 //     indices: Vec<u16>,
 // }
-
-
 
 // get joints and bind them to their named connection if it exists
 pub fn bind_joint_request_to_parent(

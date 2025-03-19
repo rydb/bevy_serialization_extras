@@ -1,11 +1,11 @@
 use bevy_asset::Asset;
 use bevy_color::prelude::*;
 use bevy_ecs::component::Component;
+use bevy_ecs::prelude::ReflectComponent;
 use bevy_pbr::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_utils::prelude::*;
 use derive_more::derive::From;
-use bevy_ecs::prelude::ReflectComponent;
 
 use crate::traits::{AssetHandleComponent, AssetState, AssetWrapper};
 

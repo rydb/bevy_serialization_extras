@@ -35,7 +35,7 @@ where
         + From<Handle<AssetType<Self>>>
         + AssetHandleComponent,
     AssetType<Self>: for<'a> From<&'a Self::PureVariant>,
-    Self::PureVariant: for<'a> From<&'a AssetType<Self>>
+    Self::PureVariant: for<'a> From<&'a AssetType<Self>>,
 {
     type WrapperTarget: Component + Deref;
     type PureVariant;

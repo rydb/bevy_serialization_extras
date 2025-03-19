@@ -41,7 +41,10 @@ impl From<&Mesh3dFlag> for GeometryWrapper {
                 let split = path.split("/Primitive").collect::<Vec<_>>();
                 let mut path = path.to_owned();
                 if split.len() > 1 {
-                    warn!("until: https://github.com/bevyengine/bevy/issues/17661 is resolved, primitives must be loaded through meshes. Chopping off `Primitive` in mean time. for \n {:#}", path);
+                    warn!(
+                        "until: https://github.com/bevyengine/bevy/issues/17661 is resolved, primitives must be loaded through meshes. Chopping off `Primitive` in mean time. for \n {:#}",
+                        path
+                    );
                     path = split
                         .first()
                         .map(|n| n.to_string())
@@ -56,7 +59,9 @@ impl From<&Mesh3dFlag> for GeometryWrapper {
             Mesh3dFlag::Pure(pure) => match pure {
                 //TODO: Implement properly.
                 MeshWrapper::Procedural(_mesh) => {
-                    warn!("procedural meshes not supported in urdf serialization(currently) defaulting to error mesh");
+                    warn!(
+                        "procedural meshes not supported in urdf serialization(currently) defaulting to error mesh"
+                    );
                     Self(FALLBACK_GEOMETRY)
                 }
                 MeshWrapper::Prefab(mesh_prefab) => match mesh_prefab {

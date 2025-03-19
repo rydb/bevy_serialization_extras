@@ -2,7 +2,9 @@
 //! unique urdf resource for models to read from.
 
 use bevy_app::prelude::*;
-use bevy_asset::{io::Reader, prelude::*, saver::AssetSaver, AssetLoader, AsyncWriteExt, LoadContext};
+use bevy_asset::{
+    AssetLoader, AsyncWriteExt, LoadContext, io::Reader, prelude::*, saver::AssetSaver,
+};
 use bevy_state::prelude::States;
 use thiserror::Error;
 
@@ -96,8 +98,7 @@ pub enum UrdfSaveError {
     #[error("Failed to save Urdf")]
     Io(#[from] std::io::Error),
     #[error("erorr saving urdf")]
-    UrdfError(#[from] urdf_rs::UrdfError)
-
+    UrdfError(#[from] urdf_rs::UrdfError),
 }
 
 #[derive(Default)]
@@ -121,9 +122,9 @@ impl AssetSaver for UrdfSaver {
         async move {
             let urdf_as_string = urdf_rs::write_to_string(&asset.0)?;
             let bytes = urdf_as_string.as_bytes();
-            
+
             writer.write_all(bytes).await?;
-            
+
             Ok(())
         }
     }

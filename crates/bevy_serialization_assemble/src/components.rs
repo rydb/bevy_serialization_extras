@@ -1,26 +1,25 @@
 use std::{
-    any::{type_name, TypeId},
+    any::{TypeId, type_name},
     fmt::Debug,
     marker::PhantomData,
 };
 
 use crate::{
+    Assemblies, AssemblyId,
     prelude::{AssetCheckers, InitializedStagers, RollDownCheckers},
     systems::{check_roll_down, initialize_asset_structure},
     traits::{Disassemble, Structure},
-    Assemblies, AssemblyId,
 };
-use bevy_reflect::Reflect;
-use bevy_tasks::Task;
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
 use bevy_ecs::{
     component::{ComponentHooks, ComponentId, StorageType},
     prelude::*,
-    world::{CommandQueue, DeferredWorld},
+    world::DeferredWorld,
 };
 use bevy_hierarchy::prelude::*;
 use bevy_log::warn;
+use bevy_reflect::Reflect;
 use bevy_transform::components::Transform;
 
 // /// The structure this entity belongs to
@@ -195,9 +194,7 @@ where
                         }
                         return;
                     }
-                    RequestAssetStructure::Asset(asset) => {
-                        asset
-                    }
+                    RequestAssetStructure::Asset(asset) => asset,
                 };
                 asset.clone()
             };
@@ -268,8 +265,6 @@ pub enum Resolve<T: Component, U: Component> {
     One(T),
     Other(U),
 }
-
-
 
 struct ResolveCommand<T, U> {
     entity: Entity,

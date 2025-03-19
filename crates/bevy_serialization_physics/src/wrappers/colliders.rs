@@ -2,15 +2,15 @@ use bevy_log::warn;
 use bevy_math::primitives::{Capsule3d, Cone, Cuboid, Cylinder, Sphere};
 use bevy_rapier3d::prelude::{Collider, ColliderView};
 use bevy_serialization_core::{
-    prelude::mesh::{MeshPrefab, FALLBACK_MESH},
+    prelude::mesh::{FALLBACK_MESH, MeshPrefab},
     traits::ComponentWrapper,
 };
 use derive_more::derive::From;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
-use strum_macros::{Display, EnumIter};
 use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter};
 
 /// Component for requesting a collider to be processed from a mesh.
 /// If a (non) mesh collider is selected, This will cause collider primitive to be generated to fit around a meshes's geoemtry.
@@ -40,7 +40,7 @@ pub struct IgnoredCollider(#[reflect(ignore)] Option<Collider>, String);
 pub enum ColliderFlag {
     Prefab(MeshPrefab),
     /// ignored variant of collider for unimplemented collider kinds.
-    Ignore(IgnoredCollider), 
+    Ignore(IgnoredCollider),
 }
 impl Default for ColliderFlag {
     fn default() -> Self {
@@ -69,7 +69,10 @@ impl From<&ColliderFlag> for Collider {
                     }
                     MeshPrefab::Sphere(sphere) => Collider::ball(sphere.radius),
                     MeshPrefab::Unimplemented(unimplemented) => {
-                        warn!("Attempted to convert unimplemented shape: {:#} to collider. Using fallback instead.", unimplemented);
+                        warn!(
+                            "Attempted to convert unimplemented shape: {:#} to collider. Using fallback instead.",
+                            unimplemented
+                        );
 
                         // Fallback mesh is a cuboid as the (more accurate) alternative would be performance dropping to 0.1fps from a dozen thosand face trimesh collider.
                         Collider::cuboid(
