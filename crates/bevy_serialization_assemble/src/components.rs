@@ -111,9 +111,9 @@ pub fn disassemble_components<'a, T>(
 
 /// Take inner new_type and add components to this components entity from [`Disassemble`]
 #[derive(Clone, Deref)]
-pub struct RequestStructure<T: Disassemble>(pub T);
+pub struct DisassembleRequest<T: Disassemble>(pub T);
 
-impl<T: Disassemble> Component for RequestStructure<T> {
+impl<T: Disassemble> Component for DisassembleRequest<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
@@ -139,7 +139,7 @@ impl<T: Disassemble> Component for RequestStructure<T> {
 /// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
 /// until [`Disassemble`] can be ran
 #[derive(Clone, Debug)]
-pub enum RequestAssetStructure<T>
+pub enum DisassembleAssetRequest<T>
 where
     T: From<T::Target> + Disassemble,
     T::Target: Asset + Sized,
@@ -149,7 +149,7 @@ where
     Asset(T),
 }
 
-impl<T> Component for RequestAssetStructure<T>
+impl<T> Component for DisassembleAssetRequest<T>
 where
     T: From<T::Target> + Disassemble,
     T::Target: Asset + Clone,
@@ -162,19 +162,19 @@ where
                 let path = match world.entity(e).get::<Self>() {
                     Some(val) => val,
                     None => {
-                        warn!("could not get RequestAssetStructure on: {:#}", e);
+                        warn!("could not get DisassembleAssetRequest on: {:#}", e);
                         return;
                     }
                 };
                 let asset = match path {
-                    RequestAssetStructure::Path(path) => {
+                    DisassembleAssetRequest::Path(path) => {
                         let handle = world.load_asset(path);
                         //upgrade path to asset handle.
                         world.commands().entity(e).remove::<Self>();
                         world.commands().entity(e).insert(Self::Handle(handle));
                         return;
                     }
-                    RequestAssetStructure::Handle(_) => {
+                    DisassembleAssetRequest::Handle(_) => {
                         if world
                             .get_resource_mut::<AssetCheckers>()
                             .unwrap()
@@ -194,7 +194,7 @@ where
                         }
                         return;
                     }
-                    RequestAssetStructure::Asset(asset) => asset,
+                    DisassembleAssetRequest::Asset(asset) => asset,
                 };
                 asset.clone()
             };

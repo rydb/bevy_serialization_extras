@@ -32,7 +32,7 @@ use crate::JointRequestStage;
 use crate::traits::AssembleParms;
 use crate::traits::Split;
 use crate::{
-    components::{Maybe, RequestStructure, Resolve},
+    components::{Maybe, DisassembleRequest, Resolve},
     traits::{Assemble, Disassemble, Structure},
 };
 
@@ -58,13 +58,13 @@ impl Disassemble for LinksNJoints {
             let joint = joint.map(
                 |n| 
                 //RollDown(
-                    RequestStructure(UrdfJoint(n)),
+                    DisassembleRequest(UrdfJoint(n)),
                 //vec![TypeId::of::<RigidBodyFlag>()]
                 //)
             );
             children.push((
                 Name::new(link.name),
-                RequestStructure(LinkColliders(link.collision)),
+                DisassembleRequest(LinkColliders(link.collision)),
                 Maybe(joint),
                 Visibility::default(),
             ))
@@ -141,7 +141,7 @@ impl Disassemble for UrdfWrapper {
         }
         Structure::Root((
             Name::new(value.0.0.name),
-            RequestStructure(LinksNJoints(linkage)),
+            DisassembleRequest(LinksNJoints(linkage)),
         ))
     }
 }

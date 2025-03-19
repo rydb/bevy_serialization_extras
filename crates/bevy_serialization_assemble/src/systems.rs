@@ -1,4 +1,4 @@
-use crate::components::{RequestAssetStructure, RollDownIded};
+use crate::components::{DisassembleAssetRequest, RollDownIded};
 use crate::traits::{Assemble, Disassemble};
 use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
 use bevy_asset::io::AssetWriter;
@@ -46,7 +46,7 @@ pub fn check_roll_down<T: Component + Clone>(
 pub fn initialize_asset_structure<T>(
     //events: EventReader<AssetEvent<T::Inner>>,
     asset_server: Res<AssetServer>,
-    requests: Query<(Entity, &RequestAssetStructure<T>)>,
+    requests: Query<(Entity, &DisassembleAssetRequest<T>)>,
     assets: Res<Assets<T::Target>>,
     mut commands: Commands,
 ) where
@@ -57,7 +57,7 @@ pub fn initialize_asset_structure<T>(
     for (e, request) in &requests {
         //println!("checking load status for... {:#}", e);
         let handle = match request {
-            RequestAssetStructure::Handle(handle) => handle,
+            DisassembleAssetRequest::Handle(handle) => handle,
             _ => {
                 warn!("no handle??");
                 return;
@@ -70,10 +70,10 @@ pub fn initialize_asset_structure<T>(
             };
             //println!("Asset loaded for {:#}", e);
             // upgrading handle to asset
-            commands.entity(e).remove::<RequestAssetStructure<T>>();
+            commands.entity(e).remove::<DisassembleAssetRequest<T>>();
             commands
                 .entity(e)
-                .insert(RequestAssetStructure::Asset(T::from(asset.clone())));
+                .insert(DisassembleAssetRequest::Asset(T::from(asset.clone())));
         }
         // else {
         //     let status = asset_server.load_state(handle);

@@ -10,7 +10,7 @@ use derive_more::derive::From;
 use strum::IntoEnumIterator;
 
 use crate::{
-    components::{Maybe, RequestAssetStructure, RequestStructure},
+    components::{Maybe, DisassembleAssetRequest, DisassembleRequest},
     traits::{Disassemble, Split, Structure},
 };
 
@@ -75,7 +75,7 @@ impl Disassemble for GltfNodeMeshOne {
         let mesh = value
             .0
             .mesh
-            .map(|n| RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Handle(n));
+            .map(|n| DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>::Handle(n));
         Structure::Root((Maybe(mesh),))
     }
 }
@@ -93,7 +93,7 @@ impl Disassemble for GltfNodeVisuals {
         let mut children = Vec::new();
 
         for handle in value.0 {
-            children.push((RequestAssetStructure::<GltfNodeMeshOne>::Handle(handle),))
+            children.push((DisassembleAssetRequest::<GltfNodeMeshOne>::Handle(handle),))
         }
 
         Structure::Children(children, Split(false))
@@ -105,7 +105,7 @@ impl Disassemble for GltfNodeColliderVisualChilds {
         let mesh = value
             .0
             .mesh
-            .map(|n| RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Handle(n));
+            .map(|n| DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>::Handle(n));
 
         let collider_request = {
             if let Some(gltf_extras) = value.0.extras {
@@ -117,7 +117,7 @@ impl Disassemble for GltfNodeColliderVisualChilds {
         Structure::Root((
             collider_request,
             Maybe(mesh),
-            RequestStructure(GltfNodeVisuals(value.0.children)),
+            DisassembleRequest(GltfNodeVisuals(value.0.children)),
         ))
     }
 }
@@ -169,7 +169,7 @@ impl Disassemble for GltfMeshWrapper {
     fn components(value: Self) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for primitive in &value.0.primitives {
-            children.push(RequestStructure(GltfPrimitiveWrapper(primitive.clone())))
+            children.push(DisassembleRequest(GltfPrimitiveWrapper(primitive.clone())))
         }
         Structure::Children(children, Split(false))
     }
@@ -180,7 +180,7 @@ impl Disassemble for GltfNodeWrapper {
         let mesh = value
             .0
             .mesh
-            .map(|n| RequestAssetStructure::Handle::<GltfMeshWrapper>(n));
+            .map(|n| DisassembleAssetRequest::Handle::<GltfMeshWrapper>(n));
 
         Structure::Root((Maybe(mesh),))
     }

@@ -7,7 +7,7 @@ use crate::{
     },
     systems::{generate_collider_from_children, generate_primitive_for_request},
     wrappers::{
-        link::{JointFlag, LinkFlag, StructureFlag},
+        link::{JointFlag, LinkFlag},
         mass::MassFlag,
         rigidbodies::RigidBodyFlag,
         solvergroupfilter::SolverGroupsFlag,
@@ -21,7 +21,8 @@ pub struct SerializationPhysicsPlugin;
 
 impl Plugin for SerializationPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<StructureFlag>()
+        app
+        // .register_type::<StructureFlag>()
             .register_type::<LinkFlag>()
             .register_type::<JointRecieverFlag>()
             .register_type::<CollisionGroupsFlag>()

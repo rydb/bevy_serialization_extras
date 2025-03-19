@@ -14,7 +14,7 @@ use bevy_inspector_egui::{
 };
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    JointRequest, SaveSuccess, components::RequestAssetStructure, prelude::*,
+    JointRequest, SaveSuccess, components::DisassembleAssetRequest, prelude::*,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -137,7 +137,7 @@ fn setup(
     // let robot = "diff_bot.xml";
     // Robot
     commands.spawn((
-        RequestAssetStructure::<UrdfWrapper>::Path(
+        DisassembleAssetRequest::<UrdfWrapper>::Path(
             "root://model_pkg/urdf/".to_owned() + ROBOT + ".xml",
         ),
         Transform::from_xyz(-2.0, 0.0, 0.0),
@@ -217,10 +217,10 @@ pub fn load_saved_robot(mut commands: Commands, mut event_reader: EventReader<Sa
 
             // Robot2
             commands.spawn((
-                RequestAssetStructure::<UrdfWrapper>::Path(
+                DisassembleAssetRequest::<UrdfWrapper>::Path(
                     "saves://".to_owned() + &event.file_name + ".xml",
                 ),
-                //RequestAssetStructure::<UrdfWrapper>::Path(SAVES.to_owned() + "" + ROBOT + ".xml"),
+                //DisassembleAssetRequest::<UrdfWrapper>::Path(SAVES.to_owned() + "" + ROBOT + ".xml"),
                 Transform::from_xyz(2.0, 0.0, 0.0),
             ));
         }

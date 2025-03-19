@@ -10,7 +10,7 @@ use urdf_rs::{Geometry, Visual};
 use bevy_math::prelude::*;
 
 use crate::{
-    components::{RequestAssetStructure, Resolve},
+    components::{DisassembleAssetRequest, Resolve},
     gltf::GltfPhysicsMeshPrimitive,
     traits::{Disassemble, Split, Structure},
 };
@@ -97,7 +97,7 @@ impl From<&Mesh3dFlag> for GeometryWrapper {
 }
 
 impl From<GeometryWrapper>
-    for Resolve<Mesh3dFlag, RequestAssetStructure<GltfPhysicsMeshPrimitive>>
+    for Resolve<Mesh3dFlag, DisassembleAssetRequest<GltfPhysicsMeshPrimitive>>
 {
     fn from(value: GeometryWrapper) -> Self {
         match value.0 {
@@ -141,7 +141,7 @@ impl From<GeometryWrapper>
                 .into(),
             )),
             urdf_rs::Geometry::Mesh { filename, .. } => {
-                Resolve::Other(RequestAssetStructure::<GltfPhysicsMeshPrimitive>::Path(
+                Resolve::Other(DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>::Path(
                     filename,
                 ))
             }
