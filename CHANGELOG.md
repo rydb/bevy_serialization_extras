@@ -103,8 +103,11 @@ So on and so forth untill all `DisassembleRequest`s and `DisassembleAssetRequest
     Post impl, assets can now be saved via the [`AssembleRequest<T>`] resource on `Assemble` implementing asset wrappers E.G to serialize a urdf:
     ```rust
     let request = AssembleRequest::<UrdfWrapper>::new(
-        ROBOT.into(),
-        SAVES.to_string(),
+        // file name
+        "diff_bot".into(),
+        // assetSource string literal id
+        "saves".to_string(),
+        // selected entities to save into asset
         entities.clone(),
     );
     ```
