@@ -1,6 +1,6 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use std::collections::HashSet;
+use std::{any::TypeId, collections::HashSet, f32::consts::PI};
 
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_asset::io::{file::{FileAssetReader, FileAssetWriter}, AssetSource};
@@ -13,10 +13,11 @@ use bevy_inspector_egui::{
 };
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::{RequestAssetStructure, RollDown}, prelude::*,
+    components::{RequestAssetStructure, RollDown}, prelude::*, JointRequest, SaveSuccess
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
+use bevy_state::app::StatesPlugin;
 use bevy_ui_extras::{visualize_components_for, UiExtrasDebug};
 use const_format::formatcp;
 use moonshine_save::save::Save;
@@ -32,24 +33,25 @@ pub const ROBOT: &str = "diff_bot";
 
 fn main() {
     App::new()
+        
         .add_plugins(AppSourcesPlugin::CRATE)
         .add_plugins(AssetSourcesUrdfPlugin {
             //TODO: This should be unified under `ROOT`
             assets_folder_local_path: "../../assets".to_owned(),
         })
-        .insert_state(InitializationStage::Select)
-        //.add_schedule(Schedule::new(AssetCheckSchedule))
-        .insert_resource(SetSaveFile {
-            name: "blue".to_owned(),
-        })
-        .insert_resource(UrdfHandles::default())
-        .insert_resource(UtilitySelection::default())
         .add_plugins(
             DefaultPlugins.set(WindowPlugin {
                 exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
                 ..Default::default()
             }), //.set(bevy_mod_raycast::low_latency_window_plugin())
         )
+        .insert_state(InitializationStage::Select)
+        //.add_schedule(Schedule::new(AssetCheckSchedule))
+        .insert_resource(SetSaveFile {
+            name: "blue".to_owned(),
+        })
+        .insert_resource(UtilitySelection::default())
+
         .add_plugins(RapierPhysicsPlugin::<()>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
         // // serialization plugins
@@ -79,11 +81,10 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, control_robot)
         .add_systems(Update, bind_left_and_right_wheel)
-        .add_systems(Update, freeze_spawned_robots)
-        .add_systems(OnEnter(InitializationStage::Select), select_robot)
-        .add_systems(OnEnter(InitializationStage::Save), save_selected)
-        .add_systems(OnEnter(InitializationStage::LoadSaved), load_saved_robot)
-        .add_systems(Startup, load_saved_robot.after(save_selected))
+        // .add_systems(Update, freeze_spawned_robots)
+        .add_systems(Update, select_robot.run_if(in_state(InitializationStage::Select)))
+        .add_systems(Update, save_selected_robot.run_if(in_state(InitializationStage::Save)))
+        .add_systems(Update, load_saved_robot.run_if(in_state(InitializationStage::LoadSaved)))
         // .register_type::<WasFrozen>()
         // .register_type::<Selected>()
         .run();
@@ -93,7 +94,6 @@ fn main() {
 pub enum InitializationStage {
     Select,
     Save,
-    AwaitSaveConfirmation,
     LoadSaved
 }
 
@@ -108,172 +108,6 @@ pub enum Wheel {
     Left,
     Right,
     Passive,
-}
-
-/// find what is "probably" the left and right wheel, and give them a marker.
-pub fn bind_left_and_right_wheel(
-    robots: Query<(Entity, &Name), (With<JointFlag>, Without<Wheel>)>,
-    mut commands: Commands,
-) {
-    for (e, name) in robots.iter() {
-        let name_str = name.to_string().to_lowercase();
-
-        let split_up = name_str.split("_").collect::<Vec<&str>>();
-        //println!("binding wheel");
-        if split_up.contains(&Wheel::Left.to_string().to_lowercase().as_str()) {
-            commands.entity(e).insert(Wheel::Left);
-        } else if split_up.contains(&Wheel::Right.to_string().to_lowercase().as_str()) {
-            commands.entity(e).insert(Wheel::Right);
-        } else {
-            commands.entity(e).insert(Wheel::Passive);
-        }
-    }
-}
-
-#[derive(Component, Reflect)]
-pub struct WasFrozen;
-
-//FIXME: physics bodies fly out of control when spawned, this freezes them for the user to unpause until thats fixed.
-pub fn freeze_spawned_robots(
-    mut robots: Query<(Entity, &mut RigidBodyFlag), Without<WasFrozen>>,
-    mut commands: Commands,
-) {
-    for (e, mut body) in robots.iter_mut() {
-        *body = RigidBodyFlag::Fixed;
-        commands.entity(e).insert(WasFrozen);
-    }
-}
-
-#[derive(Resource, Default)]
-pub struct UrdfHandles {
-    pub handle_vec: Vec<Handle<Urdf>>,
-}
-
-pub fn control_robot(
-    mut rigid_body_flag: Query<&mut RigidBodyFlag, Without<BasePlate>>,
-    keys: Res<ButtonInput<KeyCode>>,
-    mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
-    mut wheels: Query<(&mut JointFlag, &Wheel)>,
-) {
-    let target_speed = 40.0;
-
-    let turn_speed_multiplier = 0.5;
-    let leftward_key = KeyCode::ArrowLeft;
-    let rightward_key = KeyCode::ArrowRight;
-    let forward_key = KeyCode::ArrowUp;
-    let backward_key = KeyCode::ArrowDown;
-
-    let freeze_key = KeyCode::KeyP;
-    let unfreeze_key = KeyCode::KeyO;
-
-    for mut context in primary_window.iter_mut() {
-        egui::Window::new("robot controls")
-            .frame(DEBUG_FRAME_STYLE)
-            .anchor(Align2::LEFT_BOTTOM, [0.0, 0.0])
-            .show(context.get_mut(), |ui| {
-                ui.label(format!("Freeze key: {:#?}", freeze_key));
-                ui.label(format!("unfreeze key {:#?}", unfreeze_key));
-                ui.label("-------------------------");
-                ui.label("");
-                ui.label("wheel controls")
-            });
-    }
-    for (mut joint, wheel) in wheels.iter_mut() {
-        for axis in joint.joint.motors.iter_mut() {
-            if keys.pressed(forward_key) {
-                axis.target_vel = target_speed
-            } else if keys.pressed(backward_key) {
-                axis.target_vel = -target_speed
-            } else {
-                axis.target_vel = 0.0
-            }
-        }
-        match wheel {
-            Wheel::Left => {
-                for axis in joint.joint.motors.iter_mut() {
-                    if keys.pressed(leftward_key) {
-                        axis.target_vel = -target_speed * turn_speed_multiplier;
-                    }
-                    if keys.pressed(rightward_key) {
-                        axis.target_vel = target_speed * turn_speed_multiplier;
-                    }
-                }
-            }
-            Wheel::Right => {
-                for axis in joint.joint.motors.iter_mut() {
-                    if keys.pressed(leftward_key) {
-                        axis.target_vel = target_speed * turn_speed_multiplier;
-                    }
-                    if keys.pressed(rightward_key) {
-                        axis.target_vel = -target_speed * turn_speed_multiplier;
-                    }
-                }
-            }
-            Wheel::Passive => {}
-        }
-    }
-
-    if keys.pressed(freeze_key) {
-        for mut rigidbody in rigid_body_flag.iter_mut() {
-            *rigidbody = RigidBodyFlag::Fixed;
-        }
-    }
-    if keys.pressed(unfreeze_key) {
-        for mut rigidbody in rigid_body_flag.iter_mut() {
-            *rigidbody = RigidBodyFlag::Dynamic;
-        }
-    }
-}
-
-pub fn select_robot(
-    robots: Query<
-        Entity,
-        (
-            With<MassFlag>,
-            With<ColliderFlag>,
-            With<Mesh3d>,
-            With<RigidBodyFlag>,
-            Without<BasePlate>,
-            Without<Selected>,
-        ),
-    >,
-    mut commands: Commands,
-) {
-    for robot in &robots {
-        commands.entity(robot).insert(Selected);
-    }
-}
-
-pub fn save_selected(
-    selected: Query<Entity, With<Selected>>,
-    mut assemble_requests: ResMut<AssembleRequests<UrdfWrapper>>,
-    mut initialization_stage: ResMut<NextState<InitializationStage>>,
-
-) {
-    if selected.iter().len() > 0 {
-        let entities = &mut selected.iter().collect::<HashSet<_>>();
-
-        println!("selected entities: {:#?}", entities);
-        let request = AssembleRequest::<UrdfWrapper>::new(
-            ROBOT.into(),
-            SAVES.to_string(),
-            entities.clone()
-        );
-        assemble_requests.0.push(request);
-        initialization_stage.set(InitializationStage::AwaitSaveConfirmation)
-    }
-}
-
-pub fn load_saved_robot(
-    mut commands: Commands,
-) {
-    // // Robot2
-    commands.spawn((
-        RequestAssetStructure::<UrdfWrapper>::Path("saves://".to_owned() + ROBOT + ".xml"),
-        //RequestAssetStructure::<UrdfWrapper>::Path(SAVES.to_owned() + "" + ROBOT + ".xml"),
-        Transform::from_xyz(2.0, 0.0, 0.0),
-    ));
-    
 }
 
 /// set up a simple 3D scene
@@ -323,6 +157,77 @@ fn setup(
         },
     ));
 }
+
+
+pub fn select_robot(
+    parts: Query<
+        Entity,
+        (
+            With<MassFlag>,
+            With<ColliderFlag>,
+            With<Mesh3d>,
+            With<RigidBodyFlag>,
+            Without<BasePlate>,
+            Without<Selected>,
+        ),
+    >,
+    mut commands: Commands,
+    mut initialization_stage: ResMut<NextState<InitializationStage>>,
+) {
+    if parts.iter().len() > 0 {
+        for part in &parts {
+            commands.entity(part).insert(Selected);
+        }
+        initialization_stage.set(InitializationStage::Save)
+    }
+
+}
+
+pub fn save_selected_robot(
+    selected: Query<Entity, With<Selected>>,
+    mut assemble_requests: ResMut<AssembleRequests<UrdfWrapper>>,
+    mut initialization_stage: ResMut<NextState<InitializationStage>>,
+    uninitialized_joints: Query<&JointRequest>,
+) {
+    if selected.iter().len() > 0 {
+        // do not attempt to save the robot while joints are uninitialized or it won't save correctly!
+        if uninitialized_joints.iter().len() <= 0 {
+            let entities = &mut selected.iter().collect::<HashSet<_>>();
+
+            println!("selected entities: {:#?}", entities);
+            let request = AssembleRequest::<UrdfWrapper>::new(
+                ROBOT.into(),
+                SAVES.to_string(),
+                entities.clone()
+            );
+            assemble_requests.0.push(request);
+            initialization_stage.set(InitializationStage::LoadSaved)
+        }
+        
+    }
+}
+
+pub fn load_saved_robot(
+    mut commands: Commands,
+    mut event_reader: EventReader<SaveSuccess>
+) {
+    for event in event_reader.read() {
+        if event.asset_type_id == TypeId::of::<Urdf>() {
+            println!("Loading saved robot: {:#}", event.file_name);
+
+            // Robot2
+            commands.spawn((
+                RequestAssetStructure::<UrdfWrapper>::Path("saves://".to_owned() + &event.file_name + ".xml"),
+                //RequestAssetStructure::<UrdfWrapper>::Path(SAVES.to_owned() + "" + ROBOT + ".xml"),
+                Transform::from_xyz(2.0, 0.0, 0.0),
+            ));
+    
+        }
+    }
+
+}
+
+
 
 #[derive(Resource, Default)]
 pub struct SetSaveFile {
@@ -392,5 +297,115 @@ impl Plugin for AppSourcesPlugin {
                 .with_reader(move || Box::new(FileAssetReader::new(SAVES)))
                 .with_writer(move |create_root| Some(Box::new(FileAssetWriter::new(SAVES, create_root)))),
         );
+    }
+}
+
+pub fn control_robot(
+    mut rigid_body_flag: Query<&mut RigidBodyFlag, Without<BasePlate>>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut primary_window: Query<&mut EguiContext, With<PrimaryWindow>>,
+    mut wheels: Query<(&mut JointFlag, &Wheel)>,
+) {
+    let target_speed = 20.0;
+
+    let turn_speed_multiplier = 0.5;
+    let leftward_key = KeyCode::ArrowLeft;
+    let rightward_key = KeyCode::ArrowRight;
+    let forward_key = KeyCode::ArrowUp;
+    let backward_key = KeyCode::ArrowDown;
+
+    let freeze_key = KeyCode::KeyP;
+    let unfreeze_key = KeyCode::KeyO;
+
+    for mut context in primary_window.iter_mut() {
+        egui::Window::new("robot controls")
+            .frame(DEBUG_FRAME_STYLE)
+            .anchor(Align2::LEFT_BOTTOM, [0.0, 0.0])
+            .show(context.get_mut(), |ui| {
+                ui.label(format!("Freeze key: {:#?}", freeze_key));
+                ui.label(format!("unfreeze key {:#?}", unfreeze_key));
+                ui.label("-------------------------");
+                ui.label("");
+                ui.label("wheel controls")
+            });
+    }
+    for (mut joint, wheel) in wheels.iter_mut() {
+        for axis in joint.joint.motors.iter_mut() {
+            if keys.pressed(forward_key) {
+                axis.target_vel = target_speed
+            } else if keys.pressed(backward_key) {
+                axis.target_vel = -target_speed
+            } else {
+                axis.target_vel = 0.0
+            }
+        }
+        match wheel {
+            Wheel::Left => {
+                for axis in joint.joint.motors.iter_mut() {
+                    if keys.pressed(leftward_key) {
+                        axis.target_vel = -target_speed * turn_speed_multiplier;
+                    }
+                    if keys.pressed(rightward_key) {
+                        axis.target_vel = target_speed * turn_speed_multiplier;
+                    }
+                }
+            }
+            Wheel::Right => {
+                for axis in joint.joint.motors.iter_mut() {
+                    if keys.pressed(leftward_key) {
+                        axis.target_vel = target_speed * turn_speed_multiplier;
+                    }
+                    if keys.pressed(rightward_key) {
+                        axis.target_vel = -target_speed * turn_speed_multiplier;
+                    }
+                }
+            }
+            Wheel::Passive => {}
+        }
+    }
+
+    if keys.pressed(freeze_key) {
+        for mut rigidbody in rigid_body_flag.iter_mut() {
+            *rigidbody = RigidBodyFlag::Fixed;
+        }
+    }
+    if keys.pressed(unfreeze_key) {
+        for mut rigidbody in rigid_body_flag.iter_mut() {
+            *rigidbody = RigidBodyFlag::Dynamic;
+        }
+    }
+}
+
+/// find what is "probably" the left and right wheel, and give them a marker.
+pub fn bind_left_and_right_wheel(
+    robots: Query<(Entity, &Name), (With<JointFlag>, Without<Wheel>)>,
+    mut commands: Commands,
+) {
+    for (e, name) in robots.iter() {
+        let name_str = name.to_string().to_lowercase();
+
+        let split_up = name_str.split("_").collect::<Vec<&str>>();
+        //println!("binding wheel");
+        if split_up.contains(&Wheel::Left.to_string().to_lowercase().as_str()) {
+            commands.entity(e).insert(Wheel::Left);
+        } else if split_up.contains(&Wheel::Right.to_string().to_lowercase().as_str()) {
+            commands.entity(e).insert(Wheel::Right);
+        } else {
+            commands.entity(e).insert(Wheel::Passive);
+        }
+    }
+}
+
+#[derive(Component, Reflect)]
+pub struct WasFrozen;
+
+//FIXME: physics bodies fly out of control when spawned, this freezes them for the user to unpause until thats fixed.
+pub fn freeze_spawned_robots(
+    mut robots: Query<(Entity, &mut RigidBodyFlag), Without<WasFrozen>>,
+    mut commands: Commands,
+) {
+    for (e, mut body) in robots.iter_mut() {
+        *body = RigidBodyFlag::Fixed;
+        commands.entity(e).insert(WasFrozen);
     }
 }

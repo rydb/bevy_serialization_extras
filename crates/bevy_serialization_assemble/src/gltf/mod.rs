@@ -125,31 +125,6 @@ impl Disassemble for GltfNodeColliderVisualChilds {
     }
 }
 
-// #[derive(Deref, From, Clone)]
-// pub struct GltfNodePrimitiveOne(pub GltfNode);
-
-// impl Disassemble for GltfNodePrimitiveOne {
-//     fn components(value: Self) -> Structure<impl Bundle> {
-//         let node = value.0;
-
-//         let mut mesh = None;
-//         if node.children.len() > 0 {
-//             warn!("{:#?} does not support multi-node. Skipping {:#}", type_name::<Self>(), node.name);
-//         } else {
-//             mesh = node.mesh.map(|n| RequestAssetStructure::<GltfPhysicsPrimitiveOne>::Handle(n))
-//         }
-//         //println!("node transform: {:#?}", node.transform);
-//         let rotationless_trans = Transform::from_translation(node.transform.translation);
-//         Structure::Root(
-//             (
-//                 Maybe(mesh),
-//                 //rotationless_trans
-//             )
-
-//         )
-//     }
-// }
-
 /// [`GltfMesh`] that will throw a warning and not initialize if there is more then 1/no primitive
 ///
 /// Tempory hot-fix for spawning singular primitives.

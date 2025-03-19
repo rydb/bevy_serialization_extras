@@ -202,11 +202,21 @@ impl Assemble for UrdfWrapper{
                         }
                     },
                     origin: Pose {
-                        xyz: urdf_rs::Vec3(
+                        xyz: {
+                            let mut origin = 
+                            urdf_rs::Vec3(
                             (joint.joint.local_frame1.translation - joint.joint.local_frame2.translation)
                             .to_array()
-                            .map(|n| n as f64)
-                        ),
+                            .map(|n| n as f64));
+                            let y = origin[1];
+
+                            let z = origin[2];
+
+                            // origin y and z need to be swapped since y and z are swapped from bevy joints and urdf ones.
+                            origin[1] = z;
+                            origin[2] = y;
+                            origin
+                        },
                         rpy: {
 
                             let rot_quat = joint.joint.local_frame1.rotation

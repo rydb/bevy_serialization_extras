@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::ReflectComponent;
 use bevy_ecs::prelude::*;
@@ -23,6 +25,12 @@ pub struct AssemblyId(pub i64);
 
 #[derive(Resource, Default)]
 pub struct Assemblies(pub HashMap<i64, i64>);
+
+#[derive(Event)]
+pub struct SaveSuccess {
+    pub file_name: String,
+    pub asset_type_id: TypeId,    
+}
 
 /// current stage of request for joint from increasing context.
 #[derive(Debug, Reflect, Clone)]

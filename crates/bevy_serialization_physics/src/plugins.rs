@@ -34,6 +34,7 @@ impl Plugin for SerializationPhysicsPlugin {
             .add_plugins(SerializeComponentFor::<ColliderFlag>::default())
             //.add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
             .add_plugins(SerializeComponentFor::<JointFlag>::default())
+            
             .add_systems(Update, generate_primitive_for_request)
             .add_systems(Update, generate_collider_from_children)
             ;

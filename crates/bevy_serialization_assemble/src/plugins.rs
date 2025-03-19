@@ -6,7 +6,7 @@ use bevy_serialization_core::run_proxy_system;
 use moonshine_save::save::SaveSystem;
 
 use crate::{
-    components::RollDown, prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{bind_joint_request_to_parent, handle_save_tasks, save_asset, stage_save_asset_request, SaveAssembledRequests}, traits::{Assemble, Disassemble, LazySerialize}, urdf::UrdfWrapper, Assemblies, AssemblyId
+    components::RollDown, prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{bind_joint_request_to_parent, handle_save_tasks, save_asset, stage_save_asset_request, SaveAssembledRequests, StagedAssembleRequestTasks}, traits::{Assemble, Disassemble, LazySerialize}, urdf::UrdfWrapper, Assemblies, AssemblyId, SaveSuccess
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -38,7 +38,7 @@ where
         .insert_resource(SaveAssembledRequests::<T::Target>::default())
         .add_systems(PreUpdate, stage_save_asset_request::<T>)
         // .add_systems(PreUpdate, handle_save_tasks)
-        .add_systems(PreUpdate, save_asset::<T>.before(SaveSystem::Save))
+        .add_systems(PreUpdate, save_asset::<T>)
         // .add_systems()
         ;
     }
@@ -55,7 +55,10 @@ impl Plugin for SerializationAssembleBasePlugin {
         .insert_resource(InitializedStagers::default())
         .insert_resource(RollDownCheckers::default())
         .insert_resource(Assemblies::default())
+        .init_resource::<StagedAssembleRequestTasks>()
         .register_type::<AssemblyId>()
+        .add_event::<SaveSuccess>()
+
         // .register_type::<RollDown>()
         .add_systems(Update, handle_save_tasks)
         .add_systems(Update, run_proxy_system::<AssetCheckers>)

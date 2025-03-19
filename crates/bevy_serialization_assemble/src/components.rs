@@ -196,8 +196,6 @@ where
                         return;
                     }
                     RequestAssetStructure::Asset(asset) => {
-                        //world.commands().entity(e)
-                        //println!("got asset");
                         asset
                     }
                 };

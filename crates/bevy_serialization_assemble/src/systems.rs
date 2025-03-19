@@ -1,8 +1,8 @@
 use crate::components::{RequestAssetStructure, RollDownIded};
 use crate::traits::{Assemble, Disassemble};
-use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage};
+use crate::{prelude::*, AssemblyId, JointRequest, JointRequestStage, SaveSuccess};
 use bevy_asset::io::AssetWriter;
-use bevy_asset::{prelude::*, AssetLoader, ErasedLoadedAsset, LoadedAsset};
+use bevy_asset::{prelude::*, AssetContainer, AssetLoader, ErasedLoadedAsset, LoadedAsset, UntypedAssetId};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
@@ -21,21 +21,9 @@ use bevy_tasks::{block_on, AsyncComputeTaskPool, IoTaskPool, Task};
 use bevy_transform::components::Transform;
 use bevy_utils::default;
 use glam::Vec3;
+use std::any::TypeId;
 use std::ops::Deref;
 use std::path::Path;
-
-// /// give entity a name from its entity id.
-// pub fn name_from_id(
-//     requests: Query<(Entity, &Name, &RequestIdFromName)>,
-//     mut commands: Commands
-// ) {
-//     for (e, name, _) in &requests {
-//         let name = name.0.clone() + &e.to_string();
-//         println!("e to string is {:#?}", e.to_string());
-//         commands.spawn(Name::new(name));
-//         commands.entity(e).remove::<RequestNameWithId>();
-//     }
-// }
 
 pub fn check_roll_down<T: Component + Clone>(
     rolldowns: Query<(Entity, &Name, &RollDownIded<T>)>,
@@ -102,32 +90,6 @@ pub fn initialize_asset_structure<T>(
 
 
 
-// /// take assets, and save them into their save file format.
-// pub async fn process_save_requests<AssetWrapper>(
-//     asset_server: Res<AssetServer>,
-//     mut assembled_assets: ResMut<SaveAssembledRequests<AssetWrapper>>
-// ) 
-// where
-//     AssetWrapper: Assemble + Clone + 'static + Default,
-// {
-//     let thread_pool = AsyncComputeTaskPool::get();
-//     while let Some(request) = assembled_assets.0.pop() {
-//         // convert asset to loaded asset
-//         let loaded: LoadedAsset<AssetWrapper::Target> = request.asset.into();
-//         // convert loaded asset to erased loaded asset
-//         let erased = ErasedLoadedAsset::from(loaded);
-//         // convert erased loaded asset into saved asset
-//         let saved: SavedAsset<AssetWrapper::Target> = SavedAsset::from_loaded(&erased).unwrap();
-
-//         let saver = AssetWrapper::Saver::default();
-
-//         let asset_writer = request.asset_source.writer().unwrap();
-//         let mut async_writer = asset_writer.write(Path::new(&request.file_name)).await.unwrap();
-
-//         let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
-//     }
-// }
-
 #[derive(Deref, DerefMut, Resource)]
 pub struct SaveAssembledRequests<T>(pub Vec<SaveAssembledRequest<T>>);
 
@@ -177,49 +139,32 @@ where
     }
 }
 
-#[derive(Resource, Deref, DerefMut)]
-pub struct StagedAssembleRequestTasks(pub Vec<Task<Result<String, String>>>);
 
-// pub fn process_save_requests(mut commands: Commands, mut staged_save_tasks: Query<&mut SaveAssembledRequests<>>) {
-//     for mut task in &mut staged_save_tasks {
-//         if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
-//             // append the returned command queue to have it execute later
-//             commands.append(&mut commands_queue);
-//         }
-//     }
-// }
 
-// /// take assets, and save them into their save file format.
-// pub async fn process_save_requests<AssetWrapper>(
-//     asset_server: Res<AssetServer>,
-//     mut assembled_assets: ResMut<SaveAssembledRequests<AssetWrapper>>
-// ) 
-// where
-//     AssetWrapper: Assemble + Clone + 'static + Default,
-// {
-//     while let Some(request) = assembled_assets.0.pop() {
-//         // convert asset to loaded asset
-//         let loaded: LoadedAsset<AssetWrapper::Target> = request.asset.into();
-//         // convert loaded asset to erased loaded asset
-//         let erased = ErasedLoadedAsset::from(loaded);
-//         // convert erased loaded asset into saved asset
-//         let saved: SavedAsset<AssetWrapper::Target> = SavedAsset::from_loaded(&erased).unwrap();
+#[derive(Default, Resource, Deref, DerefMut)]
+pub struct StagedAssembleRequestTasks(pub Vec<Task<Result<(String, TypeId), String>>>);
 
-//         let saver = AssetWrapper::Saver::default();
-
-//         let asset_writer = request.asset_source.writer().unwrap();
-//         let task = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default());
-
-//         AsyncComputeTaskPool::get().spawn(task);
-
-//         // Handle task polling here if you need output
-//     }
-// }
-
-pub fn handle_save_tasks(mut tasks: ResMut<StagedAssembleRequestTasks>, ) {
+pub fn handle_save_tasks(mut tasks: ResMut<StagedAssembleRequestTasks>, mut event_writer: EventWriter<SaveSuccess>) {
     while let Some(mut task) = tasks.pop() {
-        block_on(future::poll_once(&mut task));
+        println!("attempt to run save task");
 
+        let task_attempt = block_on(future::poll_once(&mut task));
+        println!("ran save task");
+        if let Some(task_result) = task_attempt {
+            match task_result {
+                Ok((success, id)) => {
+                    println!("successfully saved {:#}", success);
+                    event_writer.send(SaveSuccess { 
+                        file_name: success, 
+                        asset_type_id: id
+                    });   
+                }
+                    ,
+                Err(err) => warn!("Could not save due to: {:#}", err),
+            }
+        } else {
+            warn!("could not do task for {:#?}", task)
+        }
     }
 }
 
@@ -261,8 +206,9 @@ where
             let mut async_writer = asset_writer.write(Path::new(&(request.file_name.to_owned() + "." + extension))).await.unwrap();
     
             let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
-            Ok(request.file_name)
+            Ok((request.file_name, TypeId::of::<AssetWrapper::Target>()))
         });
+        println!("finished adding save task");
         save_tasks.push(task);
     }
 }
