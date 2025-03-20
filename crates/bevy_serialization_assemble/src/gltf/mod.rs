@@ -10,8 +10,8 @@ use derive_more::derive::From;
 use strum::IntoEnumIterator;
 
 use crate::{
-    components::{DisassembleAssetRequest, DisassembleRequest, Maybe},
-    traits::{Disassemble, Split, Structure},
+    components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe},
+    traits::{Disassemble, DisassembleSettings, Split, Structure},
 };
 
 #[derive(From, Clone, Deref)]
@@ -61,23 +61,25 @@ pub fn gltf_collider_request(extras: GltfExtras) -> RequestCollider {
 // }
 
 impl Disassemble for GltfPrimitiveWrapper {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mat = value.material.clone().map(|n| MeshMaterial3d(n));
         Structure::Root((Mesh3d(value.mesh.clone()), Maybe(mat)))
     }
+    
 }
 
 #[derive(Clone, Deref, From)]
 pub struct GltfNodeMeshOne(pub GltfNode);
 
 impl Disassemble for GltfNodeMeshOne {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mesh = value
             .0
             .mesh
-            .map(|n| DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>::Handle(n));
+            .map(|n| DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>(DisassembleStage::Handle(n), DisassembleSettings::default()));
         Structure::Root((Maybe(mesh),))
     }
+    
 }
 
 /// GltfNode wrapper for spawning gltf nodes with a parent collider mesh, and children visual meshes.
@@ -89,23 +91,24 @@ pub struct GltfNodeColliderVisualChilds(pub GltfNode);
 pub struct GltfNodeVisuals(pub Vec<Handle<GltfNode>>);
 
 impl Disassemble for GltfNodeVisuals {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
         for handle in value.0 {
-            children.push((DisassembleAssetRequest::<GltfNodeMeshOne>::Handle(handle),))
+            children.push(DisassembleAssetRequest::<GltfNodeMeshOne>(DisassembleStage::Handle(handle), DisassembleSettings::default()))
         }
 
-        Structure::Children(children, Split(false))
+        Structure::Children(children, Split(settings.split))
     }
+    
 }
 
 impl Disassemble for GltfNodeColliderVisualChilds {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mesh = value
             .0
             .mesh
-            .map(|n| DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>::Handle(n));
+            .map(|n| DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>(DisassembleStage::Handle(n), DisassembleSettings::default()));
 
         let collider_request = {
             if let Some(gltf_extras) = value.0.extras {
@@ -117,9 +120,10 @@ impl Disassemble for GltfNodeColliderVisualChilds {
         Structure::Root((
             collider_request,
             Maybe(mesh),
-            DisassembleRequest(GltfNodeVisuals(value.0.children)),
+            DisassembleRequest(GltfNodeVisuals(value.0.children), DisassembleSettings::default()),
         ))
     }
+    
 }
 
 /// [`GltfMesh`] that will throw a warning and not initialize if there is more then 1/no primitive
@@ -131,7 +135,7 @@ impl Disassemble for GltfNodeColliderVisualChilds {
 pub struct GltfPhysicsMeshPrimitive(pub GltfMesh);
 
 impl Disassemble for GltfPhysicsMeshPrimitive {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mesh = {
             if value.0.primitives.len() > 1 {
                 //TODO: maybe replace this with some kind of mesh condenser system?
@@ -160,30 +164,33 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
         };
         Structure::Root((collider_request, Maybe(material), Maybe(primitive)))
     }
+    
 }
 
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfMeshWrapper(pub GltfMesh);
 
 impl Disassemble for GltfMeshWrapper {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for primitive in &value.0.primitives {
-            children.push(DisassembleRequest(GltfPrimitiveWrapper(primitive.clone())))
+            children.push(DisassembleRequest(GltfPrimitiveWrapper(primitive.clone()), DisassembleSettings::default()))
         }
-        Structure::Children(children, Split(false))
+        Structure::Children(children, Split(settings.split))
     }
+    
 }
 
 impl Disassemble for GltfNodeWrapper {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mesh = value
             .0
             .mesh
-            .map(|n| DisassembleAssetRequest::Handle::<GltfMeshWrapper>(n));
+            .map(|n| DisassembleAssetRequest(DisassembleStage::Handle::<GltfMeshWrapper>(n), DisassembleSettings::default()));
 
         Structure::Root((Maybe(mesh),))
     }
+    
 }
 
 // impl IntoHashMap<Query<'_, '_, GltfNodeQuery>> for GltfNodeWrapper {

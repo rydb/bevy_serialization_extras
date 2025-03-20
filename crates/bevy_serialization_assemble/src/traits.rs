@@ -32,6 +32,11 @@ pub trait AssembleParms {
     type Params: SystemParam;
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct DisassembleSettings {
+    pub split: bool,
+}
+
 /// The trait for Disassembling structures into either:
 ///
 /// A) its sub components
@@ -43,10 +48,12 @@ pub trait Disassemble
 where
     Self: Clone + Send + Sync + Deref + 'static,
 {
-    fn components(value: Self) -> Structure<impl Bundle>;
+    // type Settings: Send + Sync + Clone;
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
 }
 
 /// Weather to split children off into seperate entities or have them as children to a parent.
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Split(pub bool);
 
 pub enum Structure<T> {
