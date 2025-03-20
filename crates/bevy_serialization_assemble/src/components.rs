@@ -5,10 +5,7 @@ use std::{
 };
 
 use crate::{
-    Assemblies, AssemblyId,
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers},
-    systems::{check_roll_down, initialize_asset_structure},
-    traits::{Disassemble, Structure},
+    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, DisassembleSettings, Structure}, Assemblies, AssemblyId
 };
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
@@ -32,6 +29,7 @@ pub fn disassemble_components<'a, T>(
     e: Entity,
     _id: ComponentId,
     comp: T,
+    disassemble_settings: DisassembleSettings
 ) where
     T: Disassemble, // where
                     //     T: Deref + Component,
@@ -56,7 +54,7 @@ pub fn disassemble_components<'a, T>(
         }
     };
 
-    match Disassemble::components(comp) {
+    match Disassemble::components(comp, disassemble_settings) {
         Structure::Root(bundle) => {
             world.commands().entity(e).insert(bundle);
         }
@@ -71,14 +69,14 @@ pub fn disassemble_components<'a, T>(
                 if !split.0 {
                     world.commands().entity(e).add_child(child);
                 } else {
-                    //TODO: expand this to other components than [`Transform`]
-                    let parent_transform = {
-                        let parent = world.entity(e).get::<Transform>();
-                        parent.map(|n| n.clone())
-                    };
-                    if let Some(parent_trans) = parent_transform {
-                        world.commands().entity(child).insert(parent_trans);
-                    };
+                    // //TODO: expand this to other components than [`Transform`]
+                    // let parent_transform = {
+                    //     let parent = world.entity(e).get::<Transform>();
+                    //     parent.map(|n| n.clone())
+                    // };
+                    // if let Some(parent_trans) = parent_transform {
+                    //     world.commands().entity(child).insert(parent_trans);
+                    // };
                 }
                 children.push(child);
             }
@@ -110,8 +108,8 @@ pub fn disassemble_components<'a, T>(
 }
 
 /// Take inner new_type and add components to this components entity from [`Disassemble`]
-#[derive(Clone, Deref)]
-pub struct DisassembleRequest<T: Disassemble>(pub T);
+#[derive(Deref, Clone)]
+pub struct DisassembleRequest<T: Disassemble>(#[deref] pub T, pub DisassembleSettings);
 
 impl<T: Disassemble> Component for DisassembleRequest<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -129,17 +127,37 @@ impl<T: Disassemble> Component for DisassembleRequest<T> {
                 comp.clone()
             };
 
-            disassemble_components(&mut world, e, id, comp.0);
+            disassemble_components(&mut world, e, id, comp.0, comp.1);
             world.commands().entity(e).remove::<Self>();
         });
     }
 }
 
+// /// Staging component for deserializing [`Disassemble`] implemented asset wrappers.
+// /// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
+// /// until [`Disassemble`] can be ran
+// #[derive(Clone, Debug)]
+// pub enum DisassembleAssetRequest<T>
+// where
+//     T: From<T::Target> + Disassemble,
+//     T::Target: Asset + Sized,
+// {
+//     Path(String),
+//     Handle(Handle<T::Target>),
+//     Asset(T),
+// }
+
+
 /// Staging component for deserializing [`Disassemble`] implemented asset wrappers.
 /// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
 /// until [`Disassemble`] can be ran
+pub struct DisassembleAssetRequest<T>(pub DisassembleStage<T>, pub DisassembleSettings)
+where
+    T: From<T::Target> + Disassemble,
+    T::Target: Asset + Sized;
+
 #[derive(Clone, Debug)]
-pub enum DisassembleAssetRequest<T>
+pub enum DisassembleStage<T> 
 where
     T: From<T::Target> + Disassemble,
     T::Target: Asset + Sized,
@@ -158,7 +176,7 @@ where
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
         _hooks.on_add(|mut world, e, id| {
-            let asset = {
+            let (asset, settings) = {
                 let path = match world.entity(e).get::<Self>() {
                     Some(val) => val,
                     None => {
@@ -166,15 +184,16 @@ where
                         return;
                     }
                 };
-                let asset = match path {
-                    DisassembleAssetRequest::Path(path) => {
+                let settings = path.1.clone();
+                let asset = match &path.0 {
+                    DisassembleStage::Path(path) => {
                         let handle = world.load_asset(path);
                         //upgrade path to asset handle.
                         world.commands().entity(e).remove::<Self>();
-                        world.commands().entity(e).insert(Self::Handle(handle));
+                        world.commands().entity(e).insert(Self(DisassembleStage::Handle(handle), settings));
                         return;
                     }
-                    DisassembleAssetRequest::Handle(_) => {
+                    DisassembleStage::Handle(_) => {
                         if world
                             .get_resource_mut::<AssetCheckers>()
                             .unwrap()
@@ -194,11 +213,11 @@ where
                         }
                         return;
                     }
-                    DisassembleAssetRequest::Asset(asset) => asset,
+                    DisassembleStage::Asset(asset) => asset,
                 };
-                asset.clone()
+                (asset.clone(), settings)
             };
-            disassemble_components(&mut world, e, id, asset);
+            disassemble_components(&mut world, e, id, asset, settings);
             world.commands().entity(e).remove::<Self>();
         });
     }

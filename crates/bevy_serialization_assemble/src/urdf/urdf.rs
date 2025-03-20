@@ -10,6 +10,7 @@ use bevy_serialization_physics::prelude::{
     },
     rigidbodies::RigidBodyFlag,
 };
+use crate::traits::DisassembleSettings;
 use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
@@ -48,34 +49,32 @@ pub struct Id(pub String);
 /// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
 /// so they are merged here.
 #[derive(Clone, Deref)]
-pub struct LinksNJoints(Vec<(Link, Option<Joint>)>);
+pub struct LinksNJoints(#[deref] Vec<(Link, Option<Joint>)>);
 
 impl Disassemble for LinksNJoints {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
         for (link, joint) in value.0 {
             let joint = joint.map(
                 |n| 
                 //RollDown(
-                    DisassembleRequest(UrdfJoint(n)),
+                    DisassembleRequest(UrdfJoint(n), DisassembleSettings::default()),
                 //vec![TypeId::of::<RigidBodyFlag>()]
                 //)
             );
             children.push((
                 Name::new(link.name),
-                DisassembleRequest(LinkColliders(link.collision)),
+                DisassembleRequest(LinkColliders(link.collision), DisassembleSettings {
+                    split: settings.split
+                }),
                 Maybe(joint),
                 Visibility::default(),
             ))
         }
-        //TODO: figure out how to resolve root entity and children entity transform desync.
-        //robots can be spawned via Split(false), and they will be correct. Initially.
-        //but transform propagation and joint transform propagation are mutually exclusive(at least in rapier)(as of 0.15).
-        // This causes bevy transform and rapier joints to desync if you update root transform.
-
-        // So, in order to prevent this desync, [`Split`] currently is set to true.
-        Structure::Children(children, Split(true))
+        //TODO: transform proprogation and joints are mutually exclusive. If Split is set to false, expect bugs
+        //if you touch [`Transform`] outside of the context of rapier updating it automatically from physics.
+        Structure::Children(children, Split(settings.split))
     }
 }
 
@@ -86,16 +85,17 @@ pub struct Visuals(pub Vec<Visual>);
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         Structure::Root((JointRequest::from(&value),))
     }
+    
 }
 
 #[derive(Clone, Deref)]
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry = {
             if value.0.len() > 1 {
@@ -120,10 +120,11 @@ impl Disassemble for LinkColliders {
             Visibility::default(),
         ))
     }
+    
 }
 
 impl Disassemble for UrdfWrapper {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut structured_joint_map = HashMap::new();
 
         for joint in &value.0.joints {
@@ -141,17 +142,18 @@ impl Disassemble for UrdfWrapper {
         }
         Structure::Root((
             Name::new(value.0.0.name),
-            DisassembleRequest(LinksNJoints(linkage)),
+            DisassembleRequest(LinksNJoints(linkage), DisassembleSettings { split: settings.split }),
         ))
     }
 }
 
-impl AssembleParms for UrdfWrapper {
+impl AssembleParms for UrdfWrapper{
     type Params = (
         Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static Mesh3dFlag), ()>,
         Query<'static, 'static, (&'static JointFlag, &'static Name), ()>,
     );
 }
+
 
 impl Assemble for UrdfWrapper {
     type Saver = UrdfSaver;

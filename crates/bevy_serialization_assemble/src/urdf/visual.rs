@@ -10,22 +10,23 @@ use urdf_rs::{Geometry, Visual};
 use bevy_math::prelude::*;
 
 use crate::{
-    components::{DisassembleAssetRequest, Resolve},
+    components::{DisassembleAssetRequest, DisassembleStage, Resolve},
     gltf::GltfPhysicsMeshPrimitive,
-    traits::{Disassemble, Split, Structure},
+    traits::{Disassemble, DisassembleSettings, Split, Structure},
 };
 
 #[derive(From, Clone, Deref)]
 pub struct VisualWrapper(pub Vec<Visual>);
 
 impl Disassemble for VisualWrapper {
-    fn components(value: Self) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for visual in value.0 {
             (children.push(Resolve::from(GeometryWrapper(visual.geometry))));
         }
-        Structure::Children(children, Split(false))
+        Structure::Children(children, Split(settings.split))
     }
+
 }
 
 const FALLBACK_GEOMETRY: Geometry = Geometry::Box {
@@ -141,8 +142,9 @@ impl From<GeometryWrapper>
                 .into(),
             )),
             urdf_rs::Geometry::Mesh { filename, .. } => {
-                Resolve::Other(DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>::Path(
-                    filename,
+                Resolve::Other(DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>(
+                    DisassembleStage::Path(filename),
+                    DisassembleSettings::default()
                 ))
             }
         }

@@ -1,5 +1,5 @@
-use crate::components::{DisassembleAssetRequest, RollDownIded};
-use crate::traits::{Assemble, Disassemble};
+use crate::components::{DisassembleAssetRequest, DisassembleStage, RollDownIded};
+use crate::traits::{Assemble, Disassemble, DisassembleSettings};
 use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_asset::{AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
@@ -56,7 +56,7 @@ pub fn initialize_asset_structure<T>(
     for (e, request) in &requests {
         //println!("checking load status for... {:#}", e);
         let handle = match request {
-            DisassembleAssetRequest::Handle(handle) => handle,
+            DisassembleAssetRequest(DisassembleStage::Handle(handle), request) => handle,
             _ => {
                 warn!("no handle??");
                 return;
@@ -72,7 +72,7 @@ pub fn initialize_asset_structure<T>(
             commands.entity(e).remove::<DisassembleAssetRequest<T>>();
             commands
                 .entity(e)
-                .insert(DisassembleAssetRequest::Asset(T::from(asset.clone())));
+                .insert(DisassembleAssetRequest(DisassembleStage::Asset(T::from(asset.clone())), request.1.clone()));
         }
         // else {
         //     let status = asset_server.load_state(handle);
