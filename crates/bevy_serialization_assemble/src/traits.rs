@@ -37,11 +37,6 @@ pub struct DisassembleSettings {
     pub split: bool,
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct DisassembleSettings {
-    pub split: bool,
-}
-
 /// The trait for Disassembling structures into either:
 ///
 /// A) its sub components
@@ -53,8 +48,6 @@ pub trait Disassemble
 where
     Self: Clone + Send + Sync + Deref + 'static,
 {
-    // type Settings: Send + Sync + Clone;
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
     // type Settings: Send + Sync + Clone;
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
 }
@@ -78,10 +71,6 @@ impl PullDown {
     }
 }
 
-
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Split(pub bool);
 
 pub enum Structure<T> {
     Root(T),

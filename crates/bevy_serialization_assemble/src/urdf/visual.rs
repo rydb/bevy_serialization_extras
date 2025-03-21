@@ -11,9 +11,7 @@ use bevy_math::prelude::*;
 
 use crate::{
     components::{DisassembleAssetRequest, DisassembleStage, Resolve},
-    components::{DisassembleAssetRequest, DisassembleStage, Resolve},
     gltf::GltfPhysicsMeshPrimitive,
-    traits::{Disassemble, DisassembleSettings, Split, Structure},
     traits::{Disassemble, DisassembleSettings, Split, Structure},
 };
 
@@ -21,7 +19,6 @@ use crate::{
 pub struct VisualWrapper(pub Vec<Visual>);
 
 impl Disassemble for VisualWrapper {
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut children = Vec::new();
         for visual in value.0 {
@@ -152,9 +149,6 @@ impl From<GeometryWrapper>
                 .into(),
             )),
             urdf_rs::Geometry::Mesh { filename, .. } => {
-                Resolve::Other(DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>(
-                    DisassembleStage::Path(filename),
-                    DisassembleSettings::default()
                 Resolve::Other(DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>(
                     DisassembleStage::Path(filename),
                     DisassembleSettings::default()

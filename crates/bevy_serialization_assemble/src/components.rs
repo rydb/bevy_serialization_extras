@@ -6,7 +6,6 @@ use std::{
 
 use crate::{
     prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, DisassembleSettings, Structure}, Assemblies, AssemblyId
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, DisassembleSettings, Structure}, Assemblies, AssemblyId
 };
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
@@ -55,7 +54,6 @@ pub fn disassemble_components<'a, T>(
         }
     };
 
-    match Disassemble::components(comp, disassemble_settings) {
     match Disassemble::components(comp, disassemble_settings) {
         Structure::Root(bundle) => {
             world.commands().entity(e).insert(bundle);
@@ -185,8 +183,6 @@ where
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum DisassembleStage<T> 
 pub enum DisassembleStage<T> 
 where
     T: From<T::Target> + Disassemble,
@@ -207,7 +203,6 @@ where
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
         _hooks.on_add(|mut world, e, id| {
             let (asset, settings) = {
-            let (asset, settings) = {
                 let path = match world.entity(e).get::<Self>() {
                     Some(val) => val,
                     None => {
@@ -215,9 +210,7 @@ where
                         return;
                     }
                 };
-                let settings = path.1.clone();
-                let asset = match &path.0 {
-                    DisassembleStage::Path(path) => {
+
                 let settings = path.1.clone();
                 let asset = match &path.0 {
                     DisassembleStage::Path(path) => {
@@ -225,10 +218,8 @@ where
                         //upgrade path to asset handle.
                         world.commands().entity(e).remove::<Self>();
                         world.commands().entity(e).insert(Self(DisassembleStage::Handle(handle), settings));
-                        world.commands().entity(e).insert(Self(DisassembleStage::Handle(handle), settings));
                         return;
                     }
-                    DisassembleStage::Handle(_) => {
                     DisassembleStage::Handle(_) => {
                         if world
                             .get_resource_mut::<AssetCheckers>()
@@ -250,12 +241,9 @@ where
                         return;
                     }
                     DisassembleStage::Asset(asset) => asset,
-                    DisassembleStage::Asset(asset) => asset,
                 };
                 (asset.clone(), settings)
-                (asset.clone(), settings)
             };
-            disassemble_components(&mut world, e, id, asset, settings);
             disassemble_components(&mut world, e, id, asset, settings);
             world.commands().entity(e).remove::<Self>();
         });
