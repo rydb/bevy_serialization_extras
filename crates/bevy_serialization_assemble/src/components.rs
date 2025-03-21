@@ -66,17 +66,21 @@ pub fn disassemble_components<'a, T>(
                     .commands()
                     .entity(child)
                     .insert(AssemblyId(assembly_id));
-                if !split.0 {
+                if !split.split {
                     world.commands().entity(e).add_child(child);
                 } else {
                     // //TODO: expand this to other components than [`Transform`]
-                    // let parent_transform = {
-                    //     let parent = world.entity(e).get::<Transform>();
-                    //     parent.map(|n| n.clone())
-                    // };
-                    // if let Some(parent_trans) = parent_transform {
-                    //     world.commands().entity(child).insert(parent_trans);
-                    // };
+
+                    if split.inheriet_transform {
+                        let parent_transform = {
+                            let parent = world.entity(e).get::<Transform>();
+                            parent.map(|n| n.clone())
+                        };
+                        if let Some(parent_trans) = parent_transform {
+                            world.commands().entity(child).insert(parent_trans);
+                        };
+                    }
+
                 }
                 children.push(child);
             }
@@ -110,6 +114,8 @@ pub fn disassemble_components<'a, T>(
 /// Take inner new_type and add components to this components entity from [`Disassemble`]
 #[derive(Deref, Clone)]
 pub struct DisassembleRequest<T: Disassemble>(#[deref] pub T, pub DisassembleSettings);
+
+
 
 impl<T: Disassemble> Component for DisassembleRequest<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -155,6 +161,19 @@ pub struct DisassembleAssetRequest<T>(pub DisassembleStage<T>, pub DisassembleSe
 where
     T: From<T::Target> + Disassemble,
     T::Target: Asset + Sized;
+
+impl<T: Disassemble> DisassembleAssetRequest<T> 
+where
+    T: From<T::Target> + Disassemble,
+    T::Target: Asset + Sized
+{
+    pub fn path(path: String, custom_settings: Option<DisassembleSettings>) -> Self {
+        Self(DisassembleStage::Path(path), custom_settings.unwrap_or_default())
+    }
+    pub fn handle(handle: Handle<T::Target>, custom_settings: Option<DisassembleSettings>) -> Self{
+        Self(DisassembleStage::Handle(handle), custom_settings.unwrap_or_default())
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum DisassembleStage<T> 

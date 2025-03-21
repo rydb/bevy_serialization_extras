@@ -98,7 +98,13 @@ impl Disassemble for GltfNodeVisuals {
             children.push(DisassembleAssetRequest::<GltfNodeMeshOne>(DisassembleStage::Handle(handle), DisassembleSettings::default()))
         }
 
-        Structure::Children(children, Split(settings.split))
+        Structure::Children(
+            children, 
+            Split {
+                split: settings.split,
+                inheriet_transform: true
+            }
+        )
     }
     
 }
@@ -176,7 +182,12 @@ impl Disassemble for GltfMeshWrapper {
         for primitive in &value.0.primitives {
             children.push(DisassembleRequest(GltfPrimitiveWrapper(primitive.clone()), DisassembleSettings::default()))
         }
-        Structure::Children(children, Split(settings.split))
+        Structure::Children(children, 
+            Split {
+                split: settings.split,
+                inheriet_transform: true
+            }
+        )
     }
     
 }

@@ -3,7 +3,7 @@ use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
 };
-use std::{collections::HashSet, ops::Deref};
+use std::{any::TypeId, collections::HashSet, ops::Deref};
 
 /// The trait for assembling a structure into its root asset.
 ///
@@ -53,8 +53,26 @@ where
 }
 
 /// Weather to split children off into seperate entities or have them as children to a parent.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Split(pub bool);
+#[derive(Debug, Clone, Default)]
+pub struct Split {
+    pub split: bool,
+    // when spliting, weather to have split parts inheriet transform from their former parent.
+    // this is nessecary if using transform propagation.
+    pub inheriet_transform: bool
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct PullDown(pub (crate) TypeId);
+
+
+impl PullDown {
+    pub fn id<T: Component>() -> Self {
+        Self (TypeId::of::<T>())
+    }
+}
+
+
+
 
 pub enum Structure<T> {
     Root(T),

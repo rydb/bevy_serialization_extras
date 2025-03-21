@@ -74,7 +74,12 @@ impl Disassemble for LinksNJoints {
         }
         //TODO: transform proprogation and joints are mutually exclusive. If Split is set to false, expect bugs
         //if you touch [`Transform`] outside of the context of rapier updating it automatically from physics.
-        Structure::Children(children, Split(settings.split))
+        Structure::Children(children, 
+            Split {
+                split: settings.split,
+                inheriet_transform: true
+            }
+        )
     }
 }
 

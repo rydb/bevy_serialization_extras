@@ -24,7 +24,13 @@ impl Disassemble for VisualWrapper {
         for visual in value.0 {
             (children.push(Resolve::from(GeometryWrapper(visual.geometry))));
         }
-        Structure::Children(children, Split(settings.split))
+        Structure::Children(
+            children, 
+            Split {
+                split: settings.split,
+                inheriet_transform: true
+            }
+        )
     }
 
 }
