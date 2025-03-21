@@ -11,6 +11,7 @@ use bevy_serialization_physics::prelude::{
     rigidbodies::RigidBodyFlag,
 };
 use crate::traits::DisassembleSettings;
+use crate::traits::DisassembleSettings;
 use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
@@ -60,11 +61,15 @@ impl Disassemble for LinksNJoints {
                 |n| 
                 //RollDown(
                     DisassembleRequest(UrdfJoint(n), DisassembleSettings::default()),
+                    DisassembleRequest(UrdfJoint(n), DisassembleSettings::default()),
                 //vec![TypeId::of::<RigidBodyFlag>()]
                 //)
             );
             children.push((
                 Name::new(link.name),
+                DisassembleRequest(LinkColliders(link.collision), DisassembleSettings {
+                    split: settings.split
+                }),
                 DisassembleRequest(LinkColliders(link.collision), DisassembleSettings {
                     split: settings.split
                 }),
@@ -101,6 +106,7 @@ pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry = {
             if value.0.len() > 1 {
@@ -126,9 +132,11 @@ impl Disassemble for LinkColliders {
         ))
     }
     
+    
 }
 
 impl Disassemble for UrdfWrapper {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut structured_joint_map = HashMap::new();
 
@@ -148,16 +156,19 @@ impl Disassemble for UrdfWrapper {
         Structure::Root((
             Name::new(value.0.0.name),
             DisassembleRequest(LinksNJoints(linkage), DisassembleSettings { split: settings.split }),
+            DisassembleRequest(LinksNJoints(linkage), DisassembleSettings { split: settings.split }),
         ))
     }
 }
 
+impl AssembleParms for UrdfWrapper{
 impl AssembleParms for UrdfWrapper{
     type Params = (
         Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static Mesh3dFlag), ()>,
         Query<'static, 'static, (&'static JointFlag, &'static Name), ()>,
     );
 }
+
 
 
 impl Assemble for UrdfWrapper {
