@@ -1,4 +1,5 @@
 use crate::components::{DisassembleAssetRequest, DisassembleStage, RollDownIded};
+use crate::gltf::TransformSchemaAlignRequest;
 use crate::traits::{Assemble, Disassemble, DisassembleSettings};
 use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
@@ -15,6 +16,7 @@ use bevy_tasks::futures_lite::future;
 use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;
 use std::any::TypeId;
+use std::f32::consts::PI;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -249,5 +251,20 @@ pub fn bind_joint_request_to_parent(
         commands.entity(e).remove::<JointRequest>();
 
         // let joint_parent_name = request.0;
+    }
+}
+
+pub fn align_transforms_to_bevy(
+    mut align_requests: Query<(Entity, &mut Transform, &TransformSchemaAlignRequest)>,
+    mut commands: Commands
+) {
+    for (e,mut trans, request) in &mut align_requests {
+        match request.0 {
+            crate::gltf::SchemaKind::GLTF => {
+                trans.rotate_x(PI);
+
+                commands.entity(e).remove::<TransformSchemaAlignRequest>();
+            },
+        }
     }
 }

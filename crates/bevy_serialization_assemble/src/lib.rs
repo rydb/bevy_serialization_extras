@@ -19,6 +19,7 @@ pub mod prelude {
     pub use super::{plugins::*, resources::*, urdf::*};
 }
 
+/// Id of an assembled structure
 #[derive(Component, Reflect, PartialEq, Deref, DerefMut)]
 #[reflect(Component)]
 pub struct AssemblyId(pub i64);

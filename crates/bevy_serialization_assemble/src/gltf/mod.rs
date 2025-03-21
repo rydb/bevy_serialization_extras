@@ -5,7 +5,8 @@ use bevy_gltf::{GltfExtras, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_log::warn;
 use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
-use bevy_serialization_physics::prelude::RequestCollider;
+use bevy_serialization_physics::prelude::{RequestCollider, RequestColliderFromChildren};
+use bevy_transform::components::Transform;
 use derive_more::derive::From;
 use strum::IntoEnumIterator;
 
@@ -39,26 +40,47 @@ pub fn gltf_collider_request(extras: GltfExtras) -> RequestCollider {
     RequestCollider::default()
 }
 
-// impl From<GltfExtras> for RequestColliderWrapper {
-//     fn from(value: GltfExtras) -> Self {
-//         if let Some(target) = value.value.replace(['}', '{', '"'], "").split(':').last() {
-//             for variant in RequestCollider::iter() {
-//                 if target == variant.to_string().to_lowercase() {
-//                     return variant.into();
-//                 }
-//             }
-//             warn!(
-//                 "
-//                 provided GltfExtra attribute did not match any valid primitive colliders. reverting to default
-//                 valid variants: {:#?}
-//                 parsed value: {:#}
-//                 ", RequestCollider::iter().map(|n| n.to_string()).collect::<Vec<_>>(), target
-//             );
-//         };
 
-//         RequestCollider::default()
-//     }
-// }
+pub enum SchemaKind {
+    GLTF
+}
+
+/// a request to align the transform of this entity to match bevy's cordinate system.
+#[derive(Component)]
+#[require(Transform)]
+pub struct TransformSchemaAlignRequest(pub SchemaKind);
+
+#[derive(Clone, Deref, From)]
+pub struct GltfPhysicsModel(pub GltfNode);
+
+impl Disassemble for GltfPhysicsModel {
+    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+        let visuals = value
+            .0
+            .mesh
+            .map(|n| DisassembleAssetRequest::<GltfMeshWrapper>::handle(n, None));
+
+        // let collider_request = {
+        //     if let Some(gltf_extras) = value.0.extras {
+        //         RequestColliderFromChildren(gltf_collider_request(gltf_extras))
+        //     } else {
+        //         RequestCollider::Convex.into()
+        //     }
+        // };
+        let collider_request = {
+            RequestColliderFromChildren(RequestCollider::Cuboid)
+        };
+        Structure::Root((
+            collider_request,
+            Maybe(visuals),
+            Visibility::Visible,
+            TransformSchemaAlignRequest(SchemaKind::GLTF)
+            //Maybe(mesh),
+            //RequestStructure(GltfNodeVisuals(value.0.children)),
+        ))
+    }
+}
+
 
 impl Disassemble for GltfPrimitiveWrapper {
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {

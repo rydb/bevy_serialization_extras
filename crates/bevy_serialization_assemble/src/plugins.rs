@@ -4,14 +4,9 @@ use bevy_app::prelude::*;
 use bevy_serialization_core::run_proxy_system;
 
 use crate::{
-    Assemblies, AssemblyId, SaveSuccess,
-    prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers},
-    systems::{
-        SaveAssembledRequests, StagedAssembleRequestTasks, bind_joint_request_to_parent,
-        handle_save_tasks, save_asset, stage_save_asset_request,
-    },
-    traits::{Assemble, Disassemble},
-    urdf::UrdfWrapper,
+    prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{
+        align_transforms_to_bevy, bind_joint_request_to_parent, handle_save_tasks, save_asset, stage_save_asset_request, SaveAssembledRequests, StagedAssembleRequestTasks
+    }, traits::{Assemble, Disassemble}, urdf::UrdfWrapper, Assemblies, AssemblyId, SaveSuccess
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -70,6 +65,7 @@ impl Plugin for SerializationAssembleBasePlugin {
         .add_systems(Update, run_proxy_system::<AssetCheckers>)
         .add_systems(Update, run_proxy_system::<RollDownCheckers>)
         .add_systems(PreUpdate, bind_joint_request_to_parent)
+        .add_systems(PreUpdate, align_transforms_to_bevy)
         //.add_systems(Update, name_from_id)
         ;
     }
