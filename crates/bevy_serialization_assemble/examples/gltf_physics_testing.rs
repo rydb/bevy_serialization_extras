@@ -24,7 +24,6 @@ use moonshine_save::save::Save;
 use strum_macros::{Display, EnumIter};
 
 pub const SAVES: &str = "saves";
-pub const ROBOT: &str = "diff_bot";
 
 
 fn main() {

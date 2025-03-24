@@ -5,7 +5,7 @@ use bevy_serialization_core::run_proxy_system;
 
 use crate::{
     prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{
-        align_transforms_to_bevy, bind_joint_request_to_parent, handle_save_tasks, save_asset, stage_save_asset_request, SaveAssembledRequests, StagedAssembleRequestTasks
+        align_mesh_to_bevy, align_transforms_to_bevy, bind_joint_request_to_parent, handle_save_tasks, save_asset, stage_save_asset_request, SaveAssembledRequests, StagedAssembleRequestTasks
     }, traits::{Assemble, Disassemble}, urdf::UrdfWrapper, Assemblies, AssemblyId, SaveSuccess
 };
 
@@ -66,6 +66,7 @@ impl Plugin for SerializationAssembleBasePlugin {
         .add_systems(Update, run_proxy_system::<RollDownCheckers>)
         .add_systems(PreUpdate, bind_joint_request_to_parent)
         .add_systems(PreUpdate, align_transforms_to_bevy)
+        .add_systems(PreUpdate, align_mesh_to_bevy)
         //.add_systems(Update, name_from_id)
         ;
     }

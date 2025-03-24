@@ -8,6 +8,7 @@ use bevy_render::prelude::*;
 use bevy_serialization_physics::prelude::{RequestCollider, RequestColliderFromChildren};
 use bevy_transform::components::Transform;
 use derive_more::derive::From;
+use glam::Quat;
 use strum::IntoEnumIterator;
 
 use crate::{
@@ -48,13 +49,15 @@ pub enum SchemaKind {
 /// a request to align the transform of this entity to match bevy's cordinate system.
 #[derive(Component)]
 #[require(Transform)]
-pub struct TransformSchemaAlignRequest(pub SchemaKind);
+pub struct TransformSchemaAlignRequest(pub Quat, pub SchemaKind);
 
 #[derive(Clone, Deref, From)]
 pub struct GltfPhysicsModel(pub GltfNode);
 
 impl Disassemble for GltfPhysicsModel {
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+        
+        let rotation = value.transform.rotation.clone();
         let visuals = value
             .0
             .mesh
@@ -74,18 +77,22 @@ impl Disassemble for GltfPhysicsModel {
             collider_request,
             Maybe(visuals),
             Visibility::Visible,
-            TransformSchemaAlignRequest(SchemaKind::GLTF)
+            TransformSchemaAlignRequest(rotation, SchemaKind::GLTF)
             //Maybe(mesh),
             //RequestStructure(GltfNodeVisuals(value.0.children)),
         ))
     }
 }
 
+/// request to re-align geoemtry to match bevy.
+/// TODO: replace with normal Mesh3d if gltf mesh loading is improved to not have this done at the [`Gltf`] level.
+#[derive(Component)]
+pub struct Mesh3dAlignmentRequest(pub Handle<Mesh>, pub SchemaKind);
 
 impl Disassemble for GltfPrimitiveWrapper {
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mat = value.material.clone().map(|n| MeshMaterial3d(n));
-        Structure::Root((Mesh3d(value.mesh.clone()), Maybe(mat)))
+        Structure::Root((Mesh3dAlignmentRequest(value.mesh.clone(), SchemaKind::GLTF), Maybe(mat)))
     }
     
     

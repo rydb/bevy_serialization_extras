@@ -1,5 +1,5 @@
 use crate::components::{DisassembleAssetRequest, DisassembleStage, RollDownIded};
-use crate::gltf::TransformSchemaAlignRequest;
+use crate::gltf::{Mesh3dAlignmentRequest, TransformSchemaAlignRequest};
 use crate::traits::{Assemble, Disassemble, DisassembleSettings};
 use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
@@ -11,10 +11,12 @@ use bevy_ecs::system::SystemState;
 use bevy_ecs::world::CommandQueue;
 use bevy_hierarchy::Children;
 use bevy_log::prelude::*;
+use bevy_render::mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues};
 use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
 use bevy_tasks::futures_lite::future;
 use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;
+use glam::{quat, Quat, Vec3};
 use std::any::TypeId;
 use std::f32::consts::PI;
 use std::ops::Deref;
@@ -259,11 +261,63 @@ pub fn align_transforms_to_bevy(
     mut commands: Commands
 ) {
     for (e,mut trans, request) in &mut align_requests {
-        match request.0 {
+        match request.1 {
             crate::gltf::SchemaKind::GLTF => {
-                trans.rotate_x(PI);
+                let alignment = Quat::from_xyzw(-1.0, -1.0, 0.0, 0.0).normalize();
+                
+                trans.rotation = alignment * request.0;
 
                 commands.entity(e).remove::<TransformSchemaAlignRequest>();
+            },
+        }
+    }
+}
+
+/// take a mesh in another model format, and rotate geometry to align with bevy's
+pub fn align_mesh_to_bevy(
+    mut align_requests: Query<(Entity, &Mesh3dAlignmentRequest)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut commands: Commands
+) {
+    for (e, request) in &mut align_requests {
+        match request.1 {
+            crate::gltf::SchemaKind::GLTF => {
+                let Some(mesh) = meshes.get_mut(&request.0) else {
+                    continue
+                };
+                
+                let Some(positions) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) else {
+                    warn!("mesh has no positions. removing request {:#}", e);
+                    commands.entity(e).remove::<Mesh3dAlignmentRequest>();
+                    continue;
+                };
+                
+                let positions = match positions {
+                    VertexAttributeValues::Float32x3(values) => values,
+                    _ => {
+                        warn!("mesh positions not Float32x3. removing request");
+                        commands.entity(e).remove::<Mesh3dAlignmentRequest>();
+                        continue
+                    }
+                };
+                for point in positions {
+                    point[1] *= -1.0;
+                    point[2] *= -1.0;
+
+                }
+
+                if let Some(VertexAttributeValues::Float32x3(normals)) =
+                    mesh.attribute_mut(Mesh::ATTRIBUTE_NORMAL)
+                {
+                    for normal in normals {
+                        normal[1] *= -1.0;
+                        normal[2] *= -1.0;
+
+                    }
+                }
+
+                commands.entity(e).insert(Mesh3d(request.0.clone()));
+                commands.entity(e).remove::<Mesh3dAlignmentRequest>();
             },
         }
     }
