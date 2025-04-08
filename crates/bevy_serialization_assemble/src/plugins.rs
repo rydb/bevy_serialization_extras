@@ -4,9 +4,15 @@ use bevy_app::prelude::*;
 use bevy_serialization_core::run_proxy_system;
 
 use crate::{
-    prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{
-        align_mesh_to_bevy, align_transforms_to_bevy, bind_joint_request_to_parent, handle_save_tasks, save_asset, stage_save_asset_request, SaveAssembledRequests, StagedAssembleRequestTasks
-    }, traits::{Assemble, Disassemble}, urdf::UrdfWrapper, Assemblies, AssemblyId, SaveSuccess
+    Assemblies, AssemblyId, SaveSuccess,
+    prelude::{AssembleRequests, AssetCheckers, InitializedStagers, RollDownCheckers},
+    systems::{
+        SaveAssembledRequests, StagedAssembleRequestTasks, align_mesh_to_bevy,
+        align_transforms_to_bevy, bind_joint_request_to_parent, handle_save_tasks, save_asset,
+        stage_save_asset_request,
+    },
+    traits::{Assemble, Disassemble},
+    urdf::UrdfWrapper,
 };
 
 /// Plugin for serializing collections of entities/components into a singular asset and vice versa.
@@ -43,7 +49,6 @@ where
         ;
     }
 }
-
 
 pub struct SerializationAssembleBasePlugin;
 

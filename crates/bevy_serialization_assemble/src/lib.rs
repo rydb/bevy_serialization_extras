@@ -5,7 +5,7 @@ use bevy_ecs::prelude::ReflectComponent;
 use bevy_ecs::prelude::*;
 use bevy_reflect::Reflect;
 use bevy_serialization_physics::prelude::JointInfo;
-use bevy_utils::HashMap;
+use bevy_utils::{HashMap, HashSet};
 
 pub mod components;
 pub mod gltf;
@@ -24,8 +24,8 @@ pub mod prelude {
 #[reflect(Component)]
 pub struct AssemblyId(pub i64);
 
-#[derive(Resource, Default)]
-pub struct Assemblies(pub HashMap<i64, i64>);
+#[derive(Resource, Default, Debug)]
+pub struct Assemblies(pub HashMap<i64, HashSet<Entity>>);
 
 #[derive(Event)]
 pub struct SaveSuccess {

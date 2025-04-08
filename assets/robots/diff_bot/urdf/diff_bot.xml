@@ -6,7 +6,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/base.glb#Mesh0"/>
+                <mesh filename="package://robots/diff_bot/models/base.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -25,7 +25,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/wheel.glb#Mesh0"/>
+                <mesh filename="package://robots/diff_bot/models/wheel.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -44,7 +44,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/wheel.glb#Mesh0"/>
+                <mesh filename="package://robots/diff_bot/models/wheel.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>
@@ -64,7 +64,7 @@
         </inertial>
         <collision>
             <geometry>
-                <mesh filename="package://model_pkg/models/caster_wheel.glb#Mesh0"/>
+                <mesh filename="package://robots/diff_bot/models/caster_wheel.glb#Mesh0"/>
             </geometry>
         </collision>
     </link>

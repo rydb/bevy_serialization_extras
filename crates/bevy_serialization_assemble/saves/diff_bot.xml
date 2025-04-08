@@ -1,30 +1,4 @@
 <robot xmlns="http://www.ros.org" name="test_robot">
-  <link name="left_wheel_link">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="0" />
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-    </inertial>
-    <collision name="left_wheel_link">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <mesh filename="package://model_pkg/models/wheel.glb#Mesh0" />
-      </geometry>
-    </collision>
-  </link>
-  <link name="base_link">
-    <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <mass value="0" />
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-    </inertial>
-    <collision name="base_link">
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <mesh filename="package://model_pkg/models/base.glb#Mesh0" />
-      </geometry>
-    </collision>
-  </link>
   <link name="right_wheel_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -34,7 +8,20 @@
     <collision name="right_wheel_link">
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://model_pkg/models/wheel.glb#Mesh0" />
+        <mesh filename="package://robots/diff_bot/models/wheel.glb#Mesh0" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_wheel_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0" />
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <collision name="left_wheel_link">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robots/diff_bot/models/wheel.glb#Mesh0" />
       </geometry>
     </collision>
   </link>
@@ -47,21 +34,34 @@
     <collision name="caster_wheel_link">
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://model_pkg/models/caster_wheel.glb#Mesh0" />
+        <mesh filename="package://robots/diff_bot/models/caster_wheel.glb#Mesh0" />
       </geometry>
     </collision>
   </link>
-  <joint name="left_wheel_link" type="continuous">
-    <origin xyz="1.1100000143051147 0.824999988079071 0" rpy="0 0 0" />
-    <parent link="base_link" />
-    <child link="left_wheel_link" />
-    <axis xyz="0 0 0" />
-    <limit lower="-999999999999999" upper="999999999999999" effort="179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" velocity="179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" />
-  </joint>
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0" />
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+    </inertial>
+    <collision name="base_link">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robots/diff_bot/models/base.glb#Mesh0" />
+      </geometry>
+    </collision>
+  </link>
   <joint name="right_wheel_link" type="continuous">
     <origin xyz="-1.1100000143051147 0.824999988079071 0" rpy="0 0 0" />
     <parent link="base_link" />
     <child link="right_wheel_link" />
+    <axis xyz="0 0 0" />
+    <limit lower="-999999999999999" upper="999999999999999" effort="179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" velocity="179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" />
+  </joint>
+  <joint name="left_wheel_link" type="continuous">
+    <origin xyz="1.1100000143051147 0.824999988079071 0" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="left_wheel_link" />
     <axis xyz="0 0 0" />
     <limit lower="-999999999999999" upper="999999999999999" effort="179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" velocity="179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" />
   </joint>

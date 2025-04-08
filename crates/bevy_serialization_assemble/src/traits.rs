@@ -46,7 +46,7 @@ pub struct DisassembleSettings {
 /// I.E: model.format -> Disassemble(FormatWrapper(Format)) -> (Mesh, Material, Name)
 pub trait Disassemble
 where
-    Self: Clone + Send + Sync + Deref + 'static,
+    Self: Clone + Send + Sync + Deref<Target: Sized> + From<Self::Target> + 'static,
 {
     // type Settings: Send + Sync + Clone;
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
@@ -58,19 +58,17 @@ pub struct Split {
     pub split: bool,
     // when spliting, weather to have split parts inheriet transform from their former parent.
     // this is nessecary if using transform propagation.
-    pub inheriet_transform: bool
+    pub inheriet_transform: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct PullDown(pub (crate) TypeId);
-
+pub struct PullDown(pub TypeId);
 
 impl PullDown {
     pub fn id<T: Component>() -> Self {
-        Self (TypeId::of::<T>())
+        Self(TypeId::of::<T>())
     }
 }
-
 
 pub enum Structure<T> {
     Root(T),

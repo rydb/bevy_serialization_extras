@@ -1,3 +1,4 @@
+use crate::traits::DisassembleSettings;
 use bevy_core::Name;
 use bevy_ecs::system::SystemParamItem;
 use bevy_log::warn;
@@ -10,7 +11,6 @@ use bevy_serialization_physics::prelude::{
     },
     rigidbodies::RigidBodyFlag,
 };
-use crate::traits::DisassembleSettings;
 use bevy_transform::components::Transform;
 use bevy_utils::prelude::default;
 use glam::{EulerRot, Quat, Vec3};
@@ -48,7 +48,7 @@ pub struct Id(pub String);
 /// Links + Joints merged together.
 /// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
 /// so they are merged here.
-#[derive(Clone, Deref)]
+#[derive(From, Clone, Deref)]
 pub struct LinksNJoints(#[deref] Vec<(Link, Option<Joint>)>);
 
 impl Disassemble for LinksNJoints {
@@ -65,20 +65,24 @@ impl Disassemble for LinksNJoints {
             );
             children.push((
                 Name::new(link.name),
-                DisassembleRequest(LinkColliders(link.collision), DisassembleSettings {
-                    split: settings.split
-                }),
+                DisassembleRequest(
+                    LinkColliders(link.collision),
+                    DisassembleSettings {
+                        split: settings.split,
+                    },
+                ),
                 Maybe(joint),
                 Visibility::default(),
             ))
         }
         //TODO: transform proprogation and joints are mutually exclusive. If Split is set to false, expect bugs
         //if you touch [`Transform`] outside of the context of rapier updating it automatically from physics.
-        Structure::Children(children, 
+        Structure::Children(
+            children,
             Split {
                 split: settings.split,
-                inheriet_transform: true
-            }
+                inheriet_transform: true,
+            },
         )
     }
 }
@@ -86,17 +90,16 @@ impl Disassemble for LinksNJoints {
 #[derive(Clone)]
 pub struct Visuals(pub Vec<Visual>);
 
-#[derive(Clone, Deref)]
+#[derive(From, Clone, Deref)]
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
     fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         Structure::Root((JointRequest::from(&value),))
     }
-    
 }
 
-#[derive(Clone, Deref)]
+#[derive(From, Clone, Deref)]
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
@@ -125,8 +128,6 @@ impl Disassemble for LinkColliders {
             Visibility::default(),
         ))
     }
-    
-    
 }
 
 impl Disassemble for UrdfWrapper {
@@ -148,19 +149,22 @@ impl Disassemble for UrdfWrapper {
         }
         Structure::Root((
             Name::new(value.0.0.name),
-            DisassembleRequest(LinksNJoints(linkage), DisassembleSettings { split: settings.split }),
+            DisassembleRequest(
+                LinksNJoints(linkage),
+                DisassembleSettings {
+                    split: settings.split,
+                },
+            ),
         ))
     }
 }
 
-impl AssembleParms for UrdfWrapper{
+impl AssembleParms for UrdfWrapper {
     type Params = (
         Query<'static, 'static, (&'static RigidBodyFlag, &'static Name, &'static Mesh3dFlag), ()>,
         Query<'static, 'static, (&'static JointFlag, &'static Name), ()>,
     );
 }
-
-
 
 impl Assemble for UrdfWrapper {
     type Saver = UrdfSaver;

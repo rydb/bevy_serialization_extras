@@ -14,7 +14,11 @@ use bevy_inspector_egui::{
 };
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::{DisassembleAssetRequest, DisassembleStage}, gltf::{GltfNodeColliderVisualChilds, GltfPhysicsModel}, prelude::*, traits::DisassembleSettings, JointRequest, SaveSuccess
+    JointRequest, SaveSuccess,
+    components::{DisassembleAssetRequest, DisassembleStage},
+    gltf::{GltfNodeColliderVisualChilds, GltfPhysicsModel},
+    prelude::*,
+    traits::DisassembleSettings,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -25,7 +29,6 @@ use strum_macros::{Display, EnumIter};
 
 pub const SAVES: &str = "saves";
 
-
 fn main() {
     App::new()
         .add_plugins(AppSourcesPlugin::CRATE)
@@ -33,12 +36,10 @@ fn main() {
             //TODO: This should be unified under `ROOT`
             assets_folder_local_path: "../../assets".to_owned(),
         })
-        .add_plugins(
-            DefaultPlugins.set(WindowPlugin {
-                exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
-                ..Default::default()
-            }), 
-        )
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
+            ..Default::default()
+        }))
         .insert_state(InitializationStage::Select)
         .add_plugins(RapierPhysicsPlugin::<()>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
@@ -102,15 +103,13 @@ fn setup(
     ));
 
     // Physics enabled gltf
-    commands.spawn(
-        (
-            DisassembleAssetRequest::<GltfPhysicsModel>::path(
-                "root://models/multi_primitive_model.glb#Node0".to_owned(), 
-                None
-            ),
-            Name::new("model"),
-        )
-    );
+    commands.spawn((
+        DisassembleAssetRequest::<GltfPhysicsModel>::path(
+            "root://models/multi_primitive_model.glb#Node0".to_owned(),
+            None,
+        ),
+        Name::new("model"),
+    ));
     // light
     commands.spawn((
         PointLight {

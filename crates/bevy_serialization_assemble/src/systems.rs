@@ -16,7 +16,7 @@ use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag
 use bevy_tasks::futures_lite::future;
 use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;
-use glam::{quat, Quat, Vec3};
+use glam::{Quat, Vec3, quat};
 use std::any::TypeId;
 use std::f32::consts::PI;
 use std::ops::Deref;
@@ -37,10 +37,13 @@ pub fn check_roll_down<T: Component + Clone>(
             let Ok(e_ref) = test.get(*child) else { return };
             let check_list = e_ref.archetype().components().collect::<Vec<_>>();
             //if components.any(|n| rolldown.1.contains(n));
-            if rolldown.1.iter().any(|n| check_list.contains(n)) {
+
+            if rolldown.1.iter().len() == 0 {
                 commands.entity(*child).insert(rolldown.0.clone());
                 commands.entity(e).remove::<RollDownIded<T>>();
-                // println!("finished rolling down");
+            } else if rolldown.1.iter().any(|n| check_list.contains(n)) {
+                commands.entity(*child).insert(rolldown.0.clone());
+                commands.entity(e).remove::<RollDownIded<T>>();
             }
         }
     }
@@ -53,7 +56,7 @@ pub fn initialize_asset_structure<T>(
     assets: Res<Assets<T::Target>>,
     mut commands: Commands,
 ) where
-    T: Clone + From<T::Target> + Deref + Disassemble + Send + Sync + 'static,
+    T: From<T::Target> + Deref + Disassemble + Send + Sync + 'static,
     T::Target: Asset + Clone,
 {
     //println!("checking initialize_asset structures...");
@@ -74,9 +77,10 @@ pub fn initialize_asset_structure<T>(
             //println!("Asset loaded for {:#}", e);
             // upgrading handle to asset
             commands.entity(e).remove::<DisassembleAssetRequest<T>>();
-            commands
-                .entity(e)
-                .insert(DisassembleAssetRequest(DisassembleStage::Asset(T::from(asset.clone())), request.1.clone()));
+            commands.entity(e).insert(DisassembleAssetRequest(
+                DisassembleStage::Asset(T::from(asset.clone())),
+                request.1.clone(),
+            ));
         }
         // else {
         //     let status = asset_server.load_state(handle);
@@ -258,17 +262,17 @@ pub fn bind_joint_request_to_parent(
 
 pub fn align_transforms_to_bevy(
     mut align_requests: Query<(Entity, &mut Transform, &TransformSchemaAlignRequest)>,
-    mut commands: Commands
+    mut commands: Commands,
 ) {
-    for (e,mut trans, request) in &mut align_requests {
+    for (e, mut trans, request) in &mut align_requests {
         match request.1 {
             crate::gltf::SchemaKind::GLTF => {
                 let alignment = Quat::from_xyzw(-1.0, -1.0, 0.0, 0.0).normalize();
-                
+
                 trans.rotation = alignment * request.0;
 
                 commands.entity(e).remove::<TransformSchemaAlignRequest>();
-            },
+            }
         }
     }
 }
@@ -277,33 +281,32 @@ pub fn align_transforms_to_bevy(
 pub fn align_mesh_to_bevy(
     mut align_requests: Query<(Entity, &Mesh3dAlignmentRequest)>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut commands: Commands
+    mut commands: Commands,
 ) {
     for (e, request) in &mut align_requests {
         match request.1 {
             crate::gltf::SchemaKind::GLTF => {
                 let Some(mesh) = meshes.get_mut(&request.0) else {
-                    continue
+                    continue;
                 };
-                
+
                 let Some(positions) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) else {
                     warn!("mesh has no positions. removing request {:#}", e);
                     commands.entity(e).remove::<Mesh3dAlignmentRequest>();
                     continue;
                 };
-                
+
                 let positions = match positions {
                     VertexAttributeValues::Float32x3(values) => values,
                     _ => {
                         warn!("mesh positions not Float32x3. removing request");
                         commands.entity(e).remove::<Mesh3dAlignmentRequest>();
-                        continue
+                        continue;
                     }
                 };
                 for point in positions {
                     point[1] *= -1.0;
                     point[2] *= -1.0;
-
                 }
 
                 if let Some(VertexAttributeValues::Float32x3(normals)) =
@@ -312,13 +315,12 @@ pub fn align_mesh_to_bevy(
                     for normal in normals {
                         normal[1] *= -1.0;
                         normal[2] *= -1.0;
-
                     }
                 }
 
                 commands.entity(e).insert(Mesh3d(request.0.clone()));
                 commands.entity(e).remove::<Mesh3dAlignmentRequest>();
-            },
+            }
         }
     }
 }

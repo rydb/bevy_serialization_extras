@@ -14,7 +14,10 @@ use bevy_inspector_egui::{
 };
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::{DisassembleAssetRequest, DisassembleStage}, prelude::*, traits::DisassembleSettings, JointRequest, SaveSuccess
+    Assemblies, AssemblyId, JointRequest, SaveSuccess,
+    components::{DisassembleAssetRequest, DisassembleStage},
+    prelude::*,
+    traits::DisassembleSettings,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -25,7 +28,6 @@ use strum_macros::{Display, EnumIter};
 
 pub const SAVES: &str = "saves";
 pub const ROBOT: &str = "diff_bot";
-
 
 fn main() {
     App::new()
@@ -133,12 +135,10 @@ fn setup(
     // Robot1
     commands.spawn((
         DisassembleAssetRequest::<UrdfWrapper>(
-            DisassembleStage::Path("root://model_pkg/urdf/".to_owned() + ROBOT + ".xml"),
-            DisassembleSettings {
-                split: false
-            },
+            DisassembleStage::Path("root://robots/diff_bot/urdf/".to_owned() + ROBOT + ".xml"),
+            DisassembleSettings { split: false },
         ),
-        Transform::from_xyz(-2.0, 0.0, 0.0)
+        Transform::from_xyz(-2.0, 0.0, 0.0),
     ));
 
     // light
@@ -208,7 +208,11 @@ pub fn save_selected_robot(
     }
 }
 
-pub fn load_saved_robot(mut commands: Commands, mut event_reader: EventReader<SaveSuccess>) {
+pub fn load_saved_robot(
+    mut commands: Commands,
+    mut event_reader: EventReader<SaveSuccess>,
+    assemblies: Res<Assemblies>,
+) {
     for event in event_reader.read() {
         if event.asset_type_id == TypeId::of::<Urdf>() {
             println!("Loading saved robot: {:#}", event.file_name);
@@ -217,13 +221,12 @@ pub fn load_saved_robot(mut commands: Commands, mut event_reader: EventReader<Sa
             commands.spawn((
                 DisassembleAssetRequest::<UrdfWrapper>(
                     DisassembleStage::Path("saves://".to_owned() + &event.file_name + ".xml"),
-                    DisassembleSettings {
-                        split: true
-                    },
+                    DisassembleSettings { split: true },
                 ),
                 Transform::from_xyz(2.0, 0.0, 0.0),
             ));
         }
+        println!("Assemblies: {:#?}", assemblies)
     }
 }
 

@@ -25,15 +25,13 @@ impl Disassemble for VisualWrapper {
             (children.push(Resolve::from(GeometryWrapper(visual.geometry))));
         }
         Structure::Children(
-            children, 
+            children,
             Split {
                 split: settings.split,
-                inheriet_transform: true
-            }
+                inheriet_transform: true,
+            },
         )
     }
-
-
 }
 
 const FALLBACK_GEOMETRY: Geometry = Geometry::Box {
@@ -151,7 +149,7 @@ impl From<GeometryWrapper>
             urdf_rs::Geometry::Mesh { filename, .. } => {
                 Resolve::Other(DisassembleAssetRequest::<GltfPhysicsMeshPrimitive>(
                     DisassembleStage::Path(filename),
-                    DisassembleSettings::default()
+                    DisassembleSettings::default(),
                 ))
             }
         }

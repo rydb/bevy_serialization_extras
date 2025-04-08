@@ -5,7 +5,10 @@ use std::{
 };
 
 use crate::{
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{Disassemble, DisassembleSettings, Structure}, Assemblies, AssemblyId
+    Assemblies, AssemblyId,
+    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers},
+    systems::{check_roll_down, initialize_asset_structure},
+    traits::{Disassemble, DisassembleSettings, Structure},
 };
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
@@ -18,6 +21,7 @@ use bevy_hierarchy::prelude::*;
 use bevy_log::warn;
 use bevy_reflect::Reflect;
 use bevy_transform::components::Transform;
+use bevy_utils::HashSet;
 
 // /// The structure this entity belongs to
 // #[derive(Component, Reflect)]
@@ -29,27 +33,24 @@ pub fn disassemble_components<'a, T>(
     e: Entity,
     _id: ComponentId,
     comp: T,
-    disassemble_settings: DisassembleSettings
+    disassemble_settings: DisassembleSettings,
 ) where
-    T: Disassemble, // where
-                    //     T: Deref + Component,
-                    //     T::Target: Disassemble
+    T: Disassemble,
 {
     let assembly_id = {
         if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
             assembly_id.0
         } else {
             // println!("creating new id for {:#}", e);
-            let mut assemblies = world.get_resource_mut::<Assemblies>().unwrap();
+            let assemblies = world.get_resource_mut::<Assemblies>().unwrap();
             let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
 
             latest_assembly += 1;
-            assemblies.0.insert(latest_assembly, latest_assembly);
+
             world
                 .commands()
                 .entity(e)
                 .insert(AssemblyId(latest_assembly));
-
             latest_assembly
         }
     };
@@ -92,6 +93,15 @@ pub fn disassemble_components<'a, T>(
                 }
                 children.push(child);
             }
+            let mut assemblies = world.get_resource_mut::<Assemblies>().unwrap();
+            let current_assembly_entities = assemblies
+                .0
+                .entry(assembly_id)
+                .or_insert(HashSet::default());
+            for child in &children {
+                current_assembly_entities.insert(child.clone());
+            }
+
             {
                 let mut initialized_stagers =
                     world.get_resource_mut::<InitializedStagers>().unwrap();
@@ -122,8 +132,6 @@ pub fn disassemble_components<'a, T>(
 /// Take inner new_type and add components to this components entity from [`Disassemble`]
 #[derive(Deref, Clone)]
 pub struct DisassembleRequest<T: Disassemble>(#[deref] pub T, pub DisassembleSettings);
-
-
 
 impl<T: Disassemble> Component for DisassembleRequest<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
@@ -161,31 +169,42 @@ impl<T: Disassemble> Component for DisassembleRequest<T> {
 //     Asset(T),
 // }
 
+pub struct AssemblyIdList {
+    pub parent: Option<Entity>,
+    pub child: Option<Entity>,
+}
 
 /// Staging component for deserializing [`Disassemble`] implemented asset wrappers.
 /// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
 /// until [`Disassemble`] can be ran
 pub struct DisassembleAssetRequest<T>(pub DisassembleStage<T>, pub DisassembleSettings)
 where
-    T: From<T::Target> + Disassemble,
+    T: Disassemble,
     T::Target: Asset + Sized;
 
-impl<T: Disassemble> DisassembleAssetRequest<T> 
+impl<T: Disassemble> DisassembleAssetRequest<T>
 where
-    T: From<T::Target> + Disassemble,
-    T::Target: Asset + Sized
+    T: Disassemble,
+    T::Target: Asset + Sized,
 {
     pub fn path(path: String, custom_settings: Option<DisassembleSettings>) -> Self {
-        Self(DisassembleStage::Path(path), custom_settings.unwrap_or_default())
+        Self(
+            DisassembleStage::Path(path),
+            custom_settings.unwrap_or_default(),
+        )
     }
-    pub fn handle(handle: Handle<T::Target>, custom_settings: Option<DisassembleSettings>) -> Self{
-        Self(DisassembleStage::Handle(handle), custom_settings.unwrap_or_default())
+    pub fn handle(handle: Handle<T::Target>, custom_settings: Option<DisassembleSettings>) -> Self {
+        Self(
+            DisassembleStage::Handle(handle),
+            custom_settings.unwrap_or_default(),
+        )
     }
 }
 
-pub enum DisassembleStage<T> 
+/// Stage of disassembly for a given [`Disassemble`] target. This is gradually broken down from Path -> Handle -> Asset until it can be disassembled.
+pub enum DisassembleStage<T>
 where
-    T: From<T::Target> + Disassemble,
+    T: Disassemble,
     T::Target: Asset + Sized,
 {
     Path(String),
@@ -217,7 +236,10 @@ where
                         let handle = world.load_asset(path);
                         //upgrade path to asset handle.
                         world.commands().entity(e).remove::<Self>();
-                        world.commands().entity(e).insert(Self(DisassembleStage::Handle(handle), settings));
+                        world
+                            .commands()
+                            .entity(e)
+                            .insert(Self(DisassembleStage::Handle(handle), settings));
                         return;
                     }
                     DisassembleStage::Handle(_) => {
@@ -368,6 +390,7 @@ pub struct RollDown<T: Clone + Component>(
     pub T,
     /// components to check for roll down.
     /// no world access so this is a [`TypeId`] instead of [`ComponentId`]
+    /// insert an empty vec to just insert on first apperance of children
     pub Vec<TypeId>,
 );
 
@@ -382,7 +405,7 @@ impl<T: Component + Clone> Component for RollDown<T> {
         _hooks.on_add(|mut world, e, id| {
             let rolldown_checkers = world.get_resource_mut::<RollDownCheckers>().unwrap();
             if !rolldown_checkers.0.contains_key(&id) {
-                warn!("Adding rolldown system for {:#?}", id);
+                //warn!("Adding rolldown system for {:#?}", id);
                 let system_id = { world.commands().register_system(check_roll_down::<T>) };
                 let mut asset_checkers = world.get_resource_mut::<RollDownCheckers>().unwrap();
 
