@@ -3,9 +3,7 @@ pub mod resources;
 pub mod urdf;
 pub mod visual;
 
-use std::marker::PhantomData;
 
-use crate::traits::{DisassembleSettings, Split};
 // use crate::systems::split_open_self;
 // use crate::systems::split_open_self_children;
 use crate::urdf::loader::UrdfLoaderPlugin;

@@ -94,7 +94,7 @@ pub struct Visuals(pub Vec<Visual>);
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
         Structure::Root((JointRequest::from(&value),))
     }
 }
@@ -103,7 +103,7 @@ impl Disassemble for UrdfJoint {
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry = {
             if value.0.len() > 1 {
@@ -272,6 +272,8 @@ impl Assemble for UrdfWrapper {
                     mimic: None,
                     // TODO: implement properly
                     safety_controller: None,
+                    // TODO: implement properly
+                    calibration: None,
                 }
             )
         }

@@ -1,6 +1,5 @@
 use std::{
     any::{TypeId, type_name},
-    fmt::Debug,
     marker::PhantomData,
 };
 

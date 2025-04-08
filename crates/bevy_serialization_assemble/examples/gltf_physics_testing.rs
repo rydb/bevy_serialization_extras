@@ -1,31 +1,23 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use std::{any::TypeId, collections::HashSet};
 
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::prelude::*;
 use bevy_asset::io::{
     AssetSource,
     file::{FileAssetReader, FileAssetWriter},
 };
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
-use bevy_inspector_egui::{
-    bevy_egui::EguiContext,
-    egui::{self, Align2, Color32, Frame, Margin, Rounding, Shadow, Stroke},
-};
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    JointRequest, SaveSuccess,
-    components::{DisassembleAssetRequest, DisassembleStage},
-    gltf::{GltfNodeColliderVisualChilds, GltfPhysicsModel},
+    components::DisassembleAssetRequest,
+    gltf::GltfPhysicsModel,
     prelude::*,
-    traits::DisassembleSettings,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{UiExtrasDebug, visualize_components_for};
 use moonshine_save::save::Save;
 
-use strum_macros::{Display, EnumIter};
 
 pub const SAVES: &str = "saves";
 

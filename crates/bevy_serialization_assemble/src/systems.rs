@@ -1,6 +1,6 @@
 use crate::components::{DisassembleAssetRequest, DisassembleStage, RollDownIded};
 use crate::gltf::{Mesh3dAlignmentRequest, TransformSchemaAlignRequest};
-use crate::traits::{Assemble, Disassemble, DisassembleSettings};
+use crate::traits::{Assemble, Disassemble};
 use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_asset::{AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
@@ -11,14 +11,13 @@ use bevy_ecs::system::SystemState;
 use bevy_ecs::world::CommandQueue;
 use bevy_hierarchy::Children;
 use bevy_log::prelude::*;
-use bevy_render::mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues};
+use bevy_render::mesh::{Mesh, Mesh3d, VertexAttributeValues};
 use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
 use bevy_tasks::futures_lite::future;
 use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;
-use glam::{Quat, Vec3, quat};
+use glam::Quat;
 use std::any::TypeId;
-use std::f32::consts::PI;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -63,7 +62,7 @@ pub fn initialize_asset_structure<T>(
     for (e, request) in &requests {
         //println!("checking load status for... {:#}", e);
         let handle = match request {
-            DisassembleAssetRequest(DisassembleStage::Handle(handle), request) => handle,
+            DisassembleAssetRequest(DisassembleStage::Handle(handle), _request) => handle,
             _ => {
                 warn!("no handle??");
                 return;
