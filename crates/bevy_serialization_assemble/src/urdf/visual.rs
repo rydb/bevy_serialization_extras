@@ -19,10 +19,10 @@ use crate::{
 pub struct VisualWrapper(pub Vec<Visual>);
 
 impl Disassemble for VisualWrapper {
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut children = Vec::new();
-        for visual in value.0 {
-            (children.push(Resolve::from(GeometryWrapper(visual.geometry))));
+        for visual in &value.0 {
+            (children.push(Resolve::from(GeometryWrapper(visual.geometry.clone()))));
         }
         Structure::Children(
             children,
@@ -101,6 +101,9 @@ impl From<&Mesh3dFlag> for GeometryWrapper {
         }
     }
 }
+
+#[derive(Component)]
+pub struct InferModelFormat(pub String);
 
 impl From<GeometryWrapper>
     for Resolve<Mesh3dFlag, DisassembleAssetRequest<GltfPhysicsMeshPrimitive>>

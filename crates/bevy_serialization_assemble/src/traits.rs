@@ -46,10 +46,10 @@ pub struct DisassembleSettings {
 /// I.E: model.format -> Disassemble(FormatWrapper(Format)) -> (Mesh, Material, Name)
 pub trait Disassemble
 where
-    Self: Clone + Send + Sync + Deref<Target: Sized> + From<Self::Target> + 'static,
+    Self: Send + Sync + Deref<Target: Sized> + From<Self::Target> + 'static,
 {
     // type Settings: Send + Sync + Clone;
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
+    fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
 }
 
 /// Weather to split children off into seperate entities or have them as children to a parent.

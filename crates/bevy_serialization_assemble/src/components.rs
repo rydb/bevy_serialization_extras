@@ -27,15 +27,13 @@ use bevy_utils::HashSet;
 // #[reflect(Component)]
 // pub struct StructureFlag(pub String);
 
-pub fn disassemble_components<'a, T>(
+pub fn disassemble_components<'a>(
     world: &mut DeferredWorld<'a>,
     e: Entity,
     _id: ComponentId,
-    comp: T,
-    disassemble_settings: DisassembleSettings,
-) where
-    T: Disassemble,
-{
+    //comp: T,
+    structure: Structure<impl Bundle>,
+) {
     let assembly_id = {
         if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
             assembly_id.0
@@ -53,8 +51,7 @@ pub fn disassemble_components<'a, T>(
             latest_assembly
         }
     };
-
-    match Disassemble::components(comp, disassemble_settings) {
+    match structure {
         Structure::Root(bundle) => {
             world.commands().entity(e).insert(bundle);
         }
@@ -145,10 +142,10 @@ impl<T: Disassemble> Component for DisassembleRequest<T> {
                         return;
                     }
                 };
-                comp.clone()
+                comp
             };
-
-            disassemble_components(&mut world, e, id, comp.0, comp.1);
+            let structure = Disassemble::components(&comp.0, comp.1.clone());
+            disassemble_components(&mut world, e, id, structure);
             world.commands().entity(e).remove::<Self>();
         });
     }
@@ -263,9 +260,10 @@ where
                     }
                     DisassembleStage::Asset(asset) => asset,
                 };
-                (asset.clone(), settings)
+                (asset, settings)
             };
-            disassemble_components(&mut world, e, id, asset, settings);
+            let structure = Disassemble::components(asset, settings);
+            disassemble_components(&mut world, e, id, structure);
             world.commands().entity(e).remove::<Self>();
         });
     }

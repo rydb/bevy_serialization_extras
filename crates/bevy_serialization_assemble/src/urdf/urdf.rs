@@ -52,11 +52,11 @@ pub struct Id(pub String);
 pub struct LinksNJoints(#[deref] Vec<(Link, Option<Joint>)>);
 
 impl Disassemble for LinksNJoints {
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
-        for (link, joint) in value.0 {
-            let joint = joint.map(
+        for (link, joint) in &value.0 {
+            let joint = joint.clone().map(
                 |n| 
                 //RollDown(
                     DisassembleRequest(UrdfJoint(n), DisassembleSettings::default()),
@@ -64,9 +64,9 @@ impl Disassemble for LinksNJoints {
                 //)
             );
             children.push((
-                Name::new(link.name),
+                Name::new(link.name.clone()),
                 DisassembleRequest(
-                    LinkColliders(link.collision),
+                    LinkColliders(link.collision.clone()),
                     DisassembleSettings {
                         split: settings.split,
                     },
@@ -94,8 +94,8 @@ pub struct Visuals(pub Vec<Visual>);
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
-    fn components(value: Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
-        Structure::Root((JointRequest::from(&value),))
+    fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
+        Structure::Root((JointRequest::from(value),))
     }
 }
 
@@ -103,7 +103,7 @@ impl Disassemble for UrdfJoint {
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
-    fn components(value: Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry = {
             if value.0.len() > 1 {
@@ -131,7 +131,7 @@ impl Disassemble for LinkColliders {
 }
 
 impl Disassemble for UrdfWrapper {
-    fn components(value: Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mut structured_joint_map = HashMap::new();
 
         for joint in &value.0.joints {
@@ -139,7 +139,7 @@ impl Disassemble for UrdfWrapper {
         }
 
         let mut linkage = Vec::new();
-        for link in value.0.0.links {
+        for link in &value.0.0.links {
             linkage.push((
                 link.clone(),
                 structured_joint_map
@@ -148,7 +148,7 @@ impl Disassemble for UrdfWrapper {
             ))
         }
         Structure::Root((
-            Name::new(value.0.0.name),
+            Name::new(value.0.0.name.clone()),
             DisassembleRequest(
                 LinksNJoints(linkage),
                 DisassembleSettings {

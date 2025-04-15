@@ -263,13 +263,18 @@ pub fn align_transforms_to_bevy(
     mut align_requests: Query<(Entity, &mut Transform, &TransformSchemaAlignRequest)>,
     mut commands: Commands,
 ) {
-    for (e, mut trans, request) in &mut align_requests {
-        match request.1 {
+    for (e, mut trans, modifier) in &mut align_requests {
+        match modifier.1 {
             crate::gltf::SchemaKind::GLTF => {
+                
                 let alignment = Quat::from_xyzw(-1.0, -1.0, 0.0, 0.0).normalize();
 
-                trans.rotation = alignment * request.0;
+                //let rot_modifier = modifier.0.rotation;
 
+                trans.rotation = alignment * modifier.0.rotation;
+
+                trans.scale = modifier.0.scale;
+                
                 commands.entity(e).remove::<TransformSchemaAlignRequest>();
             }
         }
