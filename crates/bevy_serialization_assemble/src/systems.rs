@@ -1,16 +1,18 @@
-use crate::components::{DisassembleAssetRequest, DisassembleStage, RollDownIded};
+use crate::components::{disassemble_components_from_system, DisassembleAssetRequest, DisassembleStage, RollDownIded};
 use crate::gltf::{Mesh3dAlignmentRequest, TransformSchemaAlignRequest};
-use crate::traits::{Assemble, Disassemble};
-use crate::{AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
+use crate::traits::{Assemble, AssetLoadSettings, Disassemble};
+use crate::{prelude::*, Assemblies, AssemblyId, JointRequest, JointRequestStage, SaveSuccess};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_asset::{AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
 use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
+use bevy_ecs::component::Components;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
 use bevy_ecs::world::CommandQueue;
 use bevy_hierarchy::Children;
 use bevy_log::prelude::*;
+use bevy_reflect::TypeRegistry;
 use bevy_render::mesh::{Mesh, Mesh3d, VertexAttributeValues};
 use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
 use bevy_tasks::futures_lite::future;
@@ -18,6 +20,7 @@ use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;
 use glam::Quat;
 use std::any::TypeId;
+use std::mem::transmute;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -47,16 +50,23 @@ pub fn check_roll_down<T: Component + Clone>(
         }
     }
 }
-
+/// check that an asset is finished loading, when it is, disassemble it
 pub fn initialize_asset_structure<T>(
     //events: EventReader<AssetEvent<T::Inner>>,
     asset_server: Res<AssetServer>,
     requests: Query<(Entity, &DisassembleAssetRequest<T>)>,
-    assets: Res<Assets<T::Target>>,
+    mut assets: ResMut<Assets<T::Target>>,
+    mut assemblies: ResMut<Assemblies>,
+    mut transforms: Query<&Transform>,
+    mut assembly_ids: Query<&AssemblyId>,
+    mut initialized_stagers: ResMut<InitializedStagers>,
     mut commands: Commands,
+    // entity_refs: Query<EntityRef>
+    components: &Components
+    //type_registry: Res<AppTypeRegistry>,
 ) where
-    T: From<T::Target> + Deref + Disassemble + Send + Sync + 'static,
-    T::Target: Asset + Clone,
+    T: Disassemble + AssetLoadSettings,
+    T::Target: Asset,
 {
     //println!("checking initialize_asset structures...");
     for (e, request) in &requests {
@@ -69,17 +79,23 @@ pub fn initialize_asset_structure<T>(
             }
         };
         if asset_server.is_loaded(handle) {
-            let Some(asset) = assets.get(handle) else {
+            let Some(asset) = assets.remove(handle) else {
                 warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
                 return;
             };
-            //println!("Asset loaded for {:#}", e);
-            // upgrading handle to asset
+
+            let structure = Disassemble::components(&T::from(asset), request.1.clone());
+
+
+
+            disassemble_components_from_system(&mut commands, 
+                &mut assembly_ids, &mut assemblies, &mut transforms, &mut initialized_stagers, e, components.component_id::<DisassembleAssetRequest<T>>().unwrap(), structure);
+
             commands.entity(e).remove::<DisassembleAssetRequest<T>>();
-            commands.entity(e).insert(DisassembleAssetRequest(
-                DisassembleStage::Asset(T::from(asset.clone())),
-                request.1.clone(),
-            ));
+            // commands.entity(e).insert(DisassembleAssetRequest(
+            //     DisassembleStage::Asset(T::from(asset)),
+            //     request.1.clone(),
+            // ));
         }
         // else {
         //     let status = asset_server.load_state(handle);

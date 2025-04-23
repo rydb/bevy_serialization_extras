@@ -7,6 +7,7 @@ use bevy_asset::io::{
     file::{FileAssetReader, FileAssetWriter},
 };
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
+use bevy_gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
     components::DisassembleAssetRequest,
@@ -28,10 +29,14 @@ fn main() {
             //TODO: This should be unified under `ROOT`
             assets_folder_local_path: "../../assets".to_owned(),
         })
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
-            ..Default::default()
-        }))
+        .add_plugins(DefaultPlugins
+            .set(
+                WindowPlugin {
+                exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
+                ..Default::default()
+                }
+            )
+        )
         .add_plugins(RapierPhysicsPlugin::<()>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
         // // serialization plugins
@@ -72,6 +77,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    assets: Res<AssetServer>
 ) {
     // plane
     commands.spawn((
@@ -90,7 +96,7 @@ fn setup(
     // Physics enabled gltf
     commands.spawn((
         DisassembleAssetRequest::<GltfPhysicsModel>::path(
-            "root://models/motor.glb#Node0".to_owned(),
+            "root://models/motor.glb".to_owned(),
             None,
         ),
         Name::new("model"),

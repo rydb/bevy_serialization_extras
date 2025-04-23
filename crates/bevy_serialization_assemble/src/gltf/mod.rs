@@ -1,7 +1,8 @@
-use bevy_asset::Handle;
+use bevy_asset::{Handle, RenderAssetUsages};
+use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
-use bevy_gltf::{GltfExtras, GltfMesh, GltfNode, GltfPrimitive};
+use bevy_gltf::{Gltf, GltfExtras, GltfLoaderSettings, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_log::warn;
 use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
@@ -13,7 +14,7 @@ use strum::IntoEnumIterator;
 
 use crate::{
     components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe},
-    traits::{Disassemble, DisassembleSettings, Split, Structure},
+    traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Split, Structure},
 };
 
 #[derive(From, Clone, Deref)]
@@ -50,37 +51,104 @@ pub enum SchemaKind {
 #[require(Transform)]
 pub struct TransformSchemaAlignRequest(pub Transform, pub SchemaKind);
 
+// pub type GltfPhysicsModel = GltfModel<true>;
+// pub type GltfVisualModel = GltfModel<false>;
+
+// #[derive(Deref, From)]
+// pub struct GltfModel<const PHYSICS: bool>(#[deref] pub GltfNode);
+
+// impl<const PHYSICS: bool> Disassemble for GltfModel<PHYSICS> {
+//     fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
+//         let trans = value.transform.clone();
+//         let visuals = value
+//             .0
+//             .mesh.clone()
+//             .map(|n| DisassembleAssetRequest::<GltfMeshWrapper>::handle(n, None));
+
+//         let collider_request = if PHYSICS {
+//             if let Some(gltf_extras) = &value.0.extras {
+//                 println!("gltf_extras are: {:#}", gltf_extras.value);
+//                 Some(RequestCollider::from(gltf_collider_request(&gltf_extras)))
+//             } else {
+//                 Some(RequestCollider::Convex)
+//             }
+//         } else {
+//             None
+//         };
+//         println!("node name: {:#}", value.0.name);
+//         Structure::Root((
+//             Maybe(collider_request),
+//             Maybe(visuals),
+//             Visibility::Visible,
+//             TransformSchemaAlignRequest(trans, SchemaKind::GLTF),
+//         ))
+//     }
+// }
+
 pub type GltfPhysicsModel = GltfModel<true>;
 pub type GltfVisualModel = GltfModel<false>;
 
 #[derive(Deref, From)]
-pub struct GltfModel<const PHYSICS: bool>(#[deref] pub GltfNode);
+#[repr(transparent)]
+pub struct GltfModel<const PHYSICS: bool>(#[deref] pub Gltf);
+
+impl<const PHYSICS: bool> AssetLoadSettings for GltfModel<PHYSICS> {
+    type LoadSettingsType = GltfLoaderSettings;
+
+    fn load_settings() -> Option<Self::LoadSettingsType> {
+        Some(GltfLoaderSettings {
+            load_cameras: false,
+            load_lights: false,
+            include_source: true,
+            load_meshes: RenderAssetUsages::default(),
+            load_materials: RenderAssetUsages::default()
+        })
+    }
+}
 
 impl<const PHYSICS: bool> Disassemble for GltfModel<PHYSICS> {
     fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
-        let trans = value.transform.clone();
-        let visuals = value
-            .0
-            .mesh.clone()
-            .map(|n| DisassembleAssetRequest::<GltfMeshWrapper>::handle(n, None));
+        //let nodes = value.nodes;
 
-        let collider_request = if PHYSICS {
-            if let Some(gltf_extras) = &value.0.extras {
-                println!("gltf_extras are: {:#}", gltf_extras.value);
-                Some(RequestCollider::from(gltf_collider_request(&gltf_extras)))
-            } else {
-                Some(RequestCollider::Convex)
-            }
-        } else {
-            None
-        };
-        println!("node name: {:#}", value.0.name);
-        Structure::Root((
-            Maybe(collider_request),
-            Maybe(visuals),
-            Visibility::Visible,
-            TransformSchemaAlignRequest(trans, SchemaKind::GLTF),
-        ))
+        println!("scenes: {:#?}", value.scenes);
+        println!("nodes: {:#?}", value.nodes);
+        println!("gltf file: {:#?}", value.source);
+        Structure::Root(
+            ()
+        )
+        // let collider_request = if PHYSICS {
+        //     if let Some(gltf_extras) = &value.0.extras {
+        //         println!("gltf_extras are: {:#}", gltf_extras.value);
+        //         Some(RequestCollider::from(gltf_collider_request(&gltf_extras)))
+        //     } else {
+        //         Some(RequestCollider::Convex)
+        //     }
+        // } else {
+        //     None
+        // };
+        // let trans = value.transform.clone();
+        // let visuals = value
+        //     .0
+        //     .mesh.clone()
+        //     .map(|n| DisassembleAssetRequest::<GltfMeshWrapper>::handle(n, None));
+
+        // let collider_request = if PHYSICS {
+        //     if let Some(gltf_extras) = &value.0.extras {
+        //         println!("gltf_extras are: {:#}", gltf_extras.value);
+        //         Some(RequestCollider::from(gltf_collider_request(&gltf_extras)))
+        //     } else {
+        //         Some(RequestCollider::Convex)
+        //     }
+        // } else {
+        //     None
+        // };
+        // println!("node name: {:#}", value.0.name);
+        // Structure::Root((
+        //     Maybe(collider_request),
+        //     Maybe(visuals),
+        //     Visibility::Visible,
+        //     TransformSchemaAlignRequest(trans, SchemaKind::GLTF),
+        // ))
     }
 }
 
@@ -111,6 +179,14 @@ impl Disassemble for GltfNodeMeshOne {
             )
         });
         Structure::Root((Maybe(mesh),))
+    }
+}
+
+impl AssetLoadSettings for GltfNodeMeshOne {
+    type LoadSettingsType = ();
+
+    fn load_settings() -> Option<Self::LoadSettingsType> {
+        None
     }
 }
 
@@ -178,6 +254,15 @@ impl Disassemble for GltfNodeColliderVisualChilds {
 #[derive(From, Deref, Clone)]
 pub struct GltfPhysicsMeshPrimitive(pub GltfMesh);
 
+
+impl AssetLoadSettings for GltfPhysicsMeshPrimitive {
+    type LoadSettingsType = ();
+
+    fn load_settings() -> Option<Self::LoadSettingsType> {
+        None
+    }
+}
+
 impl Disassemble for GltfPhysicsMeshPrimitive {
     fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
         let mesh = {
@@ -212,6 +297,14 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
 
 #[derive(From, Clone, Deref, DerefMut)]
 pub struct GltfMeshWrapper(pub GltfMesh);
+
+impl AssetLoadSettings for GltfMeshWrapper {
+    type LoadSettingsType = ();
+
+    fn load_settings() -> Option<Self::LoadSettingsType> {
+        None
+    }
+}
 
 impl Disassemble for GltfMeshWrapper {
     fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle> {

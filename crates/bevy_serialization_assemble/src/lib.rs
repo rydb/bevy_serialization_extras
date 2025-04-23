@@ -20,7 +20,7 @@ pub mod prelude {
 }
 
 /// Id of an assembled structure
-#[derive(Component, Reflect, PartialEq, Deref, DerefMut)]
+#[derive(Component, Reflect, PartialEq, Deref, DerefMut, Clone)]
 #[reflect(Component)]
 pub struct AssemblyId(pub i64);
 

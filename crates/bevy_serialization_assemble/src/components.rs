@@ -4,21 +4,17 @@ use std::{
 };
 
 use crate::{
-    Assemblies, AssemblyId,
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers},
-    systems::{check_roll_down, initialize_asset_structure},
-    traits::{Disassemble, DisassembleSettings, Structure},
+    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Structure}, Assemblies, AssemblyId
 };
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
 use bevy_ecs::{
-    component::{ComponentHooks, ComponentId, StorageType},
-    prelude::*,
-    world::DeferredWorld,
+    component::{ComponentHooks, ComponentId, StorageType}, prelude::*, system::SystemState, world::DeferredWorld
 };
 use bevy_hierarchy::prelude::*;
 use bevy_log::warn;
 use bevy_reflect::Reflect;
+use bevy_render::mesh::Mesh3d;
 use bevy_transform::components::Transform;
 use bevy_utils::HashSet;
 
@@ -27,30 +23,43 @@ use bevy_utils::HashSet;
 // #[reflect(Component)]
 // pub struct StructureFlag(pub String);
 
-pub fn disassemble_components<'a>(
+pub fn disassemble_components_from_world<'a>(
     world: &mut DeferredWorld<'a>,
+    assembly_id: Option<AssemblyId>,
+    transform: Option<Transform>,
     e: Entity,
     _id: ComponentId,
     //comp: T,
     structure: Structure<impl Bundle>,
 ) {
-    let assembly_id = {
-        if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
-            assembly_id.0
-        } else {
-            // println!("creating new id for {:#}", e);
-            let assemblies = world.get_resource_mut::<Assemblies>().unwrap();
-            let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
+    let assembly_id = match assembly_id {
+        Some(id) => id.0,
+        None => {
+            let mut latest_assembly = world.resource::<Assemblies>().0.iter().last().map(|n| *n.0).unwrap_or(0);
 
             latest_assembly += 1;
 
-            world
-                .commands()
-                .entity(e)
-                .insert(AssemblyId(latest_assembly));
+            world.commands().entity(e).insert(AssemblyId(latest_assembly));
             latest_assembly
-        }
+        },
     };
+    // let assembly_id = {
+    //     if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
+    //         assembly_id.0
+    //     } else {
+    //         // println!("creating new id for {:#}", e);
+    //         let assemblies = world.get_resource_mut::<Assemblies>().unwrap();
+    //         let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
+
+    //         latest_assembly += 1;
+
+    //         world
+    //             .commands()
+    //             .entity(e)
+    //             .insert(AssemblyId(latest_assembly));
+    //         latest_assembly
+    //     }
+    // };
     match structure {
         Structure::Root(bundle) => {
             world.commands().entity(e).insert(bundle);
@@ -59,8 +68,7 @@ pub fn disassemble_components<'a>(
             let mut children = Vec::new();
             for bundle in bundles {
                 let child = world.commands().spawn(bundle).id();
-                world
-                    .commands()
+                world.commands()
                     .entity(child)
                     .insert(AssemblyId(assembly_id));
                 if !split.split {
@@ -70,8 +78,8 @@ pub fn disassemble_components<'a>(
 
                     if split.inheriet_transform {
                         let parent_transform = {
-                            let parent = world.entity(e).get::<Transform>();
-                            parent.map(|n| n.clone())
+                            transform
+                            //parent.map(|n| n.clone())
                         };
                         if let Some(parent_trans) = parent_transform {
                             world.commands().entity(child).insert(parent_trans);
@@ -89,7 +97,7 @@ pub fn disassemble_components<'a>(
                 }
                 children.push(child);
             }
-            let mut assemblies = world.get_resource_mut::<Assemblies>().unwrap();
+            let mut assemblies = world.resource_mut::<Assemblies>();
             let current_assembly_entities = assemblies
                 .0
                 .entry(assembly_id)
@@ -99,8 +107,121 @@ pub fn disassemble_components<'a>(
             }
 
             {
-                let mut initialized_stagers =
-                    world.get_resource_mut::<InitializedStagers>().unwrap();
+                // let mut initialized_stagers =
+                //     world.get_resource_mut::<InitializedStagers>().unwrap();
+
+                let mut initialized_stagers = world.resource_mut::<InitializedStagers>();
+                let previous_result = initialized_stagers.0.get_mut(&e);
+
+                match previous_result {
+                    Some(res) => {
+                        for child in children {
+                            res.push(child);
+                        }
+                    }
+                    None => {
+                        initialized_stagers.0.insert(e, children.clone());
+                    }
+                }
+                //initialized_stagers.0.insert(e, v)
+                // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+                // if let Some(old_val) = initialized_children.0.insert(e, children) {
+                //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+                // }
+            }
+            //world.commands().entity(e).remove::<Self>();
+        }
+    }
+}
+
+pub fn disassemble_components_from_system<'a>(
+    //world: &mut DeferredWorld<'a>,
+    mut commands: &mut Commands,
+    assembly_ids: &mut Query<&AssemblyId>,
+    mut assemblies: &mut ResMut<Assemblies>,
+    transforms: &mut Query<&Transform>,
+    mut initialized_stagers: &mut ResMut<InitializedStagers>,
+    e: Entity,
+    _id: ComponentId,
+    //comp: T,
+    structure: Structure<impl Bundle>,
+) {
+    let assembly_id = match assembly_ids.get(e).ok() {
+        Some(id) => id.0,
+        None => {
+            let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
+
+            latest_assembly += 1;
+
+            commands.entity(e).insert(AssemblyId(latest_assembly));
+            latest_assembly
+        },
+    };
+    // let assembly_id = {
+    //     if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
+    //         assembly_id.0
+    //     } else {
+    //         // println!("creating new id for {:#}", e);
+    //         let assemblies = world.get_resource_mut::<Assemblies>().unwrap();
+    //         let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
+
+    //         latest_assembly += 1;
+
+    //         world
+    //             .commands()
+    //             .entity(e)
+    //             .insert(AssemblyId(latest_assembly));
+    //         latest_assembly
+    //     }
+    // };
+    match structure {
+        Structure::Root(bundle) => {
+            commands.entity(e).insert(bundle);
+        }
+        Structure::Children(bundles, split) => {
+            let mut children = Vec::new();
+            for bundle in bundles {
+                let child = commands.spawn(bundle).id();
+                    commands
+                    .entity(child)
+                    .insert(AssemblyId(assembly_id));
+                if !split.split {
+                    commands.entity(e).add_child(child);
+                } else {
+                    // //TODO: expand this to other components than [`Transform`]
+
+                    if split.inheriet_transform {
+                        let parent_transform = {
+                            transforms.get(e)
+                            //parent.map(|n| n.clone())
+                        };
+                        if let Ok(parent_trans) = parent_transform {
+                            commands.entity(child).insert(*parent_trans);
+                        };
+                    }
+
+                    // //TODO: expand this to other components than [`Transform`]
+                    // let parent_transform = {
+                    //     let parent = world.entity(e).get::<Transform>();
+                    //     parent.map(|n| n.clone())
+                    // };
+                    // if let Some(parent_trans) = parent_transform {
+                    //     world.commands().entity(child).insert(parent_trans);
+                    // };
+                }
+                children.push(child);
+            }
+            let current_assembly_entities = assemblies
+                .0
+                .entry(assembly_id)
+                .or_insert(HashSet::default());
+            for child in &children {
+                current_assembly_entities.insert(child.clone());
+            }
+
+            {
+                // let mut initialized_stagers =
+                //     world.get_resource_mut::<InitializedStagers>().unwrap();
 
                 let previous_result = initialized_stagers.0.get_mut(&e);
 
@@ -145,8 +266,9 @@ impl<T: Disassemble> Component for DisassembleRequest<T> {
                 comp
             };
             let structure = Disassemble::components(&comp.0, comp.1.clone());
-            disassemble_components(&mut world, e, id, structure);
-            world.commands().entity(e).remove::<Self>();
+            let assembly_id = world.entity(e).get::<AssemblyId>().map(|n| n.to_owned());
+            let transform = world.entity(e).get::<Transform>().map(|n| n.to_owned());
+            disassemble_components_from_world(&mut world, assembly_id, transform,e, id, structure);
         });
     }
 }
@@ -175,12 +297,12 @@ pub struct AssemblyIdList {
 /// until [`Disassemble`] can be ran
 pub struct DisassembleAssetRequest<T>(pub DisassembleStage<T>, pub DisassembleSettings)
 where
-    T: Disassemble,
+    T: Disassemble + AssetLoadSettings,
     T::Target: Asset + Sized;
 
-impl<T: Disassemble> DisassembleAssetRequest<T>
+impl<'a, T: Disassemble> DisassembleAssetRequest<T>
 where
-    T: Disassemble,
+    T: Disassemble + AssetLoadSettings,
     T::Target: Asset + Sized,
 {
     pub fn path(path: String, custom_settings: Option<DisassembleSettings>) -> Self {
@@ -205,19 +327,19 @@ where
 {
     Path(String),
     Handle(Handle<T::Target>),
-    Asset(T),
+    //Asset(T),
 }
 
 impl<T> Component for DisassembleAssetRequest<T>
 where
-    T: From<T::Target> + Disassemble,
-    T::Target: Asset + Clone,
+    T: From<T::Target> + Disassemble + AssetLoadSettings,
+    T::Target: Asset,
 {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
         _hooks.on_add(|mut world, e, id| {
-            let (asset, settings) = {
+            //let (asset, settings) = {
                 let path = match world.entity(e).get::<Self>() {
                     Some(val) => val,
                     None => {
@@ -227,9 +349,18 @@ where
                 };
 
                 let settings = path.1.clone();
-                let asset = match &path.0 {
-                    DisassembleStage::Path(path) => {
-                        let handle = world.load_asset(path);
+                match path.0 {
+                    DisassembleStage::Path(ref path) => {
+                        let handle = match T::load_settings(){
+                            
+                            Some(n) => {
+                                let handle: Handle<T::Target> = world.load_asset_with_settings(path, |settings: &mut T::LoadSettingsType| {
+                                    *settings =  T::load_settings().unwrap();
+                                });
+                                handle
+                            },
+                            None => world.load_asset(path),
+                        };
                         //upgrade path to asset handle.
                         world.commands().entity(e).remove::<Self>();
                         world
@@ -258,13 +389,13 @@ where
                         }
                         return;
                     }
-                    DisassembleStage::Asset(asset) => asset,
+                    //DisassembleStage::Asset(ref asset) => asset,
                 };
-                (asset, settings)
-            };
-            let structure = Disassemble::components(asset, settings);
-            disassemble_components(&mut world, e, id, structure);
-            world.commands().entity(e).remove::<Self>();
+                //(asset, settings)
+            //};
+            // let structure = Disassemble::components(asset, settings);
+            // disassemble_components(&mut world, e, id, structure);
+            //world.commands().entity(e).remove::<Self>();
         });
     }
 }
@@ -323,6 +454,10 @@ impl<T: Component> Component for Maybe<T> {
         _hooks.on_add(maybe_hook::<T>);
     }
 }
+
+// pub struct TakeAsset<T> {
+//     entity: E
+// }
 
 /// staging component for resolving one component from another.
 /// useful for bundles where the context for what something is has to be resolved later

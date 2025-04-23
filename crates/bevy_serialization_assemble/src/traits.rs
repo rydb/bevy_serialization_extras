@@ -1,4 +1,4 @@
-use bevy_asset::{Asset, AssetLoader, saver::AssetSaver};
+use bevy_asset::{meta::Settings, saver::AssetSaver, Asset, AssetLoader};
 use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
@@ -50,6 +50,12 @@ where
 {
     // type Settings: Send + Sync + Clone;
     fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
+}
+pub trait AssetLoadSettings{
+    /// Settings for how this asset is loaded
+    type LoadSettingsType: Settings + Default;
+    // const LOADSETTINGS: Option<&'static Self::LoadSettingsType>;
+    fn load_settings() -> Option<Self::LoadSettingsType>;
 }
 
 /// Weather to split children off into seperate entities or have them as children to a parent.
