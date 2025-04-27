@@ -3,8 +3,7 @@
 use std::ops::Deref;
 
 use bevy_ecs::{
-    component::ComponentId,
-    system::{Commands, Res, Resource, SystemId},
+    component::ComponentId, resource::Resource, system::{Commands, Res, SystemId}
 };
 
 pub mod plugins;
@@ -20,7 +19,7 @@ pub mod prelude {
 #[doc = "hidden"]
 pub fn run_proxy_system<T>(proxy_systems: Res<T>, mut commands: Commands)
 where
-    T: Resource + Deref<Target = bevy_utils::HashMap<ComponentId, SystemId>>,
+    T: Resource + Deref<Target = std::collections::HashMap<ComponentId, SystemId>>,
 {
     for (_, system) in (*proxy_systems).iter() {
         commands.run_system(*system);

@@ -1,6 +1,5 @@
 use std::{
-    any::{TypeId, type_name},
-    marker::PhantomData,
+    any::{type_name, TypeId}, collections::HashSet, marker::PhantomData
 };
 
 use crate::{
@@ -9,14 +8,12 @@ use crate::{
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
 use bevy_ecs::{
-    component::{ComponentHooks, ComponentId, StorageType}, prelude::*, system::SystemState, world::DeferredWorld
+    component::{ComponentHooks, ComponentId, HookContext, Mutable, StorageType}, prelude::*, system::SystemState, world::DeferredWorld
 };
-use bevy_hierarchy::prelude::*;
 use bevy_log::warn;
 use bevy_reflect::Reflect;
 use bevy_render::mesh::Mesh3d;
 use bevy_transform::components::Transform;
-use bevy_utils::HashSet;
 
 // /// The structure this entity belongs to
 // #[derive(Component, Reflect)]
@@ -254,23 +251,25 @@ impl<T: Disassemble> Component for DisassembleRequest<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, id| {
+        _hooks.on_add(|mut world, hook| {
             let comp = {
-                let comp = match world.entity(e).get::<Self>() {
+                let comp = match world.entity(hook.entity).get::<Self>() {
                     Some(val) => val,
                     None => {
-                        warn!("could not get Disassemble on: {:#}", e);
+                        warn!("could not get Disassemble on: {:#}", hook.entity);
                         return;
                     }
                 };
                 comp
             };
             let structure = Disassemble::components(&comp.0, comp.1.clone());
-            let assembly_id = world.entity(e).get::<AssemblyId>().map(|n| n.to_owned());
-            let transform = world.entity(e).get::<Transform>().map(|n| n.to_owned());
-            disassemble_components_from_world(&mut world, assembly_id, transform,e, id, structure);
+            let assembly_id = world.entity(hook.entity).get::<AssemblyId>().map(|n| n.to_owned());
+            let transform = world.entity(hook.entity).get::<Transform>().map(|n| n.to_owned());
+            disassemble_components_from_world(&mut world, assembly_id, transform,hook.entity, hook.component_id, structure);
         });
     }
+    
+    type Mutability = Mutable;
 }
 
 // /// Staging component for deserializing [`Disassemble`] implemented asset wrappers.
@@ -332,18 +331,18 @@ where
 
 impl<T> Component for DisassembleAssetRequest<T>
 where
-    T: From<T::Target> + Disassemble + AssetLoadSettings,
+    T: Disassemble + AssetLoadSettings,
     T::Target: Asset,
 {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, id| {
+        _hooks.on_add(|mut world, hook| {
             //let (asset, settings) = {
-                let path = match world.entity(e).get::<Self>() {
+                let path = match world.entity(hook.entity).get::<Self>() {
                     Some(val) => val,
                     None => {
-                        warn!("could not get DisassembleAssetRequest on: {:#}", e);
+                        warn!("could not get DisassembleAssetRequest on: {:#}", hook.entity);
                         return;
                     }
                 };
@@ -362,10 +361,10 @@ where
                             None => world.load_asset(path),
                         };
                         //upgrade path to asset handle.
-                        world.commands().entity(e).remove::<Self>();
+                        world.commands().entity(hook.entity).remove::<Self>();
                         world
                             .commands()
-                            .entity(e)
+                            .entity(hook.entity)
                             .insert(Self(DisassembleStage::Handle(handle), settings));
                         return;
                     }
@@ -374,7 +373,7 @@ where
                             .get_resource_mut::<AssetCheckers>()
                             .unwrap()
                             .0
-                            .contains_key(&id)
+                            .contains_key(&hook.component_id)
                             == false
                         {
                             let system_id = {
@@ -385,7 +384,7 @@ where
                             let mut asset_checkers =
                                 world.get_resource_mut::<AssetCheckers>().unwrap();
 
-                            asset_checkers.0.insert(id, system_id);
+                            asset_checkers.0.insert(hook.component_id, system_id);
                         }
                         return;
                     }
@@ -398,6 +397,8 @@ where
             //world.commands().entity(e).remove::<Self>();
         });
     }
+    
+    type Mutability = Mutable;
 }
 
 /// Staging component for optional components. Is split open into inner component if it exists.
@@ -408,12 +409,11 @@ pub struct Maybe<T: Component>(pub Option<T>);
 /// Generates a [`MaybeCommand`].
 fn maybe_hook<B: Component>(
     mut world: DeferredWorld<'_>,
-    entity: Entity,
-    _component_id: ComponentId,
+    hook: HookContext
 ) {
     // Component hooks can't perform structural changes, so we need to rely on commands.
     world.commands().queue(MaybeCommand {
-        entity,
+        entity: hook.entity,
         _phantom: PhantomData::<B>,
     });
 }
@@ -453,6 +453,8 @@ impl<T: Component> Component for Maybe<T> {
     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
         _hooks.on_add(maybe_hook::<T>);
     }
+    
+    type Mutability = Mutable;
 }
 
 // pub struct TakeAsset<T> {
@@ -473,12 +475,11 @@ struct ResolveCommand<T, U> {
 
 fn resolve_command<T: Component, U: Component>(
     mut world: DeferredWorld<'_>,
-    entity: Entity,
-    _component_id: ComponentId,
+    hook: HookContext
 ) {
     // Component hooks can't perform structural changes, so we need to rely on commands.
     world.commands().queue(ResolveCommand {
-        entity,
+        entity: hook.entity,
         _phantom: PhantomData::<(T, U)>,
     });
 }
@@ -508,6 +509,8 @@ impl<T: Component, U: Component> Component for Resolve<T, U> {
     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
         _hooks.on_add(resolve_command::<T, U>);
     }
+    
+    type Mutability = Mutable;
 }
 
 #[derive(Clone)]
@@ -534,18 +537,18 @@ impl<T: Component + Clone> Component for RollDown<T> {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, e, id| {
+        _hooks.on_add(|mut world, hook| {
             let rolldown_checkers = world.get_resource_mut::<RollDownCheckers>().unwrap();
-            if !rolldown_checkers.0.contains_key(&id) {
+            if !rolldown_checkers.0.contains_key(&hook.component_id) {
                 //warn!("Adding rolldown system for {:#?}", id);
                 let system_id = { world.commands().register_system(check_roll_down::<T>) };
                 let mut asset_checkers = world.get_resource_mut::<RollDownCheckers>().unwrap();
 
-                asset_checkers.0.insert(id, system_id);
+                asset_checkers.0.insert(hook.component_id, system_id);
             }
             let mut valid_ids = Vec::new();
 
-            let inner = match world.entity(e).get::<Self>() {
+            let inner = match world.entity(hook.entity).get::<Self>() {
                 Some(val) => {
                     let components = world.components();
                     for id in &val.1 {
@@ -557,14 +560,14 @@ impl<T: Component + Clone> Component for RollDown<T> {
                     val.0.clone()
                 }
                 None => {
-                    warn!("could not get RollDown<T> on: {:#}", e);
+                    warn!("could not get RollDown<T> on: {:#}", hook.entity);
                     return;
                 }
             };
             //world.commands().entity(e).remove::<Self>();
             world
                 .commands()
-                .entity(e)
+                .entity(hook.entity)
                 .insert(RollDownIded(inner, valid_ids));
 
             // let children = {
@@ -583,4 +586,6 @@ impl<T: Component + Clone> Component for RollDown<T> {
             //world.commands().entity(e).remove::<Self>();
         });
     }
+    
+    type Mutability = Mutable;
 }

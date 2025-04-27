@@ -1,6 +1,5 @@
 use bevy_asset::Assets;
 use bevy_ecs::prelude::*;
-use bevy_hierarchy::Children;
 use bevy_log::warn;
 use bevy_math::primitives::{Cuboid, Sphere};
 use bevy_rapier3d::prelude::{AsyncCollider, ComputedColliderShape};

@@ -4,13 +4,11 @@ use crate::traits::{Assemble, AssetLoadSettings, Disassemble};
 use crate::{prelude::*, Assemblies, AssemblyId, JointRequest, JointRequestStage, SaveSuccess};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_asset::{AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
-use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::component::Components;
 use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
 use bevy_ecs::world::CommandQueue;
-use bevy_hierarchy::Children;
 use bevy_log::prelude::*;
 use bevy_reflect::TypeRegistry;
 use bevy_render::mesh::{Mesh, Mesh3d, VertexAttributeValues};
@@ -79,12 +77,14 @@ pub fn initialize_asset_structure<T>(
             }
         };
         if asset_server.is_loaded(handle) {
-            let Some(asset) = assets.remove(handle) else {
+            let Some(asset) = assets.get(handle) else {
                 warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
                 return;
             };
-
-            let structure = Disassemble::components(&T::from(asset), request.1.clone());
+            
+            // let t_converted = transmute_copy_safe::<T::Target, T>(asset);
+            let t_converted = T::wrap_ref(asset);
+            let structure = Disassemble::components(t_converted, request.1.clone());
 
 
 

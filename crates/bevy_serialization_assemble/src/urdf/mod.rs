@@ -4,6 +4,9 @@ pub mod urdf;
 pub mod visual;
 
 
+use crate::traits::AssetLoadSettings;
+use bytemuck::TransparentWrapper;
+use ref_cast::RefCast;
 // use crate::systems::split_open_self;
 // use crate::systems::split_open_self_children;
 use crate::urdf::loader::UrdfLoaderPlugin;
@@ -19,8 +22,17 @@ use urdf_rs::Robot;
 
 pub const PACKAGE: &str = "package";
 
-#[derive(Asset, TypePath, From, Deref, Debug, Clone, Default)]
+#[derive(Asset, TypePath, From, Deref, Debug, Clone, Default, TransparentWrapper)]
+#[repr(transparent)]
 pub struct UrdfWrapper(pub Urdf);
+
+impl AssetLoadSettings for UrdfWrapper {
+    type LoadSettingsType = ();
+
+    fn load_settings() -> Option<Self::LoadSettingsType> {
+        None
+    }
+}
 
 #[derive(Asset, TypePath, From, Deref, Debug, Clone)]
 pub struct Urdf(pub Robot);

@@ -1,5 +1,4 @@
 use crate::traits::DisassembleSettings;
-use bevy_core::Name;
 use bevy_ecs::system::SystemParamItem;
 use bevy_log::warn;
 use bevy_render::prelude::Visibility;
@@ -48,7 +47,8 @@ pub struct Id(pub String);
 /// Links + Joints merged together.
 /// URDF spec has these two as seperate, but joints are merged into the same entities/are dependent on links,
 /// so they are merged here.
-#[derive(From, Clone, Deref)]
+#[derive(From, Clone, Deref, TransparentWrapper)]
+#[repr(transparent)]
 pub struct LinksNJoints(#[deref] Vec<(Link, Option<Joint>)>);
 
 impl Disassemble for LinksNJoints {
@@ -90,7 +90,8 @@ impl Disassemble for LinksNJoints {
 #[derive(Clone)]
 pub struct Visuals(pub Vec<Visual>);
 
-#[derive(From, Clone, Deref)]
+#[derive(From, Clone, Deref, TransparentWrapper)]
+#[repr(transparent)]
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
@@ -99,7 +100,8 @@ impl Disassemble for UrdfJoint {
     }
 }
 
-#[derive(From, Clone, Deref)]
+#[derive(From, Clone, Deref, TransparentWrapper)]
+#[repr(transparent)]
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {

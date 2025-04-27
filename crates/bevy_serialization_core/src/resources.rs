@@ -4,10 +4,10 @@ use bevy_ecs::system::SystemId;
 use bevy_reflect::Reflect;
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph, Exposure};
 use bevy_render::prelude::*;
-use bevy_utils::HashMap;
 use moonshine_save::GetFilePath;
-use moonshine_save::save::SaveInput;
+use moonshine_save::save::{EntityFilter, SaveInput};
 use std::any::TypeId;
+use std::collections::HashMap;
 use std::path::Path;
 
 use bevy_ecs::prelude::*;
@@ -34,23 +34,18 @@ pub struct WrapCompDeserializers(pub HashMap<ComponentId, SystemId>);
 pub struct SerializeFilter(pub SaveInput);
 impl Default for SerializeFilter {
     fn default() -> Self {
-        // Due to: https://github.com/Zeenobit/moonshine_save/issues/16
-        // components that do not implement reflect break save/load.
-        // this is just an a default list of unimplemented components to skip serializing over to stop this breakage.
-        // make a pr to fix this if this issue is resolved.
         Self({
-            // Due to bevy_scene taking `self` and not `&mut self`, to stop partial move errors, It requires... this.. for initialization.
-            let filter = SaveInput::default();
+            // Due to bevy_scene taking `self` and not `&mut self`, need to initialize this twice.
             let mut new_filter = SaveInput::default();
 
-            new_filter.components = filter
+            new_filter.entities = EntityFilter::Any;
+            new_filter.components = new_filter
                 .components
                 .clone()
                 .deny::<CameraMainTextureUsages>()
                 .deny::<CameraRenderGraph>()
                 .deny::<Exposure>()
                 .deny::<Mesh3d>()
-                //.deny::<InheritedVisibility>()
                 
                 ;
             new_filter

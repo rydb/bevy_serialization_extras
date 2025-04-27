@@ -118,7 +118,7 @@ impl AssetSaver for UrdfSaver {
         writer: &mut bevy_asset::io::Writer,
         asset: bevy_asset::saver::SavedAsset<'_, Self::Asset>,
         _settings: &Self::Settings,
-    ) -> impl bevy_utils::ConditionalSendFuture<Output = Result<(), Self::Error>> {
+    ) -> impl bevy_tasks::ConditionalSendFuture<Output = Result<(), Self::Error>> {
         async move {
             let urdf_as_string = urdf_rs::write_to_string(&asset.0)?;
             let bytes = urdf_as_string.as_bytes();

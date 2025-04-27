@@ -2,6 +2,7 @@ use bevy_derive::Deref;
 use bevy_ecs::prelude::*;
 use bevy_log::warn;
 use bevy_serialization_core::prelude::mesh::{Mesh3dFlag, MeshPrefab, MeshWrapper};
+use bytemuck::TransparentWrapper;
 use derive_more::From;
 use glam::Vec3;
 use nalgebra::Vector3;
@@ -15,7 +16,8 @@ use crate::{
     traits::{Disassemble, DisassembleSettings, Split, Structure},
 };
 
-#[derive(From, Clone, Deref)]
+#[derive(From, Deref, TransparentWrapper)]
+#[repr(transparent)]
 pub struct VisualWrapper(pub Vec<Visual>);
 
 impl Disassemble for VisualWrapper {
@@ -38,6 +40,8 @@ const FALLBACK_GEOMETRY: Geometry = Geometry::Box {
     size: urdf_rs::Vec3([0.1, 0.1, 0.1]),
 };
 
+#[derive(TransparentWrapper)]
+#[repr(transparent)]
 pub struct GeometryWrapper(pub Geometry);
 
 impl From<&Mesh3dFlag> for GeometryWrapper {

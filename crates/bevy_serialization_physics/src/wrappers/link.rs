@@ -15,7 +15,7 @@ use rapier3d::{
     na::Isometry3,
 };
 
-use bevy_ecs::{component::StorageType, prelude::*, query::QueryData};
+use bevy_ecs::{component::{ComponentMutability, Mutable, StorageType}, prelude::*, query::QueryData};
 use bevy_math::Vec3;
 use bevy_reflect::prelude::*;
 use bevy_transform::prelude::*;
@@ -339,14 +339,14 @@ impl Component for JointFlag {
 
     fn register_component_hooks(_hooks: &mut bevy_ecs::component::ComponentHooks) {
         // keeps joint and Transform consistent with eachother to stop parts from flying off
-        _hooks.on_add(|mut world, e, _| {
+        _hooks.on_add(|mut world, hook| {
             // rapier joint positions affect transform, but do not affect transformation unless they're part of an active rigidbody.
             // to prevent rebound from joint being snapped on by joint, add transform onto this entity to automatically snap it to where its supposed to be
             let new_trans = {
-                let comp = match world.entity(e).get::<Self>() {
+                let comp = match world.entity(hook.entity).get::<Self>() {
                     Some(val) => val,
                     None => {
-                        warn!("could not get {:#?} on: {:#}", type_name::<Self>(), e);
+                        warn!("could not get {:#?} on: {:#}", type_name::<Self>(), hook.entity);
                         return;
                     }
                 };
@@ -366,13 +366,15 @@ impl Component for JointFlag {
                 //parent_trans.translation + comp.joint.local_frame1.translation
             };
 
-            world.commands().entity(e).insert(new_trans);
+            world.commands().entity(hook.entity).insert(new_trans);
 
             // let Some(parent) =
             // let Some(parent_trans) = world.entity(comp.parent_id).get::<Tran
             //world.commands().entity(e).insert()
         });
     }
+    
+    type Mutability = Mutable;
 }
 
 #[derive(Reflect, PartialEq, Clone, Debug)]

@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     marker::PhantomData,
 };
 
@@ -7,7 +7,6 @@ use bevy_asset::prelude::*;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_transform::prelude::*;
-use bevy_utils::HashMap;
 
 // /// registry of initialized structures + their children.
 // #[derive(Resource, Default)]

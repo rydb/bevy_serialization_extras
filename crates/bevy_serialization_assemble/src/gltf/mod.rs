@@ -1,5 +1,4 @@
 use bevy_asset::{Handle, RenderAssetUsages};
-use bevy_core::Name;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 use bevy_gltf::{Gltf, GltfExtras, GltfLoaderSettings, GltfMesh, GltfNode, GltfPrimitive};
@@ -8,8 +7,10 @@ use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
 use bevy_serialization_physics::prelude::RequestCollider;
 use bevy_transform::components::Transform;
+use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
 use glam::Quat;
+use ref_cast::RefCast;
 use strum::IntoEnumIterator;
 
 use crate::{
@@ -17,10 +18,12 @@ use crate::{
     traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Split, Structure},
 };
 
-#[derive(From, Clone, Deref)]
+#[derive(From, Clone, Deref, TransparentWrapper)]
+#[repr(transparent)]
 pub struct GltfNodeWrapper(GltfNode);
 
-#[derive(From, Clone, Deref, DerefMut)]
+#[derive(From, Clone, Deref, DerefMut, TransparentWrapper)]
+#[repr(transparent)]
 pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
 
 pub fn gltf_collider_request(extras: &GltfExtras) -> RequestCollider {
@@ -85,14 +88,14 @@ pub struct TransformSchemaAlignRequest(pub Transform, pub SchemaKind);
 //     }
 // }
 
-pub type GltfPhysicsModel = GltfModel<true>;
-pub type GltfVisualModel = GltfModel<false>;
+// pub type GltfPhysicsModel = GltfModel<true>;
+// pub type GltfVisualModel = GltfModel<false>;
 
-#[derive(Deref, From)]
+#[derive(Deref, From, TransparentWrapper)]
 #[repr(transparent)]
-pub struct GltfModel<const PHYSICS: bool>(#[deref] pub Gltf);
+pub struct GltfModel(#[deref] pub Gltf);
 
-impl<const PHYSICS: bool> AssetLoadSettings for GltfModel<PHYSICS> {
+impl AssetLoadSettings for GltfModel {
     type LoadSettingsType = GltfLoaderSettings;
 
     fn load_settings() -> Option<Self::LoadSettingsType> {
@@ -106,7 +109,7 @@ impl<const PHYSICS: bool> AssetLoadSettings for GltfModel<PHYSICS> {
     }
 }
 
-impl<const PHYSICS: bool> Disassemble for GltfModel<PHYSICS> {
+impl Disassemble for GltfModel {
     fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
         //let nodes = value.nodes;
 
@@ -167,7 +170,8 @@ impl Disassemble for GltfPrimitiveWrapper {
     }
 }
 
-#[derive(Clone, Deref, From)]
+#[derive(Clone, Deref, From, TransparentWrapper)]
+#[repr(transparent)]
 pub struct GltfNodeMeshOne(pub GltfNode);
 
 impl Disassemble for GltfNodeMeshOne {
@@ -192,10 +196,12 @@ impl AssetLoadSettings for GltfNodeMeshOne {
 
 /// GltfNode wrapper for spawning gltf nodes with a parent collider mesh, and children visual meshes.
 /// This is for physics
-#[derive(Clone, Deref, From)]
+#[derive(Clone, Deref, From, TransparentWrapper)]
+#[repr(transparent)]
 pub struct GltfNodeColliderVisualChilds(pub GltfNode);
 
-#[derive(Clone, Deref, From)]
+#[derive(Clone, Deref, From, TransparentWrapper)]
+#[repr(transparent)]
 pub struct GltfNodeVisuals(pub Vec<Handle<GltfNode>>);
 
 impl Disassemble for GltfNodeVisuals {
@@ -218,6 +224,7 @@ impl Disassemble for GltfNodeVisuals {
         )
     }
 }
+
 
 impl Disassemble for GltfNodeColliderVisualChilds {
     fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
@@ -251,7 +258,8 @@ impl Disassemble for GltfNodeColliderVisualChilds {
 /// Tempory hot-fix for spawning singular primitives.
 /// Necessary due to physics with child primitives being unsupported in rapier and avain.
 /// https://github.com/bevyengine/bevy/issues/17661
-#[derive(From, Deref, Clone)]
+#[derive(From, Deref, Clone, TransparentWrapper)]
+#[repr(transparent)]
 pub struct GltfPhysicsMeshPrimitive(pub GltfMesh);
 
 
@@ -295,7 +303,8 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
     }
 }
 
-#[derive(From, Clone, Deref, DerefMut)]
+#[derive(From, Clone, Deref, DerefMut, TransparentWrapper)]
+#[repr(transparent)]
 pub struct GltfMeshWrapper(pub GltfMesh);
 
 impl AssetLoadSettings for GltfMeshWrapper {

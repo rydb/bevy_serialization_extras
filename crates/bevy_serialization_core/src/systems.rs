@@ -2,13 +2,12 @@ use crate::{
     prelude::{ComponentsOnSave, TypeRegistryOnSave},
     traits::*,
 };
-use std::any::{TypeId, type_name};
+use std::{any::{type_name, TypeId}, collections::HashMap};
 
 use bevy_asset::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_log::warn;
 use bevy_reflect::TypeInfo;
-use bevy_utils::HashMap;
 use moonshine_save::save::Save;
 
 /// takes a component, and spawns a serializable copy of it on its entity

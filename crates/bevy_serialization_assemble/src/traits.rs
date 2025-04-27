@@ -3,6 +3,8 @@ use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
 };
+use bytemuck::TransparentWrapper;
+use ref_cast::RefCast;
 use std::{any::TypeId, collections::HashSet, ops::Deref};
 
 /// The trait for assembling a structure into its root asset.
@@ -46,12 +48,12 @@ pub struct DisassembleSettings {
 /// I.E: model.format -> Disassemble(FormatWrapper(Format)) -> (Mesh, Material, Name)
 pub trait Disassemble
 where
-    Self: Send + Sync + Deref<Target: Sized> + From<Self::Target> + 'static,
+    Self: Send + Sync + Deref<Target: Sized> + TransparentWrapper<Self::Target> + 'static,
 {
     // type Settings: Send + Sync + Clone;
     fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
 }
-pub trait AssetLoadSettings{
+pub trait AssetLoadSettings {
     /// Settings for how this asset is loaded
     type LoadSettingsType: Settings + Default;
     // const LOADSETTINGS: Option<&'static Self::LoadSettingsType>;

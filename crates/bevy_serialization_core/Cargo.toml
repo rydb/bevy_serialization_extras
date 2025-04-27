@@ -21,7 +21,6 @@ bevy_asset = {workspace = true}
 bevy_transform = {workspace = true}
 bevy_color = {workspace = true}
 bevy_derive = {workspace = true}
-bevy_core = {workspace = true}
 bevy_log = {workspace = true}
 glam = {workspace = true}
 ron = {workspace = true}

@@ -11,7 +11,7 @@ use bevy_serialization_core::{
     prelude::{SerializationBasePlugin, material::Material3dFlag},
     resources::{LoadRequest, SaveRequest},
 };
-use bevy_ui_extras::UiExtrasDebug;
+use bevy_ui_extras::{states::DebugMenuState, UiExtrasDebug};
 use moonshine_save::save::Save;
 use std::{env, path::PathBuf};
 use strum_macros::{Display, EnumIter};
@@ -30,7 +30,10 @@ fn main() {
         .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationBasePlugin)
-        .add_plugins(UiExtrasDebug::default())
+        .add_plugins(UiExtrasDebug {
+            menu_mode: DebugMenuState::Explain,
+            ..default()
+        })
         .add_systems(Startup, setup)
         .add_systems(Update, save_file_selection)
         //TODO: re-add when this has been re-implemented.
