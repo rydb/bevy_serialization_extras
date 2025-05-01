@@ -1,26 +1,30 @@
-use std::any::type_name;
+use std::{any::type_name, collections::HashMap};
 
-use bevy_asset::{Handle, RenderAssetUsages};
+use bevy_asset::{AssetContainer, Handle, RenderAssetUsages};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 use bevy_gltf::{Gltf, GltfExtras, GltfLoaderSettings, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_log::warn;
+use bevy_math::primitives::{Cuboid, Cylinder};
 use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
-use bevy_serialization_physics::prelude::RequestCollider;
+use bevy_serialization_core::prelude::mesh::MeshPrefab;
+use bevy_serialization_physics::prelude::{ColliderFlag, RequestCollider};
 use bevy_transform::components::Transform;
 use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
-use glam::Quat;
+use glam::{Quat, Vec3};
 use gltf::json::Value;
-use khr_implicit_shapes::{KHRImplicitShapesMap, KHR_IMPLICIT_SHAPES};
+use khr_implicit_shapes::{KHRImplicitShapesMap, Shape, KHR_IMPLICIT_SHAPES};
 use khr_physics_rigid_bodies::{KhrPhysicsRigidBodiesMap, KHR_PHYSICS_RIGID_BODIES};
+use khr_physics_rigid_bodies_nodes::KHRPhysicsRigidBodiesNodeProp;
 use ref_cast::RefCast;
 use strum::IntoEnumIterator;
 
 
 mod khr_implicit_shapes;
 mod khr_physics_rigid_bodies;
+mod khr_physics_rigid_bodies_nodes;
 
 use crate::{
     components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe},
@@ -118,42 +122,88 @@ impl AssetLoadSettings for GltfModel {
     }
 }
 
+#[derive(Default)]
+pub struct PhysicsProperties {
+    pub colliders: Vec<ColliderFlag>,
+}
+
 /// parse gltf physics extensions into their extension property maps.
-pub fn parse_gltf_physics_extensions_map(gltf: &gltf::Gltf) -> Result<(KhrPhysicsRigidBodiesMap, KHRImplicitShapesMap), String> {
+pub fn parse_gltf_physics(gltf: &gltf::Gltf) -> Result<PhysicsProperties, String> {
     
     // let error_message = &gltf.document.as_json();
     let Some(external_extensions) = gltf.extensions() else {
         return Err("gltf external extensions evaluated to none".to_owned())
     };
-    let Some((khr_physics_rigid_bodies_key, khr_physics_rigid_bodies_values)) = external_extensions.iter()
-    .find(|(n, val)| n.eq_ignore_ascii_case(KHR_PHYSICS_RIGID_BODIES)) else {
+    // let Some((khr_physics_rigid_bodies_key, khr_physics_rigid_bodies_values)) = external_extensions.iter()
+    // .find(|(n, val)| n.eq_ignore_ascii_case(KHR_PHYSICS_RIGID_BODIES)) else {
+    //     return Err(format!("could not find khr_physics_rigid_bodies in extensions: {:#?}", external_extensions))
+    // };
+    let Some((_, khr_implicit_shapes_values)) = external_extensions.iter()
+    .find(|(n, _)| n.eq_ignore_ascii_case(KHR_IMPLICIT_SHAPES)) else {
         return Err(format!("could not find khr_physics_rigid_bodies in extensions: {:#?}", external_extensions))
     };
-    let Some((khr_implicit_shapes_key, khr_implicit_shapes_values)) = external_extensions.iter()
-    .find(|(n, val)| n.eq_ignore_ascii_case(KHR_IMPLICIT_SHAPES)) else {
-        return Err(format!("could not find khr_physics_rigid_bodies in extensions: {:#?}", external_extensions))
-    };
-    let khr_implict_shapes = serde_json::from_value(khr_implicit_shapes_values.clone());
+    let khr_implict_shapes_extension_props = serde_json::from_value::<KHRImplicitShapesMap>(khr_implicit_shapes_values.clone()).unwrap();
 
     // println!("khr implicit shapes are: {:#?}", khr_implicit_shapes);
     // println!("khr implicit shape values of type {:#?}", khr_implicit_shapes_values);
 
-    let khr_physics = serde_json::from_value(khr_physics_rigid_bodies_values.clone());
+    // let khr_physics_extension_props = serde_json::from_value(khr_physics_rigid_bodies_values.clone());
 
-    println!("khr physics is: {:#?}", khr_physics);
-    println!("khr physics values of type {:#?}", khr_physics_rigid_bodies_values);
+    // println!("khr physics is: {:#?}", khr_physics_extension_props);
+    // println!("khr physics values of type {:#?}", khr_physics_rigid_bodies_values);
 
-    // let khr_physics = match KHRPhysicsRigidBodies::try_from(khr_physics_rigid_bodies_values.to_owned()) {
-    //     Ok(n) => n,
-    //     Err(err) => return Err(err)
-    // };
+    let nodes = gltf.nodes();
 
-    Ok((khr_physics.unwrap_or_default(), khr_implict_shapes.unwrap_or_default()))
+
+    let mut colliders = Vec::new();
+
+    for node in nodes {
+        let Some(node_properties) = node.extensions() else {
+            continue;
+        };
+        let Some((key, values)) = node_properties.iter()
+        .find(|(n, val)| n.eq_ignore_ascii_case(KHR_PHYSICS_RIGID_BODIES)) else {
+            warn!("node: {:#?} does not have a rigid_body extension", node.name());
+            continue;
+            // return Err(format!("could not find khr_physics_rigid_bodies in extensions: {:#?}", external_extensions))
+        };
+        let khr_physics_node_prop = serde_json::from_value::<KHRPhysicsRigidBodiesNodeProp>(values.clone()).unwrap();
+        
+        let collider = khr_implict_shapes_extension_props.shapes.iter().nth(khr_physics_node_prop.collider.geometry.shape_index as usize).unwrap();
+
+        let collider: MeshPrefab = match collider {
+            Shape::Box(box_shape) => Cuboid::from_size(Vec3::from(box_shape.size.size.map(|n| n as f32))).into(),
+            Shape::Cylinder(cylinder_shape) => {
+                warn!("khr_physics_rigid_body cylinder -> core wrapper conversion not 1:1. These may desync");
+                Cylinder::new(cylinder_shape.dimensions.radius_top as f32, cylinder_shape.dimensions.height as f32).into()
+            },
+        };
+        let collider = ColliderFlag::Prefab(collider);
+        colliders.push(collider);
+        
+        // println!("khr node props are: {:#?}", khr_physics_node_prop);
+        // println!("khr node prop values are {:#?}", values);
+        
+        // println!("node extensions for {:#} are {:#?}", node.name().unwrap_or_default(), extensions);
+    }
+    Ok(
+        PhysicsProperties { colliders: colliders }
+    )
+
+    // Ok((khr_physics_extension_props.unwrap_or_default(), khr_implict_shapes_extension_props))
+
 }
 
-/// take extension maps for physics and parse their physics from their indexes.
-pub fn parse_gltf_nodes_physics() {
+#[derive(Component, Default)]
+pub struct RootNode {
+    handle: Handle<GltfNode>,
+}
 
+
+/// Registry for pyhsics properties for a given gltf.
+/// [`Gltf`] does not hold handles to non-intrinsic extensions. This is where gltf physics are accessed.
+pub struct PhysicsPropertyRegistry {
+    physics: HashMap<Handle<Gltf>, PhysicsProperties> 
 }
 
 impl Disassemble for GltfModel {
@@ -165,16 +215,26 @@ impl Disassemble for GltfModel {
         //println!("gltf file: {:#?}", value.source);
         
 
-
+        let mut name = "".to_owned();
+        
+        
+        //let mut gltf_properties = GltfMore::default();
         if let Some(gltf) = &value.source {
-            let x = parse_gltf_physics_extensions_map(gltf);
+            //gltf_properties.physics = parse_gltf_physics(gltf).unwrap();
+            
+            let root_node = gltf.nodes().find(|n| n.children().len() > 0).unwrap();
+            name = root_node.name().unwrap_or_default().to_owned();
+
         } else {
             warn!("gltf loaded without source. Cannot parse extensions. Offending gltf nodes: {:#?}", value.named_nodes)
         }
+        
         //println!("gltf extensions: {:#?}", value.source)
         Structure::Root(
             (
-                
+                Name::new(name),
+                //gltf_properties
+                       
             )
         )
         // let collider_request = if PHYSICS {

@@ -10,7 +10,7 @@ pub const KHR_IMPLICIT_SHAPES: &'static str = "khr_implicit_shapes";
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct KHRImplicitShapesMap {
-    shapes: Vec<Shape>,
+    pub shapes: Vec<Shape>,
 }
 
 #[derive(Debug, Serialize)]
@@ -23,7 +23,7 @@ pub enum Shape {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BoxShape {
     #[serde(rename = "box")]
-    size: BoxData,
+    pub size: BoxData,
 }
 
 
@@ -31,19 +31,19 @@ pub struct BoxShape {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CylinderShape {
     #[serde(rename = "cylinder")]
-    dimensions: CylinderData,
+    pub dimensions: CylinderData,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BoxData {
-    size: [f64; 3],
+    pub size: [f64; 3],
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CylinderData {
-    height: f64,
-    radius_bottom: f64,
-    radius_top: f64,
+    pub height: f64,
+    pub radius_bottom: f64,
+    pub radius_top: f64,
 }
 
 impl<'de> Deserialize<'de> for Shape {
