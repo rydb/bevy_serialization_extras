@@ -19,6 +19,9 @@ bytemuck = "1.22"
 bevy_camera_extras = "0.16"
 bevy_ui_extras = "0.20"
 ref-cast = "1.0"
+gltf = "1.4"
+serde_json = {version = "1"}
+serde = {version = "1"}
 # bevy_rapier3d = "0.29"
 bevy_rapier3d = {git = "https://github.com/mnmaita/bevy_rapier", rev = "98da7beae596001a6daf59a62d3e1e19adb4811b"}
 rapier3d = "0.24.0"

@@ -1,3 +1,5 @@
+use std::any::type_name;
+
 use bevy_asset::{Handle, RenderAssetUsages};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
@@ -10,8 +12,15 @@ use bevy_transform::components::Transform;
 use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
 use glam::Quat;
+use gltf::json::Value;
+use khr_implicit_shapes::{KHRImplicitShapesMap, KHR_IMPLICIT_SHAPES};
+use khr_physics_rigid_bodies::{KhrPhysicsRigidBodiesMap, KHR_PHYSICS_RIGID_BODIES};
 use ref_cast::RefCast;
 use strum::IntoEnumIterator;
+
+
+mod khr_implicit_shapes;
+mod khr_physics_rigid_bodies;
 
 use crate::{
     components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe},
@@ -109,15 +118,64 @@ impl AssetLoadSettings for GltfModel {
     }
 }
 
+/// parse gltf physics extensions into their extension property maps.
+pub fn parse_gltf_physics_extensions_map(gltf: &gltf::Gltf) -> Result<(KhrPhysicsRigidBodiesMap, KHRImplicitShapesMap), String> {
+    
+    // let error_message = &gltf.document.as_json();
+    let Some(external_extensions) = gltf.extensions() else {
+        return Err("gltf external extensions evaluated to none".to_owned())
+    };
+    let Some((khr_physics_rigid_bodies_key, khr_physics_rigid_bodies_values)) = external_extensions.iter()
+    .find(|(n, val)| n.eq_ignore_ascii_case(KHR_PHYSICS_RIGID_BODIES)) else {
+        return Err(format!("could not find khr_physics_rigid_bodies in extensions: {:#?}", external_extensions))
+    };
+    let Some((khr_implicit_shapes_key, khr_implicit_shapes_values)) = external_extensions.iter()
+    .find(|(n, val)| n.eq_ignore_ascii_case(KHR_IMPLICIT_SHAPES)) else {
+        return Err(format!("could not find khr_physics_rigid_bodies in extensions: {:#?}", external_extensions))
+    };
+    let khr_implict_shapes = serde_json::from_value(khr_implicit_shapes_values.clone());
+
+    // println!("khr implicit shapes are: {:#?}", khr_implicit_shapes);
+    // println!("khr implicit shape values of type {:#?}", khr_implicit_shapes_values);
+
+    let khr_physics = serde_json::from_value(khr_physics_rigid_bodies_values.clone());
+
+    println!("khr physics is: {:#?}", khr_physics);
+    println!("khr physics values of type {:#?}", khr_physics_rigid_bodies_values);
+
+    // let khr_physics = match KHRPhysicsRigidBodies::try_from(khr_physics_rigid_bodies_values.to_owned()) {
+    //     Ok(n) => n,
+    //     Err(err) => return Err(err)
+    // };
+
+    Ok((khr_physics.unwrap_or_default(), khr_implict_shapes.unwrap_or_default()))
+}
+
+/// take extension maps for physics and parse their physics from their indexes.
+pub fn parse_gltf_nodes_physics() {
+
+}
+
 impl Disassemble for GltfModel {
     fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
         //let nodes = value.nodes;
 
         println!("scenes: {:#?}", value.scenes);
         println!("nodes: {:#?}", value.nodes);
-        println!("gltf file: {:#?}", value.source);
+        //println!("gltf file: {:#?}", value.source);
+        
+
+
+        if let Some(gltf) = &value.source {
+            let x = parse_gltf_physics_extensions_map(gltf);
+        } else {
+            warn!("gltf loaded without source. Cannot parse extensions. Offending gltf nodes: {:#?}", value.named_nodes)
+        }
+        //println!("gltf extensions: {:#?}", value.source)
         Structure::Root(
-            ()
+            (
+                
+            )
         )
         // let collider_request = if PHYSICS {
         //     if let Some(gltf_extras) = &value.0.extras {

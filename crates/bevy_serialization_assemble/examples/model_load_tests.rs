@@ -10,9 +10,7 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::DisassembleAssetRequest,
-    gltf::GltfPhysicsModel,
-    prelude::*,
+    components::DisassembleAssetRequest, gltf::GltfModel, prelude::*
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -95,7 +93,7 @@ fn setup(
 
     // Physics enabled gltf
     commands.spawn((
-        DisassembleAssetRequest::<GltfPhysicsModel>::path(
+        DisassembleAssetRequest::<GltfModel>::path(
             "root://models/motor.glb".to_owned(),
             None,
         ),

@@ -22,6 +22,9 @@ bevy_asset = {workspace = true}
 ref-cast = {workspace = true}
 bevy_app = {workspace = true}
 bevy_internal = {workspace = true}
+serde_json = {workspace = true}
+serde = {workspace = true}
+gltf = {workspace = true}
 bevy_pbr = {workspace = true}
 bytemuck = {workspace = true}
 bevy_log = {workspace = true}
