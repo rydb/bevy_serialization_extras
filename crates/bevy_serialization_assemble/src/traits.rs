@@ -1,4 +1,4 @@
-use bevy_asset::{meta::Settings, saver::AssetSaver, Asset, AssetLoader};
+use bevy_asset::{meta::Settings, saver::AssetSaver, Asset, AssetLoader, Handle, UntypedHandle};
 use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
@@ -39,6 +39,11 @@ pub struct DisassembleSettings {
     pub split: bool,
 }
 
+pub enum Source {
+    Asset(UntypedHandle),
+    Component
+}
+
 /// The trait for Disassembling structures into either:
 ///
 /// A) its sub components
@@ -51,7 +56,7 @@ where
     Self: Send + Sync + Deref<Target: Sized> + TransparentWrapper<Self::Target> + 'static,
 {
     // type Settings: Send + Sync + Clone;
-    fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle>;
+    fn components(value: &Self, settings: DisassembleSettings, source: Source) -> Structure<impl Bundle>;
 }
 pub trait AssetLoadSettings {
     /// Settings for how this asset is loaded

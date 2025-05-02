@@ -1,6 +1,6 @@
 use crate::components::{disassemble_components_from_system, DisassembleAssetRequest, DisassembleStage, RollDownIded};
 use crate::gltf::{Mesh3dAlignmentRequest, TransformSchemaAlignRequest};
-use crate::traits::{Assemble, AssetLoadSettings, Disassemble};
+use crate::traits::{Assemble, AssetLoadSettings, Disassemble, Source};
 use crate::{prelude::*, Assemblies, AssemblyId, JointRequest, JointRequestStage, SaveSuccess};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_asset::{AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
@@ -84,7 +84,7 @@ pub fn initialize_asset_structure<T>(
             
             // let t_converted = transmute_copy_safe::<T::Target, T>(asset);
             let t_converted = T::wrap_ref(asset);
-            let structure = Disassemble::components(t_converted, request.1.clone());
+            let structure = Disassemble::components(t_converted, request.1.clone(), Source::Asset(handle.clone().untyped()));
 
 
 

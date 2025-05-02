@@ -3,7 +3,7 @@ use std::{
 };
 
 use crate::{
-    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Structure}, Assemblies, AssemblyId
+    prelude::{AssetCheckers, InitializedStagers, RollDownCheckers}, systems::{check_roll_down, initialize_asset_structure}, traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Source, Structure}, Assemblies, AssemblyId
 };
 use bevy_asset::prelude::*;
 use bevy_derive::Deref;
@@ -262,7 +262,7 @@ impl<T: Disassemble> Component for DisassembleRequest<T> {
                 };
                 comp
             };
-            let structure = Disassemble::components(&comp.0, comp.1.clone());
+            let structure = Disassemble::components(&comp.0, comp.1.clone(), Source::Component);
             let assembly_id = world.entity(hook.entity).get::<AssemblyId>().map(|n| n.to_owned());
             let transform = world.entity(hook.entity).get::<Transform>().map(|n| n.to_owned());
             disassemble_components_from_world(&mut world, assembly_id, transform,hook.entity, hook.component_id, structure);

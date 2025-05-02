@@ -10,7 +10,7 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::DisassembleAssetRequest, gltf::GltfModel, prelude::*
+    components::DisassembleAssetRequest, gltf::{physics::GltfPhysicsPlugin, wrappers::GltfModel}, prelude::*
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
@@ -42,6 +42,7 @@ fn main() {
         .add_plugins(SerializationAssembleBasePlugin)
         .add_plugins(SerializationPhysicsPlugin)
         .add_plugins(SerializationBasePlugin)
+        .add_plugins(GltfPhysicsPlugin)
         .add_plugins(UrdfSerializationPlugin)
         // // rapier physics plugins
         .add_plugins(UiExtrasDebug {

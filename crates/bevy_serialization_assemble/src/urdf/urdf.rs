@@ -1,4 +1,4 @@
-use crate::traits::DisassembleSettings;
+use crate::traits::{DisassembleSettings, Source};
 use bevy_ecs::system::SystemParamItem;
 use bevy_log::warn;
 use bevy_render::prelude::Visibility;
@@ -52,7 +52,7 @@ pub struct Id(pub String);
 pub struct LinksNJoints(#[deref] Vec<(Link, Option<Joint>)>);
 
 impl Disassemble for LinksNJoints {
-    fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle> {
         let mut children = Vec::new();
 
         for (link, joint) in &value.0 {
@@ -95,7 +95,7 @@ pub struct Visuals(pub Vec<Visual>);
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
-    fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle> {
         Structure::Root((JointRequest::from(value),))
     }
 }
@@ -105,7 +105,7 @@ impl Disassemble for UrdfJoint {
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
-    fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry = {
             if value.0.len() > 1 {
@@ -133,7 +133,7 @@ impl Disassemble for LinkColliders {
 }
 
 impl Disassemble for UrdfWrapper {
-    fn components(value: &Self, settings: DisassembleSettings) -> Structure<impl Bundle> {
+    fn components(value: &Self, settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle> {
         let mut structured_joint_map = HashMap::new();
 
         for joint in &value.0.joints {
