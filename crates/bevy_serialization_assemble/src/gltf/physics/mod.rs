@@ -7,6 +7,7 @@ use bevy_ecs::{component::{ComponentHooks, Immutable}, prelude::*};
 use bevy_gltf::{Gltf, GltfNode};
 use bevy_log::warn;
 use bevy_math::primitives::{Cuboid, Cylinder};
+use bevy_reflect::Reflect;
 use bevy_serialization_core::prelude::mesh::MeshPrefab;
 use bevy_serialization_physics::prelude::ColliderFlag;
 
@@ -29,9 +30,11 @@ pub struct PhysicsProperties {
 
 }
 
-#[derive(Component)]
-pub struct NodePhysicsMaps(pub Vec<(u32, NodePhysicsMap)>);
+/// Request for the physics of a given node from the [`GltfPhysicsRegistry`]
+#[derive(Component, Reflect)]
+pub struct NodePhysicsRequest(pub Vec<(u32, NodePhysicsMap)>);
 
+#[derive(Reflect)]
 pub struct NodePhysicsMap {
     pub motion: f32,
     pub collider_id: u32
@@ -45,6 +48,7 @@ impl Plugin for GltfPhysicsPlugin {
     fn build(&self, app: &mut App) {
         app
         .init_resource::<PhysicsPropertyRegistry>()    
+        .register_type::<NodePhysicsRequest>()
         ;
     }
 }

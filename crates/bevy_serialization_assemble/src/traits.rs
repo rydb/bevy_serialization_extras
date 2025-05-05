@@ -89,7 +89,10 @@ impl PullDown {
 // }
 
 pub struct Structure<T,U> {
+    /// components going on the entity this component is attached to.
     pub root: T,
+    /// components going onto the sub-components/children of this entity.
     pub children: Vec<U>,
+    /// settings for what (if) children are split off from the parent/child hierarchy.
     pub split: Split
 }

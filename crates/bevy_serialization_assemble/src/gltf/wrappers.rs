@@ -17,9 +17,9 @@ use physics::{khr_implicit_shapes::khr_implicit_shapes::{KHRImplicitShapesMap, S
 use ref_cast::RefCast;
 use strum::IntoEnumIterator;
 
-use crate::{components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe}, gltf::physics::{parse_gltf_physics, GltfPhysicsRegistration, NodePhysicsMaps, PhysicsProperties}, traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Source, Split, Structure}};
+use crate::{components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe}, gltf::physics::{parse_gltf_physics, GltfPhysicsRegistration, NodePhysicsRequest, PhysicsProperties}, traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Source, Split, Structure}};
 
-use super::{gltf_collider_request, physics, Mesh3dAlignmentRequest, SchemaKind};
+use super::{gltf_collider_request, physics, Mesh3dAlignmentRequest, SchemaKind, TransformSchemaAlignRequest};
 
 #[derive(From, Clone, Deref, TransparentWrapper)]
 #[repr(transparent)]
@@ -36,6 +36,22 @@ impl AssetLoadSettings for GltfRootNodeWrapper {
 #[derive(From, Clone, Deref, DerefMut, TransparentWrapper)]
 #[repr(transparent)]
 pub struct GltfPrimitiveWrapper(pub GltfPrimitive);
+
+impl Disassemble for GltfPrimitiveWrapper {
+    fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
+        let mat = value.material.clone().map(|n| MeshMaterial3d(n));
+        Structure { 
+            root: (
+                Name::new(value.name.clone()),
+                Mesh3dAlignmentRequest(value.mesh.clone(), SchemaKind::GLTF),
+                Maybe(mat),
+                Visibility::default(),
+            ), 
+            children: Vec::<()>::default(), 
+            split: Split::default() 
+        }
+    }
+}
 
 #[derive(Deref, From, TransparentWrapper)]
 #[repr(transparent)]
@@ -55,9 +71,48 @@ impl AssetLoadSettings for GltfModel {
     }
 }
 
-// pub struct GltfNodeChildless {
+#[derive(From, Clone, Deref, TransparentWrapper)]
+#[repr(transparent)]
+pub struct GltfNodeWrapper(GltfNode);
 
-// }
+impl AssetLoadSettings for GltfNodeWrapper {
+    type LoadSettingsType = ();
+
+    fn load_settings() -> Option<Self::LoadSettingsType> {
+        None
+    }
+}
+
+impl Disassemble for GltfNodeWrapper {
+    fn components(value: &Self, settings: DisassembleSettings, source: Source) -> Structure<impl Bundle, impl Bundle> {
+        let mut children = Vec::new();
+
+        let sub_nodes = &value.0.children;
+        
+        let mesh = value.0.mesh.clone().map(|n| {
+            DisassembleAssetRequest::<GltfMeshWrapper>(
+                DisassembleStage::Handle(n),
+                DisassembleSettings::default(),
+            )
+        });
+
+        for node in sub_nodes {
+            children.push(
+                DisassembleAssetRequest::<GltfNodeWrapper>::handle(node.clone(), None),
+            )
+        }
+        Structure { 
+            root: (
+                Name::new(value.name.clone()),
+                TransformSchemaAlignRequest(value.transform.clone(), SchemaKind::GLTF),
+                Maybe(mesh),
+                Visibility::default(),
+            ), 
+            children: children, 
+            split: Split { split: false, inheriet_transform: true }
+        }
+    }
+}
 
 impl Disassemble for GltfRootNodeWrapper {
     fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
@@ -72,7 +127,7 @@ impl Disassemble for GltfRootNodeWrapper {
         for child in &value.0.children {
             children.push(
                 (
-                    DisassembleAssetRequest::<GltfNodeMeshOne>::handle(child.clone(), None),
+                    // DisassembleAssetRequest::<GltfNodeMeshOne>::handle(child.clone(), None),
                 )
             )
         }
@@ -86,7 +141,10 @@ impl Disassemble for GltfRootNodeWrapper {
             
         // )
         return Structure {
-            root: (),
+            root: (
+                Name::new(value.name.clone()),
+                TransformSchemaAlignRequest(value.transform.clone(), SchemaKind::GLTF)
+            ),
             children: children,
             split: Split { split: false, inheriet_transform: true }
         }
@@ -118,7 +176,6 @@ impl Disassemble for GltfRootNodeWrapper {
         // } else {
         //     None
         // };
-        // let trans = value.transform.clone();
         // let visuals = value
         //     .0
         //     .mesh.clone()
@@ -184,32 +241,15 @@ impl Disassemble for GltfModel {
 
         let top_node = top_node.unwrap();
 
-        //println!("gltf extensions: {:#?}", value.source)
-        // Structure::Root(
-        //     (
-        //         Name::new(name),
-        //         GltfPhysicsRegistration {
-        //             gltf_handle,
-        //             physics: physics_extension_maps
-        //         },
-                
-        //         NodePhysicsMaps(node_physics_map),
-        //         DisassembleAssetRequest::<GltfRootNodeWrapper>::handle(top_node.clone(), None)
-
-        //         //gltf_properties
-                       
-        //     )
-        // )
         Structure { 
             root: (
-                Name::new(name),
                 GltfPhysicsRegistration {
                     gltf_handle,
                     physics: physics_extension_maps
                 },
                 
-                NodePhysicsMaps(node_physics_map),
-                DisassembleAssetRequest::<GltfRootNodeWrapper>::handle(top_node.clone(), None)                       
+                NodePhysicsRequest(node_physics_map),
+                DisassembleAssetRequest::<GltfNodeWrapper>::handle(top_node.clone(), None)                       
             ),
             children: Vec::<()>::default(), 
             split: Split::default(), 
@@ -240,7 +280,10 @@ impl Disassemble for GltfMeshWrapper {
             ))
         }
         Structure { 
-            root: (), 
+            root: (
+                Name::new(value.name.clone()),
+                Visibility::default(),
+            ), 
             children: children, 
             split: Split {
                 split: settings.split,
@@ -309,19 +352,7 @@ impl Disassemble for GltfPhysicsMeshPrimitive {
     }
 }
 
-impl Disassemble for GltfPrimitiveWrapper {
-    fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
-        let mat = value.material.clone().map(|n| MeshMaterial3d(n));
-        Structure { 
-            root: (
-                Mesh3dAlignmentRequest(value.mesh.clone(), SchemaKind::GLTF),
-                Maybe(mat),
-            ), 
-            children: Vec::<()>::default(), 
-            split: Split::default() 
-        }
-    }
-}
+
 
 #[derive(Clone, Deref, From, TransparentWrapper)]
 #[repr(transparent)]
@@ -338,7 +369,8 @@ impl Disassemble for GltfNodeMeshOne {
         Structure { 
             root: (
                 Name::new(value.name.clone()),
-                Maybe(mesh)
+                Maybe(mesh),
+                TransformSchemaAlignRequest(value.transform.clone(), SchemaKind::GLTF)
             ), 
             children: Vec::<()>::default(), 
             split: Split::default()
