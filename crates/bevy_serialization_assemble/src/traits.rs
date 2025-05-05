@@ -56,7 +56,7 @@ where
     Self: Send + Sync + Deref<Target: Sized> + TransparentWrapper<Self::Target> + 'static,
 {
     // type Settings: Send + Sync + Clone;
-    fn components(value: &Self, settings: DisassembleSettings, source: Source) -> Structure<impl Bundle>;
+    fn components(value: &Self, settings: DisassembleSettings, source: Source) -> Structure<impl Bundle, impl Bundle>;
 }
 pub trait AssetLoadSettings {
     /// Settings for how this asset is loaded
@@ -83,7 +83,13 @@ impl PullDown {
     }
 }
 
-pub enum Structure<T> {
-    Root(T),
-    Children(Vec<T>, Split),
+// pub enum Structure<T> {
+//     Root(T),
+//     Children(Vec<T>, Split),
+// }
+
+pub struct Structure<T,U> {
+    pub root: T,
+    pub children: Vec<U>,
+    pub split: Split
 }

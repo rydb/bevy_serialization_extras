@@ -8,7 +8,7 @@ pub const KHR_PHYSICS_RIGID_BODIES: &'static str = "khr_physics_rigid_bodies";
 
 /// KHR_physics_rigid_bodies properties map. 
 /// proposal. 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct KhrPhysicsRigidBodiesMap {
     #[serde(rename = "physicsMaterials")]
     physics_materials: Vec<PhysicsMaterials>,
@@ -18,7 +18,7 @@ pub struct KhrPhysicsRigidBodiesMap {
 
 
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct CollisionFilters {
     #[serde(rename = "collisionSystems")]
     pub collision_systems: Vec<String>,
@@ -31,7 +31,7 @@ pub struct CollisionFilters {
 
 
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct PhysicsMaterials {
     #[serde(rename = "staticFriction")]
     pub static_friction: f32,

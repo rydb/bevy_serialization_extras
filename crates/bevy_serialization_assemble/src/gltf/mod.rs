@@ -56,66 +56,15 @@ pub enum SchemaKind {
 #[require(Transform)]
 pub struct TransformSchemaAlignRequest(pub Transform, pub SchemaKind);
 
-// pub type GltfPhysicsModel = GltfModel<true>;
-// pub type GltfVisualModel = GltfModel<false>;
-
-// #[derive(Deref, From)]
-// pub struct GltfModel<const PHYSICS: bool>(#[deref] pub GltfNode);
-
-// impl<const PHYSICS: bool> Disassemble for GltfModel<PHYSICS> {
-//     fn components(value: &Self, _settings: DisassembleSettings) -> Structure<impl Bundle> {
-//         let trans = value.transform.clone();
-//         let visuals = value
-//             .0
-//             .mesh.clone()
-//             .map(|n| DisassembleAssetRequest::<GltfMeshWrapper>::handle(n, None));
-
-//         let collider_request = if PHYSICS {
-//             if let Some(gltf_extras) = &value.0.extras {
-//                 println!("gltf_extras are: {:#}", gltf_extras.value);
-//                 Some(RequestCollider::from(gltf_collider_request(&gltf_extras)))
-//             } else {
-//                 Some(RequestCollider::Convex)
-//             }
-//         } else {
-//             None
-//         };
-//         println!("node name: {:#}", value.0.name);
-//         Structure::Root((
-//             Maybe(collider_request),
-//             Maybe(visuals),
-//             Visibility::Visible,
-//             TransformSchemaAlignRequest(trans, SchemaKind::GLTF),
-//         ))
-//     }
-// }
-
-// pub type GltfPhysicsModel = GltfModel<true>;
-// pub type GltfVisualModel = GltfModel<false>;
-
-
-
-
-
 #[derive(Component, Default)]
 pub struct RootNode {
     handle: Handle<GltfNode>,
 }
 
-
-
-
-
 /// request to re-align geoemtry to match bevy.
 /// TODO: replace with normal Mesh3d if gltf mesh loading is improved to not have this done at the [`Gltf`] level.
 #[derive(Component)]
 pub struct Mesh3dAlignmentRequest(pub Handle<Mesh>, pub SchemaKind);
-
-
-
-
-
-
 
 // impl IntoHashMap<Query<'_, '_, GltfNodeQuery>> for GltfNodeWrapper {
 //     fn into_hashmap(value: Query<'_, '_, GltfNodeQuery>, world: &World) -> std::collections::HashMap<String, Self> {

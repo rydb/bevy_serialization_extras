@@ -27,7 +27,7 @@ pub fn disassemble_components_from_world<'a>(
     e: Entity,
     _id: ComponentId,
     //comp: T,
-    structure: Structure<impl Bundle>,
+    structure: Structure<impl Bundle, impl Bundle>,
 ) {
     let assembly_id = match assembly_id {
         Some(id) => id.0,
@@ -40,95 +40,73 @@ pub fn disassemble_components_from_world<'a>(
             latest_assembly
         },
     };
-    // let assembly_id = {
-    //     if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
-    //         assembly_id.0
-    //     } else {
-    //         // println!("creating new id for {:#}", e);
-    //         let assemblies = world.get_resource_mut::<Assemblies>().unwrap();
-    //         let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
+    world.commands().entity(e).insert(structure.root);
+    let mut children = Vec::new();
+    for bundle in structure.children {
+        let child = world.commands().spawn(bundle).id();
+        world.commands()
+            .entity(child)
+            .insert(AssemblyId(assembly_id));
+        if !structure.split.split {
+            world.commands().entity(e).add_child(child);
+        } else {
+            // //TODO: expand this to other components than [`Transform`]
 
-    //         latest_assembly += 1;
+            if structure.split.inheriet_transform {
+                let parent_transform = {
+                    transform
+                    //parent.map(|n| n.clone())
+                };
+                if let Some(parent_trans) = parent_transform {
+                    world.commands().entity(child).insert(parent_trans);
+                };
+            }
 
-    //         world
-    //             .commands()
-    //             .entity(e)
-    //             .insert(AssemblyId(latest_assembly));
-    //         latest_assembly
-    //     }
-    // };
-    match structure {
-        Structure::Root(bundle) => {
-            world.commands().entity(e).insert(bundle);
+            // //TODO: expand this to other components than [`Transform`]
+            // let parent_transform = {
+            //     let parent = world.entity(e).get::<Transform>();
+            //     parent.map(|n| n.clone())
+            // };
+            // if let Some(parent_trans) = parent_transform {
+            //     world.commands().entity(child).insert(parent_trans);
+            // };
         }
-        Structure::Children(bundles, split) => {
-            let mut children = Vec::new();
-            for bundle in bundles {
-                let child = world.commands().spawn(bundle).id();
-                world.commands()
-                    .entity(child)
-                    .insert(AssemblyId(assembly_id));
-                if !split.split {
-                    world.commands().entity(e).add_child(child);
-                } else {
-                    // //TODO: expand this to other components than [`Transform`]
-
-                    if split.inheriet_transform {
-                        let parent_transform = {
-                            transform
-                            //parent.map(|n| n.clone())
-                        };
-                        if let Some(parent_trans) = parent_transform {
-                            world.commands().entity(child).insert(parent_trans);
-                        };
-                    }
-
-                    // //TODO: expand this to other components than [`Transform`]
-                    // let parent_transform = {
-                    //     let parent = world.entity(e).get::<Transform>();
-                    //     parent.map(|n| n.clone())
-                    // };
-                    // if let Some(parent_trans) = parent_transform {
-                    //     world.commands().entity(child).insert(parent_trans);
-                    // };
-                }
-                children.push(child);
-            }
-            let mut assemblies = world.resource_mut::<Assemblies>();
-            let current_assembly_entities = assemblies
-                .0
-                .entry(assembly_id)
-                .or_insert(HashSet::default());
-            for child in &children {
-                current_assembly_entities.insert(child.clone());
-            }
-
-            {
-                // let mut initialized_stagers =
-                //     world.get_resource_mut::<InitializedStagers>().unwrap();
-
-                let mut initialized_stagers = world.resource_mut::<InitializedStagers>();
-                let previous_result = initialized_stagers.0.get_mut(&e);
-
-                match previous_result {
-                    Some(res) => {
-                        for child in children {
-                            res.push(child);
-                        }
-                    }
-                    None => {
-                        initialized_stagers.0.insert(e, children.clone());
-                    }
-                }
-                //initialized_stagers.0.insert(e, v)
-                // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
-                // if let Some(old_val) = initialized_children.0.insert(e, children) {
-                //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
-                // }
-            }
-            //world.commands().entity(e).remove::<Self>();
-        }
+        children.push(child);
     }
+    let mut assemblies = world.resource_mut::<Assemblies>();
+    let current_assembly_entities = assemblies
+        .0
+        .entry(assembly_id)
+        .or_insert(HashSet::default());
+    for child in &children {
+        current_assembly_entities.insert(child.clone());
+    }
+
+    {
+        // let mut initialized_stagers =
+        //     world.get_resource_mut::<InitializedStagers>().unwrap();
+
+        let mut initialized_stagers = world.resource_mut::<InitializedStagers>();
+        let previous_result = initialized_stagers.0.get_mut(&e);
+
+        match previous_result {
+            Some(res) => {
+                for child in children {
+                    res.push(child);
+                }
+            }
+            None => {
+                initialized_stagers.0.insert(e, children.clone());
+            }
+        }
+        //initialized_stagers.0.insert(e, v)
+        // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+        // if let Some(old_val) = initialized_children.0.insert(e, children) {
+        //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+        // }
+    }
+    //world.commands().entity(e).remove::<Self>();
+
 }
 
 pub fn disassemble_components_from_system<'a>(
@@ -141,7 +119,7 @@ pub fn disassemble_components_from_system<'a>(
     e: Entity,
     _id: ComponentId,
     //comp: T,
-    structure: Structure<impl Bundle>,
+    structure: Structure<impl Bundle, impl Bundle>,
 ) {
     let assembly_id = match assembly_ids.get(e).ok() {
         Some(id) => id.0,
@@ -154,93 +132,71 @@ pub fn disassemble_components_from_system<'a>(
             latest_assembly
         },
     };
-    // let assembly_id = {
-    //     if let Some(assembly_id) = world.entity(e).get::<AssemblyId>() {
-    //         assembly_id.0
-    //     } else {
-    //         // println!("creating new id for {:#}", e);
-    //         let assemblies = world.get_resource_mut::<Assemblies>().unwrap();
-    //         let mut latest_assembly = assemblies.0.iter().last().map(|n| *n.0).unwrap_or(0);
 
-    //         latest_assembly += 1;
+    commands.entity(e).insert(structure.root);
+    let mut children = Vec::new();
+    for bundle in structure.children {
+        let child = commands.spawn(bundle).id();
+            commands
+            .entity(child)
+            .insert(AssemblyId(assembly_id));
+        if !structure.split.split {
+            commands.entity(e).add_child(child);
+        } else {
+            // //TODO: expand this to other components than [`Transform`]
 
-    //         world
-    //             .commands()
-    //             .entity(e)
-    //             .insert(AssemblyId(latest_assembly));
-    //         latest_assembly
-    //     }
-    // };
-    match structure {
-        Structure::Root(bundle) => {
-            commands.entity(e).insert(bundle);
+            if structure.split.inheriet_transform {
+                let parent_transform = {
+                    transforms.get(e)
+                    //parent.map(|n| n.clone())
+                };
+                if let Ok(parent_trans) = parent_transform {
+                    commands.entity(child).insert(*parent_trans);
+                };
+            }
+
+            // //TODO: expand this to other components than [`Transform`]
+            // let parent_transform = {
+            //     let parent = world.entity(e).get::<Transform>();
+            //     parent.map(|n| n.clone())
+            // };
+            // if let Some(parent_trans) = parent_transform {
+            //     world.commands().entity(child).insert(parent_trans);
+            // };
         }
-        Structure::Children(bundles, split) => {
-            let mut children = Vec::new();
-            for bundle in bundles {
-                let child = commands.spawn(bundle).id();
-                    commands
-                    .entity(child)
-                    .insert(AssemblyId(assembly_id));
-                if !split.split {
-                    commands.entity(e).add_child(child);
-                } else {
-                    // //TODO: expand this to other components than [`Transform`]
-
-                    if split.inheriet_transform {
-                        let parent_transform = {
-                            transforms.get(e)
-                            //parent.map(|n| n.clone())
-                        };
-                        if let Ok(parent_trans) = parent_transform {
-                            commands.entity(child).insert(*parent_trans);
-                        };
-                    }
-
-                    // //TODO: expand this to other components than [`Transform`]
-                    // let parent_transform = {
-                    //     let parent = world.entity(e).get::<Transform>();
-                    //     parent.map(|n| n.clone())
-                    // };
-                    // if let Some(parent_trans) = parent_transform {
-                    //     world.commands().entity(child).insert(parent_trans);
-                    // };
-                }
-                children.push(child);
-            }
-            let current_assembly_entities = assemblies
-                .0
-                .entry(assembly_id)
-                .or_insert(HashSet::default());
-            for child in &children {
-                current_assembly_entities.insert(child.clone());
-            }
-
-            {
-                // let mut initialized_stagers =
-                //     world.get_resource_mut::<InitializedStagers>().unwrap();
-
-                let previous_result = initialized_stagers.0.get_mut(&e);
-
-                match previous_result {
-                    Some(res) => {
-                        for child in children {
-                            res.push(child);
-                        }
-                    }
-                    None => {
-                        initialized_stagers.0.insert(e, children.clone());
-                    }
-                }
-                //initialized_stagers.0.insert(e, v)
-                // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
-                // if let Some(old_val) = initialized_children.0.insert(e, children) {
-                //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
-                // }
-            }
-            //world.commands().entity(e).remove::<Self>();
-        }
+        children.push(child);
     }
+    let current_assembly_entities = assemblies
+        .0
+        .entry(assembly_id)
+        .or_insert(HashSet::default());
+    for child in &children {
+        current_assembly_entities.insert(child.clone());
+    }
+
+    {
+        // let mut initialized_stagers =
+        //     world.get_resource_mut::<InitializedStagers>().unwrap();
+
+        let previous_result = initialized_stagers.0.get_mut(&e);
+
+        match previous_result {
+            Some(res) => {
+                for child in children {
+                    res.push(child);
+                }
+            }
+            None => {
+                initialized_stagers.0.insert(e, children.clone());
+            }
+        }
+        //initialized_stagers.0.insert(e, v)
+        // let mut initialized_children = world.get_resource_mut::<InitializedChildren>().unwrap();
+        // if let Some(old_val) = initialized_children.0.insert(e, children) {
+        //     warn!("old value replaced for InitializedChildren, Refactor this to work with multiple  RequestStructur::Children to prevent bugs");
+        // }
+    }
+            //world.commands().entity(e).remove::<Self>();
 }
 
 /// Take inner new_type and add components to this components entity from [`Disassemble`]

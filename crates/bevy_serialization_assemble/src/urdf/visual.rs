@@ -19,18 +19,20 @@ use crate::{
 pub struct VisualWrapper(pub Vec<Visual>);
 
 impl Disassemble for VisualWrapper {
-    fn components(value: &Self, settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle> {
+    fn components(value: &Self, settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
         let mut children = Vec::new();
         for visual in &value.0 {
             (children.push(Resolve::from(GeometryWrapper(visual.geometry.clone()))));
         }
-        Structure::Children(
-            children,
-            Split {
+
+        Structure { 
+            root: (), 
+            children: children, 
+            split: Split {
                 split: settings.split,
                 inheriet_transform: true,
             },
-        )
+        }
     }
 }
 

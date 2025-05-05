@@ -7,20 +7,20 @@ use serde_json::{Result, Value};
 pub const KHR_IMPLICIT_SHAPES: &'static str = "khr_implicit_shapes";
 
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct KHRImplicitShapesMap {
     pub shapes: Vec<Shape>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Shape {
     Box(BoxShape),
     Cylinder(CylinderShape),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BoxShape {
     #[serde(rename = "box")]
     pub size: BoxData,
@@ -28,18 +28,18 @@ pub struct BoxShape {
 
 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CylinderShape {
     #[serde(rename = "cylinder")]
     pub dimensions: CylinderData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BoxData {
     pub size: [f64; 3],
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CylinderData {
     pub height: f64,
     pub radius_bottom: f64,
