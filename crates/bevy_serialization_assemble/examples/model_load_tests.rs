@@ -24,7 +24,7 @@ fn main() {
     App::new()
         .add_plugins(AppSourcesPlugin::CRATE)
         .add_plugins(AssetSourcesUrdfPlugin {
-            //TODO: This should be unified under `ROOT`
+            //TODO: This should be unified underc `ROOT`
             assets_folder_local_path: "../../assets".to_owned(),
         })
         .add_plugins(DefaultPlugins

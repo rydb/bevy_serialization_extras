@@ -18,8 +18,12 @@ pub mod khr_physics_rigid_bodies;
 use bevy_ecs::component::StorageType;
 use glam::Vec3;
 use khr_implicit_shapes::khr_implicit_shapes::{KHRImplicitShapesMap, Shape, KHR_IMPLICIT_SHAPES};
-use khr_physics_rigid_bodies::{khr_physics_rigid_bodies::{KhrPhysicsRigidBodiesMap, KHR_PHYSICS_RIGID_BODIES}, khr_physics_rigid_bodies_nodes::KHRPhysicsRigidBodiesNodeProp};
+use khr_physics_rigid_bodies::{extension::{KhrPhysicsRigidBodiesMap, KHR_PHYSICS_RIGID_BODIES}, node::KHRPhysicsRigidBodiesNodeProp};
 use std::fmt::Debug;
+
+use crate::AssemblyId;
+
+use super::{wrappers::NodeId, GltfAssociation};
 
 
 #[derive(Default, Clone)]
@@ -32,12 +36,12 @@ pub struct PhysicsProperties {
 
 /// Request for the physics of a given node from the [`GltfPhysicsRegistry`]
 #[derive(Component, Reflect)]
-pub struct NodePhysicsRequest(pub Vec<(u32, NodePhysicsMap)>);
+pub struct NodePhysicsRequest(pub Vec<(usize, NodePhysicsMap)>);
 
 #[derive(Reflect)]
 pub struct NodePhysicsMap {
     pub motion: f32,
-    pub collider_id: u32
+    pub collider_id: usize
 }
 
 /// plugin for initializing infastructure for gltf physics
@@ -49,6 +53,7 @@ impl Plugin for GltfPhysicsPlugin {
         app
         .init_resource::<PhysicsPropertyRegistry>()    
         .register_type::<NodePhysicsRequest>()
+        .add_systems(Update, bind_physics)
         ;
     }
 }
@@ -56,7 +61,6 @@ impl Plugin for GltfPhysicsPlugin {
 /// component holding a request to register specific gltf's physics properties.
 #[derive(Clone)]
 pub struct GltfPhysicsRegistration {
-    pub gltf_handle: Handle<Gltf>,
     pub physics: PhysicsProperties
 }
 
@@ -65,11 +69,16 @@ impl Component for GltfPhysicsRegistration {
 
     fn register_component_hooks(_hooks: &mut ComponentHooks) {
         _hooks.on_add(|mut world, hook| {
-            let component = world.get::<Self>(hook.entity).unwrap().clone();
-            println!("gltf physics initialized for: {:#?}", component.gltf_handle);
+            let registration = world.get::<Self>(hook.entity).unwrap().clone();
+            
+            let Some(gltf_handle) = world.get::<GltfAssociation>(hook.entity).map(|n| n.clone()) else {
+                warn!("{:#?} requested gltf physics but has no associated gltf. Skipping.", hook.entity);
+                return
+            };
+            println!("gltf physics initialized for: {:#?}", gltf_handle.0);
             let mut gltf_physics_registry = world.get_resource_mut::<PhysicsPropertyRegistry>().unwrap();
         
-            gltf_physics_registry.insert(component.gltf_handle, component.physics);
+            gltf_physics_registry.insert(gltf_handle.0, registration.physics);
 
             world.commands().entity(hook.entity).remove::<Self>();
         });
@@ -84,7 +93,7 @@ impl Component for GltfPhysicsRegistration {
 pub struct PhysicsPropertyRegistry(pub HashMap<Handle<Gltf>, PhysicsProperties>);
 
 /// parse gltf physics extensions into their extension property maps.
-pub fn parse_gltf_physics(gltf: &gltf::Gltf) -> Result<(PhysicsProperties, Vec<(u32, NodePhysicsMap)>), String> {
+pub fn parse_gltf_physics(gltf: &gltf::Gltf) -> Result<(PhysicsProperties, Vec<(usize, NodePhysicsMap)>), String> {
     
     // let error_message = &gltf.document.as_json();
     let Some(external_extensions) = gltf.extensions() else {
@@ -128,7 +137,7 @@ pub fn parse_gltf_physics(gltf: &gltf::Gltf) -> Result<(PhysicsProperties, Vec<(
         
         node_physics.push(
             (
-                node.index() as u32,
+                node.index(),
                 NodePhysicsMap {
                 motion: khr_physics_node_prop.motion.mass,
                 collider_id: khr_physics_node_prop.collider.geometry.shape_index
@@ -148,7 +157,6 @@ pub fn parse_gltf_physics(gltf: &gltf::Gltf) -> Result<(PhysicsProperties, Vec<(
         // colliders.push(collider);
         
     }
-
     Ok(
         (
             PhysicsProperties { implicit_shapes: khr_implict_shapes, physics_rigid_bodies: khr_physics },
@@ -157,15 +165,59 @@ pub fn parse_gltf_physics(gltf: &gltf::Gltf) -> Result<(PhysicsProperties, Vec<(
             )
         )
     )
+}
+
+pub fn bind_physics(
+    physics: Res<PhysicsPropertyRegistry>,
+    requests: Query<(Entity, &GltfAssociation, &NodePhysicsRequest, &AssemblyId)>,
+    nodes: Query<(Entity, &AssemblyId, &NodeId)>,
+    mut commands: Commands,
+) {
+    for (e, handle, request, assembly_id) in &requests {
+        let Some(extension) = physics.0.get(&handle.0) else {
+            warn!("{:#}'s gltf handle, {:#?} does map to a physics extension registry? Skipping.",e ,handle.0);
+            return;
+        };
+
+        let implicit_shapes = &extension.implicit_shapes;
+        let physiscs_rigid_bodies = &extension.physics_rigid_bodies;
 
 
+        let associated_nodes = nodes.iter()
+        .filter(|(e, id, ..)| &assembly_id == id)
+        .map(|(e, _, n)| (e, n))
+        .collect::<Vec<_>>();
 
-    // let mut colliders = Vec::new();
 
+        for (node_id, map) in &request.0 {
+            let Some((e, node_id)) = associated_nodes.iter().find(|(e, n)| &n.0 == node_id) else {
+                warn!("no matching node id found for {:#}. Associated nodes: {:#?}", node_id, associated_nodes);
+                return
+            };
 
-    // Ok(())
-    // Ok(
-    //     PhysicsProperties { colliders: colliders }
-    // )
+            let Some(shape) = implicit_shapes.shapes.iter().nth(map.collider_id) else {
+                warn!("no shape found for {:#?}. Shapes are 0 through {:#?}", map.collider_id, implicit_shapes.shapes.len() - 1);
+                return
+            };
+        
+            let collider: MeshPrefab = match shape {
+                Shape::Box(box_shape) => Cuboid::from_size(Vec3::from(box_shape.size.size.map(|n| n as f32))).into(),
+                Shape::Cylinder(cylinder_shape) => {
+                    warn!("khr_physics_rigid_body cylinder -> core wrapper conversion not 1:1. These may desync");
+                    Cylinder::new(cylinder_shape.dimensions.radius_top as f32, cylinder_shape.dimensions.height as f32).into()
+                }
+            };
 
+            commands.entity(*e).insert(ColliderFlag::from(collider));
+        }
+
+        commands.entity(e).remove::<NodePhysicsRequest>();
+            //let collider = physiscs_rigid_bodies.physics_materials.iter().nth(n)
+        
+        //let collider = request.0
+        // for (id, data) in &request.0 {
+
+        // }
+
+    }
 }

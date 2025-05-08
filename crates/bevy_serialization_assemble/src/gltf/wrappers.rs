@@ -13,25 +13,16 @@ use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
 use glam::{Quat, Vec3};
 use gltf::json::Value;
-use physics::{khr_implicit_shapes::khr_implicit_shapes::{KHRImplicitShapesMap, Shape, KHR_IMPLICIT_SHAPES}, khr_physics_rigid_bodies::{khr_physics_rigid_bodies::KHR_PHYSICS_RIGID_BODIES, khr_physics_rigid_bodies_nodes::KHRPhysicsRigidBodiesNodeProp}};
+use physics::{khr_implicit_shapes::khr_implicit_shapes::{KHRImplicitShapesMap, Shape, KHR_IMPLICIT_SHAPES}, khr_physics_rigid_bodies::{extension::KHR_PHYSICS_RIGID_BODIES, node::KHRPhysicsRigidBodiesNodeProp}};
 use ref_cast::RefCast;
 use strum::IntoEnumIterator;
 
-use crate::{components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe}, gltf::physics::{parse_gltf_physics, GltfPhysicsRegistration, NodePhysicsRequest, PhysicsProperties}, traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Source, Split, Structure}};
+use crate::{components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe}, gltf::{physics::{parse_gltf_physics, GltfPhysicsRegistration, NodePhysicsRequest, PhysicsProperties}, GltfAssociation}, traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Source, Split, Structure}};
 
 use super::{gltf_collider_request, physics, Mesh3dAlignmentRequest, SchemaKind, TransformSchemaAlignRequest};
 
-// #[derive(From, Clone, Deref, TransparentWrapper)]
-// #[repr(transparent)]
-// pub struct GltfRootNodeWrapper(GltfNode);
-
-// impl AssetLoadSettings for GltfRootNodeWrapper {
-//     type LoadSettingsType = ();
-
-//     fn load_settings() -> Option<Self::LoadSettingsType> {
-//         None
-//     }
-// }
+#[derive(Component, Debug)]
+pub struct NodeId(pub usize);
 
 #[derive(From, Clone, Deref, DerefMut, TransparentWrapper)]
 #[repr(transparent)]
@@ -43,6 +34,7 @@ impl Disassemble for GltfPrimitiveWrapper {
         Structure { 
             root: (
                 Name::new(value.name.clone()),
+                
                 // Mesh3dAlignmentRequest(value.mesh.clone(), SchemaKind::GLTF),
                 Mesh3d(value.mesh.clone()),
                 Maybe(mat),
@@ -102,10 +94,12 @@ impl Disassemble for GltfNodeWrapper {
                 DisassembleAssetRequest::<GltfNodeWrapper>::handle(node.clone(), None),
             )
         }
+        println!("{:?} node id is {:#?}", value.name.clone(), value.index);
         Structure { 
             root: (
                 Name::new(value.name.clone()),
                 //TransformSchemaAlignRequest(value.transform.clone(), SchemaKind::GLTF),
+                NodeId(value.index),
                 value.transform.clone(),
                 Maybe(mesh),
                 Visibility::default(),
@@ -115,94 +109,6 @@ impl Disassemble for GltfNodeWrapper {
         }
     }
 }
-
-// impl Disassemble for GltfRootNodeWrapper {
-//     fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
-        
-//         let mut children = Vec::new();
-
-//         if value.mesh.is_some() {
-//             panic!("A root node cannot have a mesh. Panicing this for now.")
-//         }
-
-        
-//         for child in &value.0.children {
-//             children.push(
-//                 (
-//                     // DisassembleAssetRequest::<GltfNodeMeshOne>::handle(child.clone(), None),
-//                 )
-//             )
-//         }
-
-//         // return Structure::Children(
-//         //     children,
-//         //     Split {
-//         //     split: false,
-//         //     inheriet_transform: true
-//         //     }    
-            
-//         // )
-//         return Structure {
-//             root: (
-//                 Name::new(value.name.clone()),
-//                 TransformSchemaAlignRequest(value.transform.clone(), SchemaKind::GLTF)
-//             ),
-//             children: children,
-//             split: Split { split: false, inheriet_transform: true }
-//         }
-//         // for child in value.children {
-//         //     //let mesh = 
-//         //     children.push(
-//         //         (
-//         //             DisassembleAssetRequest::<GltfNodeWrapper>::handle(c, custom_settings)
-//         //         )
-//         //     )
-//         // }
-
-//         // return Structure::Children(children, Split { split: false, inheriet_transform: true })
-//         // let mesh = value.0.mesh.clone().map(|n| {
-//         //     DisassembleAssetRequest(
-//         //         DisassembleStage::Handle::<GltfMeshWrapper>(n),
-//         //         DisassembleSettings::default(),
-//         //     )
-//         // });
-
-//         // Structure::Root((Maybe(mesh),))
-//             // let collider_request = if PHYSICS {
-//         //     if let Some(gltf_extras) = &value.0.extras {
-//         //         println!("gltf_extras are: {:#}", gltf_extras.value);
-//         //         Some(RequestCollider::from(gltf_collider_request(&gltf_extras)))
-//         //     } else {
-//         //         Some(RequestCollider::Convex)
-//         //     }
-//         // } else {
-//         //     None
-//         // };
-//         // let visuals = value
-//         //     .0
-//         //     .mesh.clone()
-//         //     .map(|n| DisassembleAssetRequest::<GltfMeshWrapper>::handle(n, None));
-
-//         // let collider_request = if PHYSICS {
-//         //     if let Some(gltf_extras) = &value.0.extras {
-//         //         println!("gltf_extras are: {:#}", gltf_extras.value);
-//         //         Some(RequestCollider::from(gltf_collider_request(&gltf_extras)))
-//         //     } else {
-//         //         Some(RequestCollider::Convex)
-//         //     }
-//         // } else {
-//         //     None
-//         // };
-//         // println!("node name: {:#}", value.0.name);
-//         // Structure::Root((
-//         //     Maybe(collider_request),
-//         //     Maybe(visuals),
-//         //     Visibility::Visible,
-//         //     TransformSchemaAlignRequest(trans, SchemaKind::GLTF),
-//         // ))
-    
-//     }
-// }
 
 impl Disassemble for GltfModel {
     fn components(value: &Self, settings: DisassembleSettings, source: Source) -> Structure<impl Bundle, impl Bundle> {
@@ -246,10 +152,9 @@ impl Disassemble for GltfModel {
         Structure { 
             root: (
                 GltfPhysicsRegistration {
-                    gltf_handle,
                     physics: physics_extension_maps
                 },
-                
+                GltfAssociation(gltf_handle),
                 NodePhysicsRequest(node_physics_map),
                 DisassembleAssetRequest::<GltfNodeWrapper>::handle(top_node.clone(), None),
             ),

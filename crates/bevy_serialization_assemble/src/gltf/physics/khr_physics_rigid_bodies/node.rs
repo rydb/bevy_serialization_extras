@@ -20,7 +20,7 @@ pub struct Motion {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Geometry {
     #[serde(rename = "shape")]
-    pub shape_index: u32, 
+    pub shape_index: usize, 
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]

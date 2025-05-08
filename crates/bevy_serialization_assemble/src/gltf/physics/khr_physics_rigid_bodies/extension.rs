@@ -11,9 +11,9 @@ pub const KHR_PHYSICS_RIGID_BODIES: &'static str = "khr_physics_rigid_bodies";
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct KhrPhysicsRigidBodiesMap {
     #[serde(rename = "physicsMaterials")]
-    physics_materials: Vec<PhysicsMaterials>,
+    pub physics_materials: Vec<PhysicsMaterials>,
     #[serde(rename = "collisionFilters")]
-    collision_filters: Vec<CollisionFilters>,
+    pub collision_filters: Vec<CollisionFilters>,
 }
 
 
