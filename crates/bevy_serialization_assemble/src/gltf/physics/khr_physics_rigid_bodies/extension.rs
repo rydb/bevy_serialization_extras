@@ -5,9 +5,8 @@ use serde::{Deserialize, Serialize};
 
 pub const KHR_PHYSICS_RIGID_BODIES: &'static str = "khr_physics_rigid_bodies";
 
-
-/// KHR_physics_rigid_bodies properties map. 
-/// proposal. 
+/// KHR_physics_rigid_bodies properties map.
+/// proposal.
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct KhrPhysicsRigidBodiesMap {
     #[serde(rename = "physicsMaterials")]
@@ -16,8 +15,6 @@ pub struct KhrPhysicsRigidBodiesMap {
     pub collision_filters: Vec<CollisionFilters>,
 }
 
-
-
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct CollisionFilters {
     #[serde(rename = "collisionSystems")]
@@ -25,11 +22,6 @@ pub struct CollisionFilters {
     #[serde(rename = "collideWithSystems")]
     pub collide_with_systems: Vec<String>,
 }
-
-
-
-
-
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct PhysicsMaterials {

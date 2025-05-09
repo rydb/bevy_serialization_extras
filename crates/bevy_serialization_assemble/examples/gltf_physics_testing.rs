@@ -1,6 +1,5 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-
 use bevy::prelude::*;
 use bevy_asset::io::{
     AssetSource,
@@ -9,15 +8,12 @@ use bevy_asset::io::{
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::DisassembleAssetRequest,
-    gltf::GltfPhysicsModel,
-    prelude::*,
+    components::DisassembleAssetRequest, gltf::GltfPhysicsModel, prelude::*,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{UiExtrasDebug, visualize_components_for};
 use moonshine_save::save::Save;
-
 
 pub const SAVES: &str = "saves";
 

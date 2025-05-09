@@ -2,7 +2,10 @@ use crate::{
     prelude::{ComponentsOnSave, TypeRegistryOnSave},
     traits::*,
 };
-use std::{any::{type_name, TypeId}, collections::HashMap};
+use std::{
+    any::{TypeId, type_name},
+    collections::HashMap,
+};
 
 use bevy_asset::prelude::*;
 use bevy_ecs::prelude::*;

@@ -11,7 +11,7 @@ use bevy_serialization_core::{
     prelude::{SerializationBasePlugin, material::Material3dFlag},
     resources::{LoadRequest, SaveRequest},
 };
-use bevy_ui_extras::{states::DebugMenuState, UiExtrasDebug};
+use bevy_ui_extras::{UiExtrasDebug, states::DebugMenuState};
 use moonshine_save::save::Save;
 use std::{env, path::PathBuf};
 use strum_macros::{Display, EnumIter};

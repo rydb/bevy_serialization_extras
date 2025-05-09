@@ -15,13 +15,18 @@ use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
 use glam::{Quat, Vec3};
 use gltf::json::Value;
-use physics::{khr_implicit_shapes::khr_implicit_shapes::{KHRImplicitShapesMap, Shape, KHR_IMPLICIT_SHAPES}, khr_physics_rigid_bodies::{extension::KHR_PHYSICS_RIGID_BODIES, node::KHRPhysicsRigidBodiesNodeProp}, PhysicsProperties};
+use physics::{
+    PhysicsProperties,
+    khr_implicit_shapes::khr_implicit_shapes::{KHR_IMPLICIT_SHAPES, KHRImplicitShapesMap, Shape},
+    khr_physics_rigid_bodies::{
+        extension::KHR_PHYSICS_RIGID_BODIES, node::KHRPhysicsRigidBodiesNodeProp,
+    },
+};
 use ref_cast::RefCast;
 use strum::IntoEnumIterator;
 
-
-pub mod wrappers;
 pub mod physics;
+pub mod wrappers;
 
 use crate::{
     components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe},
@@ -66,7 +71,6 @@ pub struct RootNode {
 #[derive(Component)]
 pub struct Mesh3dAlignmentRequest(pub Handle<Mesh>, pub SchemaKind);
 
-
-/// Gltf associated with this entity. 
+/// Gltf associated with this entity.
 #[derive(Component, Clone)]
 pub struct GltfAssociation(pub Handle<Gltf>);

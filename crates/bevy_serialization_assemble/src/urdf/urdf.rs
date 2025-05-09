@@ -52,7 +52,11 @@ pub struct Id(pub String);
 pub struct LinksNJoints(#[deref] Vec<(Link, Option<Joint>)>);
 
 impl Disassemble for LinksNJoints {
-    fn components(value: &Self, settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
+    fn components(
+        value: &Self,
+        settings: DisassembleSettings,
+        _source: Source,
+    ) -> Structure<impl Bundle, impl Bundle> {
         let mut children = Vec::new();
 
         for (link, joint) in &value.0 {
@@ -77,13 +81,13 @@ impl Disassemble for LinksNJoints {
         }
         //TODO: transform proprogation and joints are mutually exclusive. If Split is set to false, expect bugs
         //if you touch [`Transform`] outside of the context of rapier updating it automatically from physics.
-        Structure { 
-            root: (), 
-            children: children, 
+        Structure {
+            root: (),
+            children: children,
             split: Split {
                 split: settings.split,
                 inheriet_transform: true,
-            }, 
+            },
         }
     }
 }
@@ -96,8 +100,16 @@ pub struct Visuals(pub Vec<Visual>);
 pub struct UrdfJoint(Joint);
 
 impl Disassemble for UrdfJoint {
-    fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
-        Structure { root: (JointRequest::from(value),), children: Vec::<()>::default(), split: Split::default()}
+    fn components(
+        value: &Self,
+        _settings: DisassembleSettings,
+        _source: Source,
+    ) -> Structure<impl Bundle, impl Bundle> {
+        Structure {
+            root: (JointRequest::from(value),),
+            children: Vec::<()>::default(),
+            split: Split::default(),
+        }
     }
 }
 
@@ -106,7 +118,11 @@ impl Disassemble for UrdfJoint {
 pub struct LinkColliders(pub Vec<Collision>);
 
 impl Disassemble for LinkColliders {
-    fn components(value: &Self, _settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
+    fn components(
+        value: &Self,
+        _settings: DisassembleSettings,
+        _source: Source,
+    ) -> Structure<impl Bundle, impl Bundle> {
         //let trans = Transform::from_rotation(Quat::from_rotation_x(PI/2.0));
         let geometry = {
             if value.0.len() > 1 {
@@ -125,20 +141,24 @@ impl Disassemble for LinkColliders {
                     .map(|n| Resolve::from(GeometryWrapper(n)))
             }
         };
-        Structure { 
+        Structure {
             root: (
                 RigidBodyFlag::Dynamic,
                 Maybe(geometry),
                 Visibility::default(),
-            ), 
-            children: Vec::<()>::default(), 
-            split: Split::default() 
+            ),
+            children: Vec::<()>::default(),
+            split: Split::default(),
         }
     }
 }
 
 impl Disassemble for UrdfWrapper {
-    fn components(value: &Self, settings: DisassembleSettings, _source: Source) -> Structure<impl Bundle, impl Bundle> {
+    fn components(
+        value: &Self,
+        settings: DisassembleSettings,
+        _source: Source,
+    ) -> Structure<impl Bundle, impl Bundle> {
         let mut structured_joint_map = HashMap::new();
 
         for joint in &value.0.joints {
@@ -154,7 +174,7 @@ impl Disassemble for UrdfWrapper {
                     .map(|(_, joint)| joint.clone()),
             ))
         }
-        Structure { 
+        Structure {
             root: (
                 Name::new(value.0.0.name.clone()),
                 DisassembleRequest(
@@ -163,9 +183,9 @@ impl Disassemble for UrdfWrapper {
                         split: settings.split,
                     },
                 ),
-            ), 
-            children: Vec::<()>::default(), 
-            split: Split::default() 
+            ),
+            children: Vec::<()>::default(),
+            split: Split::default(),
         }
     }
 }

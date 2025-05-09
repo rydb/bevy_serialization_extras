@@ -3,7 +3,9 @@
 use std::ops::Deref;
 
 use bevy_ecs::{
-    component::ComponentId, resource::Resource, system::{Commands, Res, SystemId}
+    component::ComponentId,
+    resource::Resource,
+    system::{Commands, Res, SystemId},
 };
 
 pub mod plugins;

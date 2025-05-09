@@ -45,9 +45,7 @@ impl Default for SerializeFilter {
                 .deny::<CameraMainTextureUsages>()
                 .deny::<CameraRenderGraph>()
                 .deny::<Exposure>()
-                .deny::<Mesh3d>()
-                
-                ;
+                .deny::<Mesh3d>();
             new_filter
         })
     }

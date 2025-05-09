@@ -1,4 +1,4 @@
-use bevy_asset::{meta::Settings, saver::AssetSaver, Asset, AssetLoader, Handle, UntypedHandle};
+use bevy_asset::{Asset, AssetLoader, Handle, UntypedHandle, meta::Settings, saver::AssetSaver};
 use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
@@ -41,7 +41,7 @@ pub struct DisassembleSettings {
 
 pub enum Source {
     Asset(UntypedHandle),
-    Component
+    Component,
 }
 
 /// The trait for Disassembling structures into either:
@@ -56,7 +56,11 @@ where
     Self: Send + Sync + Deref<Target: Sized> + TransparentWrapper<Self::Target> + 'static,
 {
     // type Settings: Send + Sync + Clone;
-    fn components(value: &Self, settings: DisassembleSettings, source: Source) -> Structure<impl Bundle, impl Bundle>;
+    fn components(
+        value: &Self,
+        settings: DisassembleSettings,
+        source: Source,
+    ) -> Structure<impl Bundle, impl Bundle>;
 }
 pub trait AssetLoadSettings {
     /// Settings for how this asset is loaded
@@ -88,11 +92,11 @@ impl PullDown {
 //     Children(Vec<T>, Split),
 // }
 
-pub struct Structure<T,U> {
+pub struct Structure<T, U> {
     /// components going on the entity this component is attached to.
     pub root: T,
     /// components going onto the sub-components/children of this entity.
     pub children: Vec<U>,
     /// settings for what (if) children are split off from the parent/child hierarchy.
-    pub split: Split
+    pub split: Split,
 }

@@ -1,6 +1,5 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-
 use bevy::prelude::*;
 use bevy_asset::io::{
     AssetSource,
@@ -10,13 +9,14 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
-    components::DisassembleAssetRequest, gltf::{physics::GltfPhysicsPlugin, wrappers::GltfModel}, prelude::*
+    components::DisassembleAssetRequest,
+    gltf::{physics::GltfPhysicsPlugin, wrappers::GltfModel},
+    prelude::*,
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
 use bevy_ui_extras::{UiExtrasDebug, visualize_components_for};
 use moonshine_save::save::Save;
-
 
 pub const SAVES: &str = "saves";
 
@@ -27,14 +27,10 @@ fn main() {
             //TODO: This should be unified underc `ROOT`
             assets_folder_local_path: "../../assets".to_owned(),
         })
-        .add_plugins(DefaultPlugins
-            .set(
-                WindowPlugin {
-                exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
-                ..Default::default()
-                }
-            )
-        )
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            exit_condition: bevy::window::ExitCondition::OnPrimaryClosed,
+            ..Default::default()
+        }))
         .add_plugins(RapierPhysicsPlugin::<()>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
         // // serialization plugins
@@ -64,7 +60,6 @@ fn main() {
         .run();
 }
 
-
 #[derive(Component)]
 pub struct BasePlate;
 
@@ -76,7 +71,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    assets: Res<AssetServer>
+    assets: Res<AssetServer>,
 ) {
     // plane
     commands.spawn((
@@ -94,10 +89,7 @@ fn setup(
 
     // Physics enabled gltf
     commands.spawn((
-        DisassembleAssetRequest::<GltfModel>::path(
-            "root://models/motor.glb".to_owned(),
-            None,
-        ),
+        DisassembleAssetRequest::<GltfModel>::path("root://models/motor.glb".to_owned(), None),
         Name::new("model"),
     ));
     // light

@@ -9,9 +9,9 @@ use log::warn;
 use moonshine_save::file_from_resource;
 use moonshine_save::load::LoadPlugin;
 use moonshine_save::load::load;
-use moonshine_save::save::save_with;
 use moonshine_save::save::SaveInput;
 use moonshine_save::save::SavePlugin;
+use moonshine_save::save::save_with;
 use std::any::type_name;
 use std::ops::Range;
 use std::{any::TypeId, marker::PhantomData};
@@ -151,7 +151,11 @@ impl<T: AssetWrapper> Plugin for SerializeAssetFor<T> {
                     match world.entity(hook_context.entity).get::<T>() {
                         Some(val) => val,
                         None => {
-                            warn!("could not get {:#?} on: {:#}", type_name::<Self>(), hook_context.entity);
+                            warn!(
+                                "could not get {:#?} on: {:#}",
+                                type_name::<Self>(),
+                                hook_context.entity
+                            );
                             return;
                         }
                     }
@@ -181,7 +185,10 @@ impl<T: AssetWrapper> Plugin for SerializeAssetFor<T> {
                 };
 
                 let componentized_asset = T::WrapperTarget::from(handle);
-                world.commands().entity(hook_context.entity).insert(componentized_asset);
+                world
+                    .commands()
+                    .entity(hook_context.entity)
+                    .insert(componentized_asset);
             });
     }
 }

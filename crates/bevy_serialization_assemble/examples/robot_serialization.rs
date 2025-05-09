@@ -21,7 +21,7 @@ use bevy_serialization_assemble::{
 };
 use bevy_serialization_core::prelude::*;
 use bevy_serialization_physics::prelude::*;
-use bevy_ui_extras::{visualize_components_for, UiExtrasDebug, DEBUG_FRAME_STYLE};
+use bevy_ui_extras::{DEBUG_FRAME_STYLE, UiExtrasDebug, visualize_components_for};
 use moonshine_save::save::Save;
 
 use strum_macros::{Display, EnumIter};

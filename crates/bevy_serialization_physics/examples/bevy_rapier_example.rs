@@ -108,7 +108,8 @@ fn create_revolute_joints(
             Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
             Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
             MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
-            AsyncCollider::default(),
+            Collider::cuboid(0.5, 0.5, 0.5),
+            //AsyncCollider::default(),
         ))
         .id();
 

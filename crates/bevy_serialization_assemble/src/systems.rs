@@ -1,7 +1,9 @@
-use crate::components::{disassemble_components_from_system, DisassembleAssetRequest, DisassembleStage, RollDownIded};
+use crate::components::{
+    DisassembleAssetRequest, DisassembleStage, RollDownIded, disassemble_components_from_system,
+};
 use crate::gltf::{Mesh3dAlignmentRequest, TransformSchemaAlignRequest};
 use crate::traits::{Assemble, AssetLoadSettings, Disassemble, Source};
-use crate::{prelude::*, Assemblies, AssemblyId, JointRequest, JointRequestStage, SaveSuccess};
+use crate::{Assemblies, AssemblyId, JointRequest, JointRequestStage, SaveSuccess, prelude::*};
 use bevy_asset::saver::{AssetSaver, SavedAsset};
 use bevy_asset::{AssetLoader, ErasedLoadedAsset, LoadedAsset, prelude::*};
 use bevy_derive::{Deref, DerefMut};
@@ -60,8 +62,7 @@ pub fn initialize_asset_structure<T>(
     mut initialized_stagers: ResMut<InitializedStagers>,
     mut commands: Commands,
     // entity_refs: Query<EntityRef>
-    components: &Components
-    //type_registry: Res<AppTypeRegistry>,
+    components: &Components, //type_registry: Res<AppTypeRegistry>,
 ) where
     T: Disassemble + AssetLoadSettings,
     T::Target: Asset,
@@ -81,15 +82,27 @@ pub fn initialize_asset_structure<T>(
                 warn!("handle for Asset<T::inner> reports being loaded by asset not available?");
                 return;
             };
-            
+
             // let t_converted = transmute_copy_safe::<T::Target, T>(asset);
             let t_converted = T::wrap_ref(asset);
-            let structure = Disassemble::components(t_converted, request.1.clone(), Source::Asset(handle.clone().untyped()));
+            let structure = Disassemble::components(
+                t_converted,
+                request.1.clone(),
+                Source::Asset(handle.clone().untyped()),
+            );
 
-
-
-            disassemble_components_from_system(&mut commands, 
-                &mut assembly_ids, &mut assemblies, &mut transforms, &mut initialized_stagers, e, components.component_id::<DisassembleAssetRequest<T>>().unwrap(), structure);
+            disassemble_components_from_system(
+                &mut commands,
+                &mut assembly_ids,
+                &mut assemblies,
+                &mut transforms,
+                &mut initialized_stagers,
+                e,
+                components
+                    .component_id::<DisassembleAssetRequest<T>>()
+                    .unwrap(),
+                structure,
+            );
 
             commands.entity(e).remove::<DisassembleAssetRequest<T>>();
             // commands.entity(e).insert(DisassembleAssetRequest(
@@ -276,19 +289,23 @@ pub fn bind_joint_request_to_parent(
 }
 
 pub fn align_transforms_to_bevy(
-    mut align_requests: Query<(Entity, &mut Transform, Option<&Name>, &TransformSchemaAlignRequest)>,
+    mut align_requests: Query<(
+        Entity,
+        &mut Transform,
+        Option<&Name>,
+        &TransformSchemaAlignRequest,
+    )>,
     mut commands: Commands,
 ) {
     for (e, mut trans, name, modifier) in &mut align_requests {
         match modifier.1 {
             crate::gltf::SchemaKind::GLTF => {
-
                 let alignment = Quat::from_xyzw(-1.0, -1.0, 0.0, 0.0).normalize();
 
                 trans.rotation = alignment * modifier.0.rotation;
                 trans.translation = alignment * modifier.0.translation;
                 trans.scale = modifier.0.scale;
-                
+
                 commands.entity(e).remove::<TransformSchemaAlignRequest>();
             }
         }

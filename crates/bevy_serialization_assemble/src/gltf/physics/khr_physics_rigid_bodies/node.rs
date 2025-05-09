@@ -1,15 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-
-
-
 /// KHRPhysicsRigidBodies property on a node.
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct KHRPhysicsRigidBodiesNodeProp {
     #[serde(rename = "motion")]
     pub motion: Motion,
     #[serde(rename = "collider")]
-    pub collider: Collider
+    pub collider: Collider,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -20,7 +17,7 @@ pub struct Motion {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Geometry {
     #[serde(rename = "shape")]
-    pub shape_index: usize, 
+    pub shape_index: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]

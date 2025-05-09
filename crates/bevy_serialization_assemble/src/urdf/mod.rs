@@ -3,7 +3,6 @@ pub mod resources;
 pub mod urdf;
 pub mod visual;
 
-
 use crate::traits::AssetLoadSettings;
 use bytemuck::TransparentWrapper;
 use ref_cast::RefCast;

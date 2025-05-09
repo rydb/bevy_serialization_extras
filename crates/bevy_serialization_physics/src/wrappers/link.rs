@@ -15,7 +15,11 @@ use rapier3d::{
     na::Isometry3,
 };
 
-use bevy_ecs::{component::{ComponentMutability, Mutable, StorageType}, prelude::*, query::QueryData};
+use bevy_ecs::{
+    component::{ComponentMutability, Mutable, StorageType},
+    prelude::*,
+    query::QueryData,
+};
 use bevy_math::Vec3;
 use bevy_reflect::prelude::*;
 use bevy_transform::prelude::*;
@@ -346,7 +350,11 @@ impl Component for JointFlag {
                 let comp = match world.entity(hook.entity).get::<Self>() {
                     Some(val) => val,
                     None => {
-                        warn!("could not get {:#?} on: {:#}", type_name::<Self>(), hook.entity);
+                        warn!(
+                            "could not get {:#?} on: {:#}",
+                            type_name::<Self>(),
+                            hook.entity
+                        );
                         return;
                     }
                 };
@@ -373,7 +381,7 @@ impl Component for JointFlag {
             //world.commands().entity(e).insert()
         });
     }
-    
+
     type Mutability = Mutable;
 }
 
