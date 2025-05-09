@@ -15,12 +15,10 @@ use bevy_derive::Deref;
 use bevy_ecs::{
     component::{ComponentHooks, ComponentId, HookContext, Mutable, StorageType},
     prelude::*,
-    system::SystemState,
     world::DeferredWorld,
 };
 use bevy_log::warn;
 use bevy_reflect::Reflect;
-use bevy_render::mesh::Mesh3d;
 use bevy_transform::components::Transform;
 
 // /// The structure this entity belongs to
@@ -128,11 +126,11 @@ pub fn disassemble_components_from_world<'a>(
 
 pub fn disassemble_components_from_system<'a>(
     //world: &mut DeferredWorld<'a>,
-    mut commands: &mut Commands,
+    commands: &mut Commands,
     assembly_ids: &mut Query<&AssemblyId>,
-    mut assemblies: &mut ResMut<Assemblies>,
+    assemblies: &mut ResMut<Assemblies>,
     transforms: &mut Query<&Transform>,
-    mut initialized_stagers: &mut ResMut<InitializedStagers>,
+    initialized_stagers: &mut ResMut<InitializedStagers>,
     e: Entity,
     _id: ComponentId,
     //comp: T,

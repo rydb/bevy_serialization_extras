@@ -1,37 +1,16 @@
-use std::{any::type_name, collections::HashMap};
 
-use bevy_asset::{AssetContainer, Handle, RenderAssetUsages};
-use bevy_derive::{Deref, DerefMut};
+use bevy_asset::Handle;
 use bevy_ecs::prelude::*;
-use bevy_gltf::{Gltf, GltfExtras, GltfLoaderSettings, GltfMesh, GltfNode, GltfPrimitive};
+use bevy_gltf::{Gltf, GltfExtras, GltfNode};
 use bevy_log::warn;
-use bevy_math::primitives::{Cuboid, Cylinder};
-use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
-use bevy_serialization_core::prelude::mesh::MeshPrefab;
-use bevy_serialization_physics::prelude::{ColliderFlag, RequestCollider};
+use bevy_serialization_physics::prelude::RequestCollider;
 use bevy_transform::components::Transform;
-use bytemuck::TransparentWrapper;
-use derive_more::derive::From;
-use glam::{Quat, Vec3};
-use gltf::json::Value;
-use physics::{
-    PhysicsProperties,
-    khr_implicit_shapes::khr_implicit_shapes::{KHR_IMPLICIT_SHAPES, KHRImplicitShapesMap, Shape},
-    khr_physics_rigid_bodies::{
-        extension::KHR_PHYSICS_RIGID_BODIES, node::KHRPhysicsRigidBodiesNodeProp,
-    },
-};
-use ref_cast::RefCast;
 use strum::IntoEnumIterator;
 
 pub mod physics;
 pub mod wrappers;
 
-use crate::{
-    components::{DisassembleAssetRequest, DisassembleRequest, DisassembleStage, Maybe},
-    traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Split, Structure},
-};
 
 pub fn gltf_collider_request(extras: &GltfExtras) -> RequestCollider {
     if let Some(target) = extras.value.replace(['}', '{', '"'], "").split(':').last() {

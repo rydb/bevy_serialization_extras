@@ -1,10 +1,9 @@
-use bevy_asset::{Asset, AssetLoader, Handle, UntypedHandle, meta::Settings, saver::AssetSaver};
+use bevy_asset::{Asset, AssetLoader, UntypedHandle, meta::Settings, saver::AssetSaver};
 use bevy_ecs::{
     prelude::*,
     system::{SystemParam, SystemParamItem},
 };
 use bytemuck::TransparentWrapper;
-use ref_cast::RefCast;
 use std::{any::TypeId, collections::HashSet, ops::Deref};
 
 /// The trait for assembling a structure into its root asset.

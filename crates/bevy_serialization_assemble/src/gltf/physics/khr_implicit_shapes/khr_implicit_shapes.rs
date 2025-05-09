@@ -2,7 +2,7 @@
 //! https://github.com/eoineoineoin/glTF_Physics/tree/master/extensions/2.0/Khronos/KHR_implicit_shapes
 
 use serde::{Deserialize, Serialize};
-use serde_json::{Result, Value};
+use serde_json::Value;
 
 pub const KHR_IMPLICIT_SHAPES: &'static str = "khr_implicit_shapes";
 

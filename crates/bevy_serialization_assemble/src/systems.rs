@@ -12,7 +12,6 @@ use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemState;
 use bevy_ecs::world::CommandQueue;
 use bevy_log::prelude::*;
-use bevy_reflect::TypeRegistry;
 use bevy_render::mesh::{Mesh, Mesh3d, VertexAttributeValues};
 use bevy_serialization_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
 use bevy_tasks::futures_lite::future;
@@ -20,8 +19,6 @@ use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;
 use glam::Quat;
 use std::any::TypeId;
-use std::mem::transmute;
-use std::ops::Deref;
 use std::path::Path;
 
 pub fn check_roll_down<T: Component + Clone>(
@@ -55,7 +52,7 @@ pub fn initialize_asset_structure<T>(
     //events: EventReader<AssetEvent<T::Inner>>,
     asset_server: Res<AssetServer>,
     requests: Query<(Entity, &DisassembleAssetRequest<T>)>,
-    mut assets: ResMut<Assets<T::Target>>,
+    assets: ResMut<Assets<T::Target>>,
     mut assemblies: ResMut<Assemblies>,
     mut transforms: Query<&Transform>,
     mut assembly_ids: Query<&AssemblyId>,

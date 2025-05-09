@@ -7,7 +7,7 @@ use bevy_ecs::{
     component::{ComponentHooks, Immutable},
     prelude::*,
 };
-use bevy_gltf::{Gltf, GltfNode};
+use bevy_gltf::Gltf;
 use bevy_log::warn;
 use bevy_math::primitives::{Cuboid, Cylinder};
 use bevy_reflect::Reflect;
@@ -24,7 +24,6 @@ use khr_physics_rigid_bodies::{
     extension::{KHR_PHYSICS_RIGID_BODIES, KhrPhysicsRigidBodiesMap},
     node::KHRPhysicsRigidBodiesNodeProp,
 };
-use std::fmt::Debug;
 
 use crate::AssemblyId;
 

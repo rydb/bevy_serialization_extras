@@ -6,7 +6,6 @@ use bevy_asset::io::{
     file::{FileAssetReader, FileAssetWriter},
 };
 use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained};
-use bevy_gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_serialization_assemble::{
     components::DisassembleAssetRequest,

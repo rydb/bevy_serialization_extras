@@ -5,7 +5,6 @@ pub mod visual;
 
 use crate::traits::AssetLoadSettings;
 use bytemuck::TransparentWrapper;
-use ref_cast::RefCast;
 // use crate::systems::split_open_self;
 // use crate::systems::split_open_self_children;
 use crate::urdf::loader::UrdfLoaderPlugin;

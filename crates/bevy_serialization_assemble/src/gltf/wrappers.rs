@@ -1,25 +1,14 @@
-use bevy_asset::{AssetContainer, Handle, RenderAssetUsages};
+use bevy_asset::{Handle, RenderAssetUsages};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
-use bevy_gltf::{Gltf, GltfExtras, GltfLoaderSettings, GltfMesh, GltfNode, GltfPrimitive};
+use bevy_gltf::{Gltf, GltfLoaderSettings, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_log::warn;
-use bevy_math::primitives::{Cuboid, Cylinder};
 use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
-use bevy_serialization_core::prelude::mesh::MeshPrefab;
-use bevy_serialization_physics::prelude::{ColliderFlag, RequestCollider};
-use bevy_transform::components::Transform;
-use bytemuck::{TransparentWrapper, Zeroable};
+use bevy_serialization_physics::prelude::RequestCollider;
+use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
-use glam::{Quat, Vec3};
-use gltf::json::Value;
-use physics::{
-    khr_implicit_shapes::khr_implicit_shapes::{KHR_IMPLICIT_SHAPES, KHRImplicitShapesMap, Shape},
-    khr_physics_rigid_bodies::{
-        extension::KHR_PHYSICS_RIGID_BODIES, node::KHRPhysicsRigidBodiesNodeProp,
-    },
-};
-use ref_cast::RefCast;
+use glam::Quat;
 use strum::IntoEnumIterator;
 
 use crate::{
@@ -33,9 +22,7 @@ use crate::{
     traits::{AssetLoadSettings, Disassemble, DisassembleSettings, Source, Split, Structure},
 };
 
-use super::{
-    Mesh3dAlignmentRequest, SchemaKind, TransformSchemaAlignRequest, gltf_collider_request, physics,
-};
+use super::gltf_collider_request;
 
 #[derive(Component, Debug)]
 pub struct NodeId(pub usize);

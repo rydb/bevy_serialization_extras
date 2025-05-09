@@ -16,7 +16,7 @@ use rapier3d::{
 };
 
 use bevy_ecs::{
-    component::{ComponentMutability, Mutable, StorageType},
+    component::{Mutable, StorageType},
     prelude::*,
     query::QueryData,
 };
