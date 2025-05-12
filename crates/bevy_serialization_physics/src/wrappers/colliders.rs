@@ -95,7 +95,12 @@ impl From<&Collider> for ColliderFlag {
         match collider {
             ColliderView::Ball(ball_view) => Self::Prefab(Sphere::new(ball_view.radius()).into()),
             ColliderView::Cuboid(cuboid_view) => {
-                Self::Prefab(Cuboid::from_size(cuboid_view.half_extents()).into())
+                let (x_half, y_half, z_half) = (cuboid_view.half_extents().x, cuboid_view.half_extents().y, cuboid_view.half_extents().z);
+                
+                let x = x_half * 2.0;
+                let y = y_half * 2.0;
+                let z = z_half * 2.0;
+                Self::Prefab(Cuboid::new(x, y, z).into())
             }
             ColliderView::Capsule(capsule_view) => {
                 Self::Prefab(Capsule3d::new(capsule_view.radius(), capsule_view.height()).into())
