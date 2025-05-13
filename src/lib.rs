@@ -1,10 +1,10 @@
 pub mod prelude {
     #[cfg(feature = "assemble")]
-    pub use bevy_serialization_assemble::prelude::*;
-    pub use bevy_serialization_core::prelude::*;
+    pub use bevy_assemble::prelude::*;
+    pub use bevy_synonomize::prelude::*;
     #[cfg(feature = "physics")]
-    pub use bevy_serialization_physics::prelude::*;
+    pub use bevy_synonyms_physics::prelude::*;
 }
 
-// pub use bevy_serialization_core;
-// pub use bevy_serialization_physics;
+// pub use bevy_synonomize;
+// pub use bevy_synonyms_physics;

@@ -23,16 +23,16 @@
 
 - Serialization of groups of enities that compose an asset into their singular asset equivillent, and vice-versa
 
-### A visualization util to list serializable/unserializable components(W.I.P) [bevy_serialization_core]
+### A visualization util to list serializable/unserializable components(W.I.P) [bevy_synonomize]
 
 [demo_gif.webm](https://github.com/rydb/bevy_serialization_extras/assets/43288084/3bda45f1-c75a-437b-a02d-27e58bd3276e)
 
 ### Visualize and edit 3rd party components that do not [`Reflect`]
-#### E.G: Edit Rapier's `ImpulseJoint` through `JointFlag` [bevy_serialization_physics]
+#### E.G: Edit Rapier's `ImpulseJoint` through `JointFlag` [bevy_synonyms_physics]
 ![edit_example.png](edit_example.png)
 
 ### Serialize a collection of entities into an [`Asset`] that is composed of them
-#### E.G: serialize the parts of a robot into a [`Urdf`] [bevy_serialization_assemble]
+#### E.G: serialize the parts of a robot into a [`Urdf`] [bevy_assemble]
 
 ```Rust
 //(entity_0, ... entity_n) -> Asset
@@ -47,7 +47,7 @@ https://github.com/user-attachments/assets/fb1a1b09-db3f-4476-9b0d-800b296ccb8a
 
 - bevy_serialization_extras is built ontop of `bevy_reflect`, not serde. No need to double dip to serialize.
 
-- bevy_serialization_extras allows regular serialization into .ron via [`moonshine_save`] + allows converting serializables into more stable file formats via bevy_serialization_assemble. 
+- bevy_serialization_extras allows regular serialization into .ron via [`moonshine_save`] + allows converting serializables into more stable file formats via bevy_assemble. 
 
 serde serialization: 
 > world <--> scene.json

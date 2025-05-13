@@ -1,0 +1,55 @@
+[package]
+name = "bevy_assemble"
+version = "0.3.0-beta.0"
+edition = "2024"
+repository = "https://github.com/rydb/bevy_serialization_extras"
+license = "MIT"
+description = "A crate for assembling assets from entities and components"
+
+
+[dependencies]
+anyhow = {workspace = true}
+bevy_synonomize = {workspace = true}
+bevy_synonyms_physics = {workspace = true}
+bevy_ecs = {workspace = true}
+bevy_transform = {workspace = true}
+bevy_render = {workspace = true}
+bevy_reflect = {workspace = true}
+bevy_color = {workspace = true}
+bevy_utils = {workspace = true}
+bevy_state = {workspace = true}
+bevy_asset = {workspace = true}
+ref-cast = {workspace = true}
+bevy_app = {workspace = true}
+bevy_internal = {workspace = true}
+serde_json = {workspace = true}
+serde = {workspace = true}
+gltf = {workspace = true}
+bevy_pbr = {workspace = true}
+bytemuck = {workspace = true}
+bevy_log = {workspace = true}
+bevy_derive = {workspace = true}
+bevy_tasks = {workspace = true}
+bevy_gltf = {workspace = true}
+thiserror = {workspace = true}
+derive_more = {workspace = true}
+glam = {workspace = true}
+nalgebra = {workspace = true}
+urdf-rs = {workspace = true}
+bevy_math = {workspace = true}
+moonshine-save = {workspace = true}
+strum_macros = {workspace = true}
+strum = {workspace = true}
+bevy_rapier3d = {workspace = true}
+
+[dev-dependencies]
+bevy = {workspace = true, features = [
+    "dynamic_linking", 
+    "trace_tracy"
+]}
+const_format = {workspace = true}
+bevy_ui_extras = {workspace = true}
+moonshine-save = {workspace = true}
+bevy_camera_extras = {workspace = true}
+bevy_rapier3d = {workspace = true}
+bevy-inspector-egui = {workspace = true}

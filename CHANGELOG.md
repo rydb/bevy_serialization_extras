@@ -9,9 +9,9 @@ This is a big update with a lot of refactors, new features, and quality life imp
 # changes
 
 
-### bevy_serialization_assemble refactors:
+### bevy_assemble refactors:
 
-bevy_serialization_assemble's 0.1 release had a lot of rough edges around it. So, this update has been mostly focused on improvements to it.
+bevy_assemble's 0.1 release had a lot of rough edges around it. So, this update has been mostly focused on improvements to it.
 
 #### renamed FromStructure into Disassemble, and impl refactors
 
@@ -112,7 +112,7 @@ So on and so forth untill all `DisassembleRequest`s and `DisassembleAssetRequest
     );
     ```
 
-### bevy_serialization_core refactors:
+### bevy_synonomize refactors:
 
 #### trait bound consolidation
 wrapper components have had their trait bounds consolidated under the new [`WrapperComponent`] trait.
@@ -136,7 +136,7 @@ pub enum Mesh3dFlag {
 }
 ```
 
-### bevy_serialization_physics refactors:
+### bevy_synonyms_physics refactors:
 
 - AsyncColliderFlag has been removed in favor of [`ColliderFlag`]. If you wish to initialize AsyncColliderFlag, use AsyncCollider from rapier.
 

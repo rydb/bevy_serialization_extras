@@ -63,18 +63,18 @@ derive_more = {version = "2", features = ["from"]}
 bitvec = "1.0"
 log = "0.4.2"
 
-bevy_serialization_core = {path = "./crates/bevy_serialization_core", version = "0.8.0-beta.0"}
-bevy_serialization_physics = {path = "./crates/bevy_serialization_physics", version = "0.8.0-beta.0"}
-bevy_serialization_assemble = {path = "./crates/bevy_serialization_assemble", version = "0.3.0-beta.0"}
+bevy_synonomize = {path = "./crates/bevy_synonomize", version = "0.8.0-beta.0"}
+bevy_synonyms_physics = {path = "./crates/bevy_synonyms_physics", version = "0.8.0-beta.0"}
+bevy_assemble = {path = "./crates/bevy_assemble", version = "0.3.0-beta.0"}
 
 [dependencies]
-bevy_serialization_core = {workspace = true}
-bevy_serialization_physics = {optional = true, workspace = true}
-bevy_serialization_assemble = {optional = true, workspace = true}
+bevy_synonomize = {workspace = true}
+bevy_synonyms_physics = {optional = true, workspace = true}
+bevy_assemble = {optional = true, workspace = true}
 
 
 
 [features]
 default = ["physics", "assemble"]
-physics = ["bevy_serialization_physics"]
-assemble = ["bevy_serialization_assemble"]
+physics = ["bevy_synonyms_physics"]
+assemble = ["bevy_assemble"]
