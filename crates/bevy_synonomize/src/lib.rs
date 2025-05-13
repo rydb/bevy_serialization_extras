@@ -8,14 +8,15 @@ use bevy_ecs::{
     system::{Commands, Res, SystemId},
 };
 
-pub mod plugins;
+// pub mod plugins;
 pub mod resources;
 mod systems;
 pub mod traits;
 pub mod wrappers;
+pub mod plugins;
 
 pub mod prelude {
-    pub use crate::{plugins::*, resources::*, traits::*, wrappers::*};
+    pub use crate::{resources::*, traits::*, wrappers::*};
 }
 
 #[doc = "hidden"]
