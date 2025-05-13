@@ -1,1 +1,0 @@
-//! synonyms for things in bevy and third party crates.

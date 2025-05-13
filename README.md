@@ -13,22 +13,22 @@
 
 ```Rust
 // Component <-> WrapperComponent
-.add_plugins(SerializeComponentFor::<AsyncCollider, ColliderFlag>::default())
+.add_plugins(SynonymizeComponent::<AsyncCollider, ColliderFlag>::default())
 
 // Asset <-> WrapperComponent
-.add_plugins(SerializeAssetFor::<MeshMaterial3d<StandardMaterial>, MaterialFlag3d>::default())
+.add_plugins(SynonymizeAsset::<MeshMaterial3d<StandardMaterial>, MaterialFlag3d>::default())
 // Query -> Component, 
 .add_plugins(SerializeQueryFor::<Linkage, ImpulseJoint, JointFlag>::default())
 ```
 
 - Serialization of groups of enities that compose an asset into their singular asset equivillent, and vice-versa
 
-### A visualization util to list serializable/unserializable components(W.I.P) [bevy_synonomize]
+### A visualization util to list serializable/unserializable components(W.I.P) [bevy_synonymize]
 
 [demo_gif.webm](https://github.com/rydb/bevy_serialization_extras/assets/43288084/3bda45f1-c75a-437b-a02d-27e58bd3276e)
 
 ### Visualize and edit 3rd party components that do not [`Reflect`]
-#### E.G: Edit Rapier's `ImpulseJoint` through `JointFlag` [bevy_synonyms_physics]
+#### E.G: Edit Rapier's `ImpulseJoint` through `JointFlag` [bevy_synonymize_physics]
 ![edit_example.png](edit_example.png)
 
 ### Serialize a collection of entities into an [`Asset`] that is composed of them

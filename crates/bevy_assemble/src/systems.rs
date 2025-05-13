@@ -13,7 +13,7 @@ use bevy_ecs::system::SystemState;
 use bevy_ecs::world::CommandQueue;
 use bevy_log::prelude::*;
 use bevy_render::mesh::{Mesh, Mesh3d, VertexAttributeValues};
-use bevy_synonyms_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
+use bevy_synonymize_physics::prelude::{JointBounded, JointFlag, RigidBodyFlag};
 use bevy_tasks::futures_lite::future;
 use bevy_tasks::{IoTaskPool, Task, block_on};
 use bevy_transform::components::Transform;

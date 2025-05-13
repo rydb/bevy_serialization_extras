@@ -1,6 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
-        "./crates/bevy_synonyms_physics/Cargo.toml",
-        "./crates/bevy_synonomize/Cargo.toml",
+        "./crates/bevy_synonymize_physics/Cargo.toml",
+        "./crates/bevy_synonymize/Cargo.toml",
     ]
 }

@@ -9,8 +9,8 @@ description = "A crate for assembling assets from entities and components"
 
 [dependencies]
 anyhow = {workspace = true}
-bevy_synonomize = {workspace = true}
-bevy_synonyms_physics = {workspace = true}
+bevy_synonymize = {workspace = true}
+bevy_synonymize_physics = {workspace = true}
 bevy_ecs = {workspace = true}
 bevy_transform = {workspace = true}
 bevy_render = {workspace = true}

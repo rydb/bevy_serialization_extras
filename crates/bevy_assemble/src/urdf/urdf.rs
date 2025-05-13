@@ -2,9 +2,9 @@ use crate::traits::{DisassembleSettings, Source};
 use bevy_ecs::system::SystemParamItem;
 use bevy_log::warn;
 use bevy_render::prelude::Visibility;
-use bevy_synonomize::prelude::mesh::Mesh3dFlag;
-use bevy_synonyms_physics::prelude::JointInfo;
-use bevy_synonyms_physics::prelude::{
+use bevy_synonymize::prelude::mesh::Mesh3dFlag;
+use bevy_synonymize_physics::prelude::JointInfo;
+use bevy_synonymize_physics::prelude::{
     link::{
         Dynamics, JointAxesMaskWrapper, JointFlag, JointLimitWrapper, JointMotorWrapper, LinkFlag,
     },

@@ -5,7 +5,7 @@ use bevy_gltf::{Gltf, GltfLoaderSettings, GltfMesh, GltfNode, GltfPrimitive};
 use bevy_log::warn;
 use bevy_pbr::MeshMaterial3d;
 use bevy_render::prelude::*;
-use bevy_synonyms_physics::prelude::RequestCollider;
+use bevy_synonymize_physics::prelude::RequestCollider;
 use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
 use glam::Quat;

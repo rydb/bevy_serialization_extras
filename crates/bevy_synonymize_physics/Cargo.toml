@@ -1,0 +1,47 @@
+[package]
+name = "bevy_synonymize_physics"
+version = "0.8.0-beta.0"
+edition = "2024"
+repository = "https://github.com/rydb/bevy_serialization_extras"
+license = "MIT"
+description = "A crate for adding physics wrappers for bevy_serialization_extras"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy_synonymize = {workspace = true}
+
+bevy_ecs = {workspace = true}
+bevy_render = {workspace = true}
+bevy_app = {workspace = true}
+bevy_reflect = {workspace = true}
+bevy_pbr = {workspace = true}
+bevy_utils = {workspace = true}
+bevy_math = {workspace = true}
+bevy_core_pipeline = {workspace = true}
+bevy_asset = {workspace = true}
+bevy_transform = {workspace = true}
+bevy_input = {workspace = true}
+bevy_rapier3d = {workspace = true}
+rapier3d = {workspace = true}
+glam = {workspace = true}
+# moonshine-save = {workspace = true}
+strum = {workspace = true}
+strum_macros = {workspace = true}
+bitflags = {workspace = true}
+derive_more = {workspace = true}
+bevy_log = {workspace = true}
+
+
+
+
+
+[dev-dependencies]
+bevy = {workspace = true, features = [
+    "dynamic_linking", 
+    "trace_tracy"
+]}
+bevy-inspector-egui = {workspace = true}
+bitvec = {workspace = true}
+bevy_ui_extras = {workspace = true}
+bevy_window = {workspace = true}

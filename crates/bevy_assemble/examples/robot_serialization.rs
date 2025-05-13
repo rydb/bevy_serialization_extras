@@ -19,8 +19,8 @@ use bevy_assemble::{
     prelude::*,
     traits::DisassembleSettings,
 };
-use bevy_synonomize::prelude::*;
-use bevy_synonyms_physics::prelude::*;
+use bevy_synonymize::prelude::*;
+use bevy_synonymize_physics::prelude::*;
 use bevy_ui_extras::{DEBUG_FRAME_STYLE, UiExtrasDebug, visualize_components_for};
 use moonshine_save::save::Save;
 

@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use bevy_app::prelude::*;
-use bevy_synonomize::run_proxy_system;
+use bevy_synonymize::run_proxy_system;
 
 use crate::{
     Assemblies, AssemblyId, SaveSuccess,

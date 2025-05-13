@@ -112,7 +112,7 @@ So on and so forth untill all `DisassembleRequest`s and `DisassembleAssetRequest
     );
     ```
 
-### bevy_synonomize refactors:
+### bevy_synonymize refactors:
 
 #### trait bound consolidation
 wrapper components have had their trait bounds consolidated under the new [`WrapperComponent`] trait.
@@ -136,7 +136,7 @@ pub enum Mesh3dFlag {
 }
 ```
 
-### bevy_synonyms_physics refactors:
+### bevy_synonymize_physics refactors:
 
 - AsyncColliderFlag has been removed in favor of [`ColliderFlag`]. If you wish to initialize AsyncColliderFlag, use AsyncCollider from rapier.
 

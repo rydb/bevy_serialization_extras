@@ -1,7 +1,7 @@
 use bevy_derive::Deref;
 use bevy_ecs::prelude::*;
 use bevy_log::warn;
-use bevy_synonomize::prelude::mesh::{Mesh3dFlag, MeshPrefab, MeshWrapper};
+use bevy_synonymize::prelude::mesh::{Mesh3dFlag, MeshPrefab, MeshWrapper};
 use bytemuck::TransparentWrapper;
 use derive_more::From;
 use glam::Vec3;

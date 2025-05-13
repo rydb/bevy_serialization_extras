@@ -4,7 +4,7 @@ use bevy_ecs::prelude::*;
 use bevy_gltf::{Gltf, GltfExtras, GltfNode};
 use bevy_log::warn;
 use bevy_render::prelude::*;
-use bevy_synonyms_physics::prelude::RequestCollider;
+use bevy_synonymize_physics::prelude::RequestCollider;
 use bevy_transform::components::Transform;
 use strum::IntoEnumIterator;
 

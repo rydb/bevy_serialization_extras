@@ -11,8 +11,8 @@ use bevy_gltf::Gltf;
 use bevy_log::warn;
 use bevy_math::primitives::{Cuboid, Cylinder};
 use bevy_reflect::Reflect;
-use bevy_synonomize::prelude::mesh::MeshPrefab;
-use bevy_synonyms_physics::prelude::ColliderFlag;
+use bevy_synonymize::prelude::mesh::MeshPrefab;
+use bevy_synonymize_physics::prelude::ColliderFlag;
 
 pub mod khr_implicit_shapes;
 pub mod khr_physics_rigid_bodies;

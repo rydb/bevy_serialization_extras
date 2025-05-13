@@ -5,7 +5,7 @@ use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::ReflectComponent;
 use bevy_ecs::prelude::*;
 use bevy_reflect::Reflect;
-use bevy_synonyms_physics::prelude::JointInfo;
+use bevy_synonymize_physics::prelude::JointInfo;
 
 pub mod components;
 pub mod gltf;

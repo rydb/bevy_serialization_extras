@@ -12,8 +12,8 @@ use bevy_assemble::{
     gltf::{physics::GltfPhysicsPlugin, wrappers::GltfModel},
     prelude::*,
 };
-use bevy_synonomize::prelude::*;
-use bevy_synonyms_physics::prelude::*;
+use bevy_synonymize::prelude::*;
+use bevy_synonymize_physics::prelude::*;
 use bevy_ui_extras::{UiExtrasDebug, visualize_components_for};
 use moonshine_save::save::Save;
 

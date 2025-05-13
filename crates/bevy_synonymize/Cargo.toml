@@ -1,0 +1,41 @@
+[package]
+name = "bevy_synonymize"
+version = "0.8.0-beta.0"
+edition = "2024"
+repository = "https://github.com/rydb/bevy_serialization_extras"
+license = "MIT"
+description = "A crate which contains the plugins/systems that bevy_serializations_extras relies on, + some misc wrappers"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy_ecs = {workspace = true}
+bevy_render = {workspace = true}
+bevy_app = {workspace = true}
+bevy_reflect = {workspace = true}
+bevy_pbr = {workspace = true}
+bevy_utils = {workspace = true}
+bevy_math = {workspace = true}
+bevy_core_pipeline = {workspace = true}
+bevy_asset = {workspace = true}
+bevy_transform = {workspace = true}
+bevy_color = {workspace = true}
+bevy_derive = {workspace = true}
+bevy_log = {workspace = true}
+glam = {workspace = true}
+ron = {workspace = true}
+
+multimap = {workspace = true}
+strum = {workspace = true}
+thiserror = {workspace = true}
+strum_macros = {workspace = true}
+yaserde = {workspace = true}
+derive_more = {workspace = true}
+log = {workspace = true}
+bytemuck = {workspace = true}
+
+[dev-dependencies]
+bevy = {workspace = true, features = ["dynamic_linking"]}
+bevy_ui_extras = {workspace = true}
+bevy-inspector-egui = {workspace = true}
+bevy_window = {workspace = true}

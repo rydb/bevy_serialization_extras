@@ -63,21 +63,20 @@ derive_more = {version = "2", features = ["from"]}
 bitvec = "1.0"
 log = "0.4.2"
 
-bevy_synonomize = {path = "./crates/bevy_synonomize", version = "0.8.0-beta.0"}
-bevy_synonyms = {path = "./crates/bevy_synonyms"}
-bevy_synonyms_save = {path = "./crates/bevy_synonyms_save"}
-bevy_synonyms_physics = {path = "./crates/bevy_synonyms_physics", version = "0.8.0-beta.0"}
+bevy_synonymize = {path = "./crates/bevy_synonymize", version = "0.8.0-beta.0"}
+bevy_synonymize_save = {path = "./crates/bevy_synonymize_save"}
+bevy_synonymize_physics = {path = "./crates/bevy_synonymize_physics", version = "0.8.0-beta.0"}
 bevy_assemble = {path = "./crates/bevy_assemble", version = "0.3.0-beta.0"}
 
 [dependencies]
-bevy_synonomize = {workspace = true}
-bevy_synonyms = {workspace = true}
-bevy_synonyms_physics = {optional = true, workspace = true}
+bevy_synonymize = {workspace = true}
+bevy_synonymize_save = {workspace = true}
+bevy_synonymize_physics = {optional = true, workspace = true}
 bevy_assemble = {optional = true, workspace = true}
 
 
 
 [features]
 default = ["physics", "assemble"]
-physics = ["bevy_synonyms_physics"]
+physics = ["bevy_synonymize_physics"]
 assemble = ["bevy_assemble"]
