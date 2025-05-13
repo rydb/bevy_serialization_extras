@@ -6,8 +6,8 @@ use bevy_inspector_egui::{
     bevy_egui::EguiContext,
     egui::{self, TextEdit},
 };
-use bevy_synonymize::prelude::material::Material3dFlag;
-use bevy_synonymize_save::{plugins::{SerializationBasePlugin, SerializationPlugin}, resources::{LoadRequest, SaveRequest}};
+use bevy_synonymize::{plugins::SynonymizeBasePlugin, prelude::material::Material3dFlag};
+use bevy_synonymize_save::{plugins::{SerializationPlugin}, resources::{LoadRequest, SaveRequest}};
 use bevy_ui_extras::{UiExtrasDebug, states::DebugMenuState};
 use moonshine_save::save::Save;
 use std::{env, path::PathBuf};
@@ -26,7 +26,7 @@ fn main() {
         }))
         .insert_resource(UtilitySelection::default())
         .add_plugins(SerializationPlugin)
-        .add_plugins(SerializationBasePlugin)
+        .add_plugins(SynonymizeBasePlugin)
         .add_plugins(UiExtrasDebug {
             menu_mode: DebugMenuState::Explain,
             ..default()

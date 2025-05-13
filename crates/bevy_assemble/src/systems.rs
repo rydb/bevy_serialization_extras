@@ -123,13 +123,13 @@ impl<T> Default for SaveAssembledRequests<T> {
     }
 }
 
-pub fn stage_save_asset_request<AssetWrapper>(
+pub fn stage_save_asset_request<AssetSynonym>(
     mut commands: Commands,
-    mut requests: ResMut<AssembleRequests<AssetWrapper>>,
+    mut requests: ResMut<AssembleRequests<AssetSynonym>>,
     // asset_server: Res<AssetServer>,
-    //mut save_assembly_requests: ResMut<SaveAssembledRequests<AssetWrapper::Target>>
+    //mut save_assembly_requests: ResMut<SaveAssembledRequests<AssetSynonym::Target>>
 ) where
-    AssetWrapper: Assemble + Clone + 'static + Default,
+    AssetSynonym: Assemble + Clone + 'static + Default,
 {
     while let Some(request) = requests.pop() {
         let mut command_queue = CommandQueue::default();
@@ -146,16 +146,16 @@ pub fn stage_save_asset_request<AssetWrapper>(
                 return;
             };
 
-            let mut system_state = SystemState::<AssetWrapper::Params>::new(world);
+            let mut system_state = SystemState::<AssetSynonym::Params>::new(world);
 
             // println!("assembling {:#?}", request.selected);
 
             let asset = {
                 let params = system_state.get_mut(world);
-                AssetWrapper::assemble(request.selected.clone(), params)
+                AssetSynonym::assemble(request.selected.clone(), params)
             };
             let mut save_assembly_requests =
-                world.resource_mut::<SaveAssembledRequests<AssetWrapper::Target>>();
+                world.resource_mut::<SaveAssembledRequests<AssetSynonym::Target>>();
             save_assembly_requests.0.push(SaveAssembledRequest {
                 asset,
                 path_keyword: request.path_keyword,
@@ -195,12 +195,12 @@ pub fn handle_save_tasks(
     }
 }
 
-pub fn save_asset<AssetWrapper>(
-    mut requests: ResMut<SaveAssembledRequests<AssetWrapper::Target>>,
+pub fn save_asset<AssetSynonym>(
+    mut requests: ResMut<SaveAssembledRequests<AssetSynonym::Target>>,
     asset_server: Res<AssetServer>,
     mut save_tasks: ResMut<StagedAssembleRequestTasks>,
 ) where
-    AssetWrapper: Assemble + Clone + 'static + Default,
+    AssetSynonym: Assemble + Clone + 'static + Default,
 {
     while let Some(request) = requests.pop() {
         let asset_server = asset_server.clone();
@@ -210,15 +210,15 @@ pub fn save_asset<AssetWrapper>(
             let Ok(asset_source) = asset_server.get_source(request.path_keyword.clone()) else {
                 return Err(format!("request path keyword {:#} not found in AssetServer. Aborting save attempt", request.path_keyword));
             };
-            let loaded: LoadedAsset<AssetWrapper::Target> = request.asset.into();
+            let loaded: LoadedAsset<AssetSynonym::Target> = request.asset.into();
             let erased = ErasedLoadedAsset::from(loaded);
 
             
-            let saved = SavedAsset::<AssetWrapper::Target>::from_loaded(&erased).unwrap();
+            let saved = SavedAsset::<AssetSynonym::Target>::from_loaded(&erased).unwrap();
 
-            let saver = AssetWrapper::Saver::default();
+            let saver = AssetSynonym::Saver::default();
         
-            let binding = <AssetWrapper::Loader>::default();
+            let binding = <AssetSynonym::Loader>::default();
             let file_extensions = binding.extensions();
             if file_extensions.len() > 1 {
                 warn!("save request for {:#} contains multiple file extensions. Defaulting to first one available. All extensions {:#?}", request.file_name, file_extensions)
@@ -230,8 +230,8 @@ pub fn save_asset<AssetWrapper>(
             let asset_writer = asset_source.writer().unwrap();
             let mut async_writer = asset_writer.write(Path::new(&(request.file_name.to_owned() + "." + extension))).await.unwrap();
     
-            let _ = saver.save(&mut *async_writer, saved, &AssetWrapper::Settings::default()).await;
-            Ok((request.file_name, TypeId::of::<AssetWrapper::Target>()))
+            let _ = saver.save(&mut *async_writer, saved, &AssetSynonym::Settings::default()).await;
+            Ok((request.file_name, TypeId::of::<AssetSynonym::Target>()))
         });
         // println!("finished adding save task");
         save_tasks.push(task);

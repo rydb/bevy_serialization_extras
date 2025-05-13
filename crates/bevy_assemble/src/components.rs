@@ -254,7 +254,7 @@ impl<T: Disassemble> Component for DisassembleRequest<T> {
     type Mutability = Mutable;
 }
 
-// /// Staging component for deserializing [`Disassemble`] implemented asset wrappers.
+// /// Staging component for deserializing [`Disassemble`] implemented asset synonyms.
 // /// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
 // /// until [`Disassemble`] can be ran
 // #[derive(Clone, Debug)]
@@ -273,7 +273,7 @@ pub struct AssemblyIdList {
     pub child: Option<Entity>,
 }
 
-/// Staging component for deserializing [`Disassemble`] implemented asset wrappers.
+/// Staging component for deserializing [`Disassemble`] implemented asset synonyms.
 /// depending on the owned information of the asset, this component is gradually elevated from Path -> Handle -> Asset
 /// until [`Disassemble`] can be ran
 pub struct DisassembleAssetRequest<T>(pub DisassembleStage<T>, pub DisassembleSettings)

@@ -100,7 +100,7 @@ So on and so forth untill all `DisassembleRequest`s and `DisassembleAssetRequest
 
 
 - 
-    Post impl, assets can now be saved via the [`AssembleRequest<T>`] resource on `Assemble` implementing asset wrappers E.G to serialize a urdf:
+    Post impl, assets can now be saved via the [`AssembleRequest<T>`] resource on `Assemble` implementing asset synonyms E.G to serialize a urdf:
     ```rust
     let request = AssembleRequest::<UrdfWrapper>::new(
         // file name
@@ -117,13 +117,13 @@ So on and so forth untill all `DisassembleRequest`s and `DisassembleAssetRequest
 #### trait bound consolidation
 wrapper components have had their trait bounds consolidated under the new [`WrapperComponent`] trait.
 
-wrapper components around assets have had their trait bounds consolidated under [`AssetWrapper`]
+wrapper components around assets have had their trait bounds consolidated under [`AssetSynonym`]
                
-### Mandatory pure/path variants for wrappers + Simplified trait impls
+### Mandatory pure/path variants for synonyms + Simplified trait impls
 
 [`FromWrapper`] has been removed in favor of From impls from your asset wrapper to asset directly.
 
-In exchange, [`AssetWrapper`]s must now be enums with a `PureVariant` and path variant (from string). 
+In exchange, [`AssetSynonym`]s must now be enums with a `PureVariant` and path variant (from string). 
 
 E.G:
 

@@ -3,7 +3,7 @@ use bevy_math::primitives::{Capsule3d, Cone, Cuboid, Cylinder, Sphere};
 use bevy_rapier3d::prelude::{Collider, ColliderView};
 use bevy_synonymize::{
     prelude::mesh::{FALLBACK_MESH, MeshPrefab},
-    traits::ComponentWrapper,
+    traits::ComponentSynonym,
 };
 use derive_more::derive::From;
 
@@ -47,8 +47,8 @@ impl Default for ColliderFlag {
     }
 }
 
-impl ComponentWrapper for ColliderFlag {
-    type WrapperTarget = Collider;
+impl ComponentSynonym for ColliderFlag {
+    type SynonymTarget = Collider;
 }
 
 impl From<&ColliderFlag> for Collider {

@@ -5,16 +5,16 @@ use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
 use bevy_log::warn;
 use crate::prelude::{material::Material3dFlag, mesh::Mesh3dFlag, AssetType};
-use crate::{systems::{desynonymize_assset, desynonymize, synonymize, try_synonymize_asset}, traits::{AssetState, AssetWrapper, ComponentWrapper}};
+use crate::{systems::{desynonymize_assset, desynonymize, synonymize, try_synonymize_asset}, traits::{AssetState, AssetSynonym, ComponentSynonym}};
 
 
 
 /// plugin for converitng between synonymous components. 
-pub struct SynonymizeComponent<T: ComponentWrapper> {
+pub struct SynonymizeComponent<T: ComponentSynonym> {
     thing: PhantomData<fn() -> T>,
 }
 
-impl<T: ComponentWrapper> Default for SynonymizeComponent<T> {
+impl<T: ComponentSynonym> Default for SynonymizeComponent<T> {
     fn default() -> Self {
         Self {
             thing: Default::default(),
@@ -22,10 +22,10 @@ impl<T: ComponentWrapper> Default for SynonymizeComponent<T> {
     }
 }
 
-impl<T: ComponentWrapper> Plugin for SynonymizeComponent<T> {
+impl<T: ComponentSynonym> Plugin for SynonymizeComponent<T> {
     fn build(&self, app: &mut App) {
         //TODO: Move this to new crate
-        //skip_serializing::<T::WrapperTarget>(app);
+        //skip_serializing::<T::SynonymTarget>(app);
         app.world_mut();
         // .register_component_hooks::<T>().on_insert(|mut world, e, id| {
         //         let comp = {
@@ -37,7 +37,7 @@ impl<T: ComponentWrapper> Plugin for SynonymizeComponent<T> {
         //                 },
         //             }
         //         };
-        //         let target = T::WrapperTarget::from(&comp);
+        //         let target = T::SynonymTarget::from(&comp);
         //         world.commands().entity(e).insert(target);
         //     });
 
@@ -51,14 +51,14 @@ impl<T: ComponentWrapper> Plugin for SynonymizeComponent<T> {
 
 /// plugin for converting between synonymous asset component newtypes.
 #[derive(Default)]
-pub struct SynonymizeAsset<T: AssetWrapper> {
+pub struct SynonymizeAsset<T: AssetSynonym> {
     thing: PhantomData<fn() -> T>,
 }
 
-impl<T: AssetWrapper> Plugin for SynonymizeAsset<T> {
+impl<T: AssetSynonym> Plugin for SynonymizeAsset<T> {
     fn build(&self, app: &mut App) {
         //TODO: Move this to new crate
-        //skip_serializing::<T::WrapperTarget>(app);
+        //skip_serializing::<T::SynonymTarget>(app);
 
         app.add_systems(
             PreUpdate,
@@ -106,7 +106,7 @@ impl<T: AssetWrapper> Plugin for SynonymizeAsset<T> {
                     }
                 };
 
-                let componentized_asset = T::WrapperTarget::from(handle);
+                let componentized_asset = T::SynonymTarget::from(handle);
                 world
                     .commands()
                     .entity(hook_context.entity)

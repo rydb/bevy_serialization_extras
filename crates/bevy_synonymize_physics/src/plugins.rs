@@ -4,7 +4,7 @@ use crate::{
         friction::FrictionFlag, link::JointRecieverFlag,
     },
     systems::{generate_collider_from_children, generate_primitive_for_request},
-    wrappers::{
+    synonyms::{
         link::{JointFlag, LinkFlag},
         mass::MassFlag,
         rigidbodies::RigidBodyFlag,
@@ -16,9 +16,9 @@ use bevy_app::prelude::*;
 use bevy_synonymize::plugins::SynonymizeComponent;
 
 /// This plugin is an addon for [`SerializationPlugin`] for physics.
-pub struct SerializationPhysicsPlugin;
+pub struct SynonymizePhysicsPlugin;
 
-impl Plugin for SerializationPhysicsPlugin {
+impl Plugin for SynonymizePhysicsPlugin {
     fn build(&self, app: &mut App) {
         app
             // .register_type::<StructureFlag>()

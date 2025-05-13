@@ -2,7 +2,7 @@ use bevy_rapier3d::dynamics::Ccd;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
-use bevy_synonymize::traits::ComponentWrapper;
+use bevy_synonymize::traits::ComponentSynonym;
 
 #[derive(Reflect, PartialEq, Component, Clone)]
 #[reflect(Component)]
@@ -10,8 +10,8 @@ pub struct CcdFlag {
     pub enabled: bool,
 }
 
-impl ComponentWrapper for CcdFlag {
-    type WrapperTarget = Ccd;
+impl ComponentSynonym for CcdFlag {
+    type SynonymTarget = Ccd;
 }
 
 impl Default for CcdFlag {

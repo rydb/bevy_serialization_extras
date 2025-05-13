@@ -2,15 +2,15 @@ use bevy_rapier3d::prelude::AdditionalMassProperties;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
-use bevy_synonymize::traits::ComponentWrapper;
+use bevy_synonymize::traits::ComponentSynonym;
 
 #[derive(Reflect, PartialEq, Component, Clone)]
 pub struct MassFlag {
     pub mass: f32,
 }
 
-impl ComponentWrapper for MassFlag {
-    type WrapperTarget = AdditionalMassProperties;
+impl ComponentSynonym for MassFlag {
+    type SynonymTarget = AdditionalMassProperties;
 }
 
 // W.I.P

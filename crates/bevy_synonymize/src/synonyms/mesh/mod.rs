@@ -1,17 +1,10 @@
 use derive_more::derive::From;
-//use bevy::prelude::*;
-//use urdf_rs::Visual;
 use crate::traits::*;
 
 use bevy_ecs::prelude::*;
 use bevy_math::prelude::*;
 use bevy_reflect::prelude::*;
 use bevy_render::prelude::*;
-
-//TODO: Until:
-// https://github.com/KhronosGroup/glTF-External-Reference
-// becomes an extension supported by gltf-rs, or the spec is merged into gltf. gltf serialization cannot be supported in this library.
-// pub mod gltf;
 
 /// bevy prefab meshes
 #[derive(Reflect, Clone, Copy, Debug, PartialEq, From)]
@@ -72,8 +65,8 @@ pub enum MeshWrapper {
     Procedural(Mesh),
 }
 
-impl AssetWrapper for Mesh3dFlag {
-    type WrapperTarget = Mesh3d;
+impl AssetSynonym for Mesh3dFlag {
+    type SynonymTarget = Mesh3d;
 
     type PureVariant = MeshWrapper;
 

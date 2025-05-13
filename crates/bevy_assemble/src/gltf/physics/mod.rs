@@ -27,7 +27,7 @@ use khr_physics_rigid_bodies::{
 
 use crate::AssemblyId;
 
-use super::{GltfAssociation, wrappers::NodeId};
+use super::{GltfAssociation, synonyms::NodeId};
 
 #[derive(Default, Clone)]
 pub struct PhysicsProperties {

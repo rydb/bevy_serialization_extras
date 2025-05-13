@@ -3,7 +3,7 @@ use bevy_rapier3d::prelude::Group;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
-use bevy_synonymize::traits::ComponentWrapper;
+use bevy_synonymize::traits::ComponentSynonym;
 
 #[derive(Component, PartialEq, Reflect, Clone, Default)]
 #[reflect(Component)]
@@ -12,8 +12,8 @@ pub struct CollisionGroupsFlag {
     pub filters: Group,
 }
 
-impl ComponentWrapper for CollisionGroupsFlag {
-    type WrapperTarget = CollisionGroups;
+impl ComponentSynonym for CollisionGroupsFlag {
+    type SynonymTarget = CollisionGroups;
 }
 
 impl From<&CollisionGroups> for CollisionGroupsFlag {

@@ -53,7 +53,7 @@ fn main() {
         // // serialization plugins
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationAssembleBasePlugin)
-        .add_plugins(SerializationPhysicsPlugin)
+        .add_plugins(SynonymizePhysicsPlugin)
         .add_plugins(SerializationBasePlugin)
         .add_plugins(UrdfSerializationPlugin)
         // // rapier physics plugins

@@ -13,63 +13,62 @@ use bevy_log::warn;
 // use moonshine_save::save::Save;
 
 /// synonymizes a component synonym with its target.
-pub fn synonymize<Wrapper>(
+pub fn synonymize<Synonym>(
     thing_query: Query<
-        (Entity, &Wrapper::WrapperTarget),
+        (Entity, &Synonym::SynonymTarget),
         Or<(
-            Added<Wrapper::WrapperTarget>,
-            Changed<Wrapper::WrapperTarget>,
+            Added<Synonym::SynonymTarget>,
+            Changed<Synonym::SynonymTarget>,
         )>,
     >,
-    wrappers: Query<Entity, Changed<Wrapper>>,
+    synonyms: Query<Entity, Changed<Synonym>>,
     mut commands: Commands,
 ) where
-    Wrapper: ComponentWrapper,
-    // Echo<Wrapper>: From<Wrapper::Target>
+    Synonym: ComponentSynonym,
 {
     for (e, f) in thing_query.iter() {
         // prevent infinite change back and forth
-        if wrappers.contains(e) == false {
+        if synonyms.contains(e) == false {
             // entity may not exist when inserting component if entity is deleted in the same frame as this.
             // this checks to make sure it exists to prevent a crash.
-            commands.entity(e).try_insert(Wrapper::from(&f));
+            commands.entity(e).try_insert(Synonym::from(&f));
         }
     }
 }
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 /// try to synonymize a component asset wrapper synonym 
-pub fn try_synonymize_asset<Wrapper>(
-    assets: ResMut<Assets<AssetType<Wrapper>>>,
+pub fn try_synonymize_asset<Synonym>(
+    assets: ResMut<Assets<AssetType<Synonym>>>,
     things_query: Query<
-        (Entity, &Wrapper::WrapperTarget),
+        (Entity, &Synonym::SynonymTarget),
         Or<(
-            Changed<Wrapper::WrapperTarget>,
-            Added<Wrapper::WrapperTarget>,
+            Changed<Synonym::SynonymTarget>,
+            Added<Synonym::SynonymTarget>,
         )>,
     >,
-    changed_wrapper: Query<Entity, Changed<Wrapper>>,
+    changed_wrapper: Query<Entity, Changed<Synonym>>,
     mut commands: Commands,
 ) where
-    Wrapper: AssetWrapper,
+    Synonym: AssetSynonym,
 {
     for (e, thing_handle) in things_query.iter() {
         // do not update on the same frame that the target has updated to prevent infinite update chain
         if changed_wrapper.contains(e) == false {
             let new_wrapper = if let Some(path) = thing_handle.path() {
-                Wrapper::from(path.to_string())
+                Synonym::from(path.to_string())
             } else {
                 let Some(asset) = assets.get(&**thing_handle) else {
                     warn!(
                         "Attempted serialize non-file asset {:#} to {:#} while the asset was unloaded. Skipping attempt",
-                        type_name::<AssetType<Wrapper>>(),
-                        type_name::<Wrapper>()
+                        type_name::<AssetType<Synonym>>(),
+                        type_name::<Synonym>()
                     );
                     return;
                 };
-                let pure = Wrapper::PureVariant::from(asset);
+                let pure = Synonym::PureVariant::from(asset);
 
-                Wrapper::from(pure)
+                Synonym::from(pure)
             };
 
             commands.entity(e).try_insert(new_wrapper);
@@ -78,14 +77,14 @@ pub fn try_synonymize_asset<Wrapper>(
 }
 
 // /// takes a wrapper component, and deserializes it back into its unserializable asset handle varaint
-pub fn desynonymize_assset<Wrapper>(
-    mut assets: ResMut<Assets<AssetType<Wrapper>>>,
-    wrapper_thing_query: Query<(Entity, &Wrapper), Changed<Wrapper>>,
-    changed_wrapper_targets: Query<Entity, Changed<Wrapper::WrapperTarget>>,
+pub fn desynonymize_assset<Synonym>(
+    mut assets: ResMut<Assets<AssetType<Synonym>>>,
+    wrapper_thing_query: Query<(Entity, &Synonym), Changed<Synonym>>,
+    changed_wrapper_targets: Query<Entity, Changed<Synonym::SynonymTarget>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) where
-    Wrapper: AssetWrapper,
+    Synonym: AssetSynonym,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         log::trace!("converting wrapper thing {:#?}", e);
@@ -95,12 +94,12 @@ pub fn desynonymize_assset<Wrapper>(
             let insert = match wrapper_thing.asset_state() {
                 AssetState::Path(wrapper_path) => {
                     let handle = asset_server.load(wrapper_path);
-                    Wrapper::WrapperTarget::from(handle)
+                    Synonym::SynonymTarget::from(handle)
                 }
                 AssetState::Pure(wrapper) => {
-                    let new_asset = AssetType::<Wrapper>::from(wrapper);
+                    let new_asset = AssetType::<Synonym>::from(wrapper);
                     let handle = assets.add(new_asset);
-                    Wrapper::WrapperTarget::from(handle)
+                    Synonym::SynonymTarget::from(handle)
                 }
             };
             commands.entity(e).try_insert(insert);
@@ -108,16 +107,16 @@ pub fn desynonymize_assset<Wrapper>(
     }
 }
 /// desynonymize a synonym component back into its target.
-pub fn desynonymize<Wrapper>(
-    wrapper_thing_query: Query<(Entity, &Wrapper), Or<(Added<Wrapper>, Changed<Wrapper>)>>,
+pub fn desynonymize<Synonym>(
+    wrapper_thing_query: Query<(Entity, &Synonym), Or<(Added<Synonym>, Changed<Synonym>)>>,
     mut commands: Commands,
 ) where
-    Wrapper: ComponentWrapper,
+    Synonym: ComponentSynonym,
 {
     for (e, f) in wrapper_thing_query.iter() {
         commands
             .entity(e)
-            .try_insert(Wrapper::WrapperTarget::from(&f));
+            .try_insert(Synonym::SynonymTarget::from(&f));
     }
 }
 

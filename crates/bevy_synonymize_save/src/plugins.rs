@@ -17,7 +17,7 @@ use bevy_synonymize::prelude::WrapAssetDeserializers;
 use bevy_synonymize::prelude::WrapAssetSerializers;
 use bevy_synonymize::prelude::WrapCompDeserializers;
 use bevy_synonymize::prelude::WrapCompSerializers;
-use bevy_synonymize::traits::ComponentWrapper;
+use bevy_synonymize::traits::ComponentSynonym;
 use log::warn;
 use moonshine_save::file_from_resource;
 use moonshine_save::load::LoadPlugin;

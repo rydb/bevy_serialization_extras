@@ -7,7 +7,7 @@ use bevy_inspector_egui::{
     egui::{self, ScrollArea, TextFormat, Ui, text::LayoutJob},
 };
 use bevy_rapier3d::prelude::*;
-use bevy_synonymize::prelude::*;
+use bevy_synonymize::{plugins::SynonymizeBasePlugin, prelude::*};
 use bevy_synonymize_physics::prelude::*;
 
 use bevy::prelude::Vec3;
@@ -29,9 +29,8 @@ fn main() {
         .register_type::<Selectable>()
         .register_type::<Selected>()
         .add_plugins(UiExtrasDebug::default())
-        .add_plugins(SerializationPlugin)
-        .add_plugins(SerializationPhysicsPlugin)
-        .add_plugins(SerializationBasePlugin)
+        .add_plugins(SynonymizeBasePlugin)
+        .add_plugins(SynonymizePhysicsPlugin)
         .register_type::<Selectable>()
         .init_resource::<SelectedMotorAxis>()
         .init_resource::<PhysicsUtilitySelection>()
@@ -108,7 +107,7 @@ fn create_revolute_joints(
             Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
             Transform::from_xyz(ORIGIN.x, ORIGIN.y, 0.0),
             MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
-            Collider::cuboid(0.5, 0.5, 0.5),
+            Collider::cuboid(0.25, 0.25, 0.25),
             //AsyncCollider::default(),
         ))
         .id();
@@ -131,7 +130,7 @@ fn create_revolute_joints(
                     Mesh3d(meshes.add(Cuboid::new(0.5, 0.5, 0.5))),
                     Transform::from_translation(positions[k]),
                     MeshMaterial3d(materials.add(Color::Srgba(Srgba::BLUE))),
-                    Collider::cuboid(0.5, 0.5, 0.5),
+                    Collider::cuboid(0.25, 0.25, 0.25),
                 ))
                 .id();
         }

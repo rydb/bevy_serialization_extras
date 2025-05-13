@@ -7,7 +7,7 @@ use bevy_reflect::prelude::*;
 use bevy_utils::prelude::*;
 use derive_more::derive::From;
 
-use crate::traits::{AssetHandleComponent, AssetState, AssetWrapper};
+use crate::traits::{AssetHandleComponent, AssetState, AssetSynonym};
 
 /// serializable wrapper for mesh materials
 #[derive(Component, Reflect, Clone, PartialEq, From)]
@@ -22,8 +22,8 @@ pub enum MaterialWrapper {
     Color(Color),
 }
 
-impl AssetWrapper for Material3dFlag {
-    type WrapperTarget = MeshMaterial3d<StandardMaterial>;
+impl AssetSynonym for Material3dFlag {
+    type SynonymTarget = MeshMaterial3d<StandardMaterial>;
     type PureVariant = MaterialWrapper;
 
     fn asset_state(&self) -> AssetState<Self::PureVariant, String> {
@@ -33,7 +33,7 @@ impl AssetWrapper for Material3dFlag {
         }
     }
 }
-// impl<'a, 'b> Into<AssetState<'b, <Material3dFlag as AssetWrapper>::PureVariant, <Material3dFlag as AssetWrapper>::PathVariant>> for &'a Material3dFlag
+// impl<'a, 'b> Into<AssetState<'b, <Material3dFlag as AssetSynonym>::PureVariant, <Material3dFlag as AssetSynonym>::PathVariant>> for &'a Material3dFlag
 
 // impl IntoAssetState for Material3dFlag {
 //     fn asset_state(&self) -> AssetState<Self::PureVariant,  Self::PathVariant> {
@@ -44,7 +44,7 @@ impl AssetWrapper for Material3dFlag {
 //     }
 // }
 
-// impl<'a, 'b> From<&'a Material3dFlag> for AssetState<'b, <Material3dFlag as AssetWrapper>::PureVariant, <Material3dFlag as AssetWrapper>::PathVariant>
+// impl<'a, 'b> From<&'a Material3dFlag> for AssetState<'b, <Material3dFlag as AssetSynonym>::PureVariant, <Material3dFlag as AssetSynonym>::PathVariant>
 //     where
 //         'a: 'b
 // {

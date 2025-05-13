@@ -9,7 +9,7 @@ use bevy_transform::components::Transform;
 use strum::IntoEnumIterator;
 
 pub mod physics;
-pub mod wrappers;
+pub mod synonyms;
 
 
 pub fn gltf_collider_request(extras: &GltfExtras) -> RequestCollider {

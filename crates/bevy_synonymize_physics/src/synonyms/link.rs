@@ -7,7 +7,7 @@ use bevy_log::warn;
 //     reflect::GetTypeRegistration,
 // };
 use bevy_rapier3d::prelude::ImpulseJoint;
-use bevy_synonymize::traits::{ChangeChecked, ComponentWrapper};
+use bevy_synonymize::traits::{ChangeChecked, ComponentSynonym};
 use bevy_utils::prelude::default;
 //use urdf_rs::{Joint, Pose, Link, Visual};
 use rapier3d::{
@@ -304,8 +304,8 @@ pub struct JointFlag {
     pub joint: JointInfo,
 }
 
-impl ComponentWrapper for JointFlag {
-    type WrapperTarget = ImpulseJoint;
+impl ComponentSynonym for JointFlag {
+    type SynonymTarget = ImpulseJoint;
 }
 
 #[derive(Default, Debug, PartialEq, Reflect, Clone)]

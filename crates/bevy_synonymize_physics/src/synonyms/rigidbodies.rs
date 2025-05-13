@@ -1,5 +1,5 @@
 use bevy_rapier3d::prelude::RigidBody;
-use bevy_synonymize::traits::ComponentWrapper;
+use bevy_synonymize::traits::ComponentSynonym;
 use strum_macros::EnumIter;
 
 use bevy_ecs::prelude::*;
@@ -15,8 +15,8 @@ pub enum RigidBodyFlag {
     Fixed,
     Dynamic,
 }
-impl ComponentWrapper for RigidBodyFlag {
-    type WrapperTarget = RigidBody;
+impl ComponentSynonym for RigidBodyFlag {
+    type SynonymTarget = RigidBody;
 }
 
 impl From<&RigidBodyFlag> for RigidBody {

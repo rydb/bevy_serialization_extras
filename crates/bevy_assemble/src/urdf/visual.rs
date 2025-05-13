@@ -12,7 +12,7 @@ use bevy_math::prelude::*;
 
 use crate::{
     components::{DisassembleAssetRequest, DisassembleStage, Resolve},
-    gltf::wrappers::GltfPhysicsMeshPrimitive,
+    gltf::synonyms::GltfPhysicsMeshPrimitive,
     traits::{Disassemble, DisassembleSettings, Source, Split, Structure},
 };
 

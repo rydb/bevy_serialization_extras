@@ -9,7 +9,7 @@ use bevy_camera_extras::{CameraController, CameraExtrasPlugin, CameraRestrained}
 use bevy_rapier3d::{plugin::RapierPhysicsPlugin, render::RapierDebugRenderPlugin};
 use bevy_assemble::{
     components::DisassembleAssetRequest,
-    gltf::{physics::GltfPhysicsPlugin, wrappers::GltfModel},
+    gltf::{physics::GltfPhysicsPlugin, synonyms::GltfModel},
     prelude::*,
 };
 use bevy_synonymize::prelude::*;
@@ -35,7 +35,7 @@ fn main() {
         // // serialization plugins
         .add_plugins(SerializationPlugin)
         .add_plugins(SerializationAssembleBasePlugin)
-        .add_plugins(SerializationPhysicsPlugin)
+        .add_plugins(SynonymizePhysicsPlugin)
         .add_plugins(SerializationBasePlugin)
         .add_plugins(GltfPhysicsPlugin)
         .add_plugins(UrdfSerializationPlugin)

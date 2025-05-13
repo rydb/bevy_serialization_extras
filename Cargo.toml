@@ -5,7 +5,7 @@ edition = "2024"
 repository = "https://github.com/rydb/bevy_serialization_extras"
 readme = "README.md"
 license = "MIT"
-description = "A crate for managing serialization with moonshine_save + wrappers."
+description = "A crate for managing serialization with moonshine_save + synonyms."
 
 [workspace]
 members = [

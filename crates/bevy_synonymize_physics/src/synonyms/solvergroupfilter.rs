@@ -3,7 +3,7 @@ use bevy_rapier3d::prelude::SolverGroups;
 
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
-use bevy_synonymize::traits::ComponentWrapper;
+use bevy_synonymize::traits::ComponentSynonym;
 
 pub const PHYSICS_FIXED: SolverGroupsFlag = SolverGroupsFlag {
     memberships: GroupWrapper::ALL,
@@ -113,8 +113,8 @@ pub struct SolverGroupsFlag {
     pub filters: GroupWrapper,
 }
 
-impl ComponentWrapper for SolverGroupsFlag {
-    type WrapperTarget = SolverGroups;
+impl ComponentSynonym for SolverGroupsFlag {
+    type SynonymTarget = SolverGroups;
 }
 
 impl From<&SolverGroupsFlag> for SolverGroups {

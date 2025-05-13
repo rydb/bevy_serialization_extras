@@ -2,7 +2,7 @@
 
 pub mod plugins;
 mod systems;
-pub mod wrappers;
+pub mod synonyms;
 //pub mod loaders;
 // pub mod bundles;
 
@@ -11,6 +11,6 @@ pub mod prelude {
         //loaders::*,
         // bundles::*,
         plugins::*,
-        wrappers::*,
+        synonyms::*,
     };
 }
