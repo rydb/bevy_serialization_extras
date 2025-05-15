@@ -1,7 +1,7 @@
-use std::path::Path;
+use std::{any::TypeId, collections::HashMap, path::Path};
 
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::prelude::*;
+use bevy_ecs::{component::ComponentId, prelude::*, system::SystemId};
 use bevy_reflect::Reflect;
 use bevy_render::{camera::{CameraMainTextureUsages, CameraRenderGraph, Exposure}, mesh::Mesh3d};
 use moonshine_save::{prelude::GetFilePath, save::{EntityFilter, SaveInput}};
@@ -56,3 +56,57 @@ impl GetFilePath for LoadRequest {
     }
 }
 
+/// keeps track of number of times refresh request has been sent. For ui utils.
+#[derive(Resource, Default)]
+pub struct RefreshCounter {
+    pub counter: usize,
+}
+
+#[derive(Resource, Default, Deref)]
+pub struct SynonymAssetSerializers(pub HashMap<ComponentId, SystemId>);
+#[derive(Resource, Default, Deref)]
+pub struct SynonymAssetDeserializers(pub HashMap<ComponentId, SystemId>);
+
+#[derive(Resource, Default, Deref)]
+pub struct SynonymCompSerializers(pub HashMap<ComponentId, SystemId>);
+
+#[derive(Resource, Default, Deref)]
+pub struct SynonymCompDeserializers(pub HashMap<ComponentId, SystemId>);
+
+/// contains the state of the type registry since the last [`SaveRequest`]/refresh.
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
+pub struct TypeRegistryOnSave {
+    pub registry: HashMap<TypeId, String>,
+}
+
+/// contains the components marked to saved since last save/refresh.
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
+pub struct ComponentsOnSave {
+    pub components: HashMap<TypeId, String>,
+}
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+pub struct ShowSerializable {
+    pub check: bool,
+}
+
+impl Default for ShowSerializable {
+    fn default() -> Self {
+        Self { check: false }
+    }
+}
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+pub struct ShowUnserializable {
+    pub check: bool,
+}
+
+impl Default for ShowUnserializable {
+    fn default() -> Self {
+        Self { check: true }
+    }
+}

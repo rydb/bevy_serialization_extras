@@ -5,19 +5,6 @@
 // use crate::traits::*;
 use bevy_core_pipeline::core_3d::{Camera3dDepthTextureUsage, ScreenSpaceTransmissionQuality};
 use bevy_render::camera::{CameraMainTextureUsages, CameraRenderGraph};
-use bevy_synonymize::plugins::SynonymizeAsset;
-use bevy_synonymize::prelude::material::Material3dFlag;
-use bevy_synonymize::prelude::mesh::Mesh3dFlag;
-use bevy_synonymize::prelude::ComponentsOnSave;
-use bevy_synonymize::prelude::RefreshCounter;
-use bevy_synonymize::prelude::ShowSerializable;
-use bevy_synonymize::prelude::ShowUnserializable;
-use bevy_synonymize::prelude::TypeRegistryOnSave;
-use bevy_synonymize::prelude::WrapAssetDeserializers;
-use bevy_synonymize::prelude::WrapAssetSerializers;
-use bevy_synonymize::prelude::WrapCompDeserializers;
-use bevy_synonymize::prelude::WrapCompSerializers;
-use bevy_synonymize::traits::ComponentSynonym;
 use log::warn;
 use moonshine_save::file_from_resource;
 use moonshine_save::load::LoadPlugin;
@@ -37,9 +24,18 @@ use bevy_pbr::prelude::*;
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 use bevy_render::prelude::*;
 
+use crate::resources::ComponentsOnSave;
 use crate::resources::LoadRequest;
+use crate::resources::RefreshCounter;
 use crate::resources::SaveRequest;
 use crate::resources::SerializeFilter;
+use crate::resources::ShowSerializable;
+use crate::resources::ShowUnserializable;
+use crate::resources::SynonymAssetDeserializers;
+use crate::resources::SynonymAssetSerializers;
+use crate::resources::SynonymCompDeserializers;
+use crate::resources::SynonymCompSerializers;
+use crate::resources::TypeRegistryOnSave;
 use crate::systems::update_last_saved_typedata;
 
 
@@ -144,10 +140,10 @@ impl Plugin for SerializationPlugin {
                 PreUpdate,
                 save_with(save_filter).into(file_from_resource::<SaveRequest>()),
             )
-            .init_resource::<WrapAssetSerializers>()
-            .init_resource::<WrapAssetDeserializers>()
-            .init_resource::<WrapCompSerializers>()
-            .init_resource::<WrapCompDeserializers>()
+            .init_resource::<SynonymAssetSerializers>()
+            .init_resource::<SynonymAssetDeserializers>()
+            .init_resource::<SynonymCompSerializers>()
+            .init_resource::<SynonymCompDeserializers>()
             .add_systems(PreUpdate, load(file_from_resource::<LoadRequest>()));
     }
 }

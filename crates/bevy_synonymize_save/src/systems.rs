@@ -3,10 +3,9 @@ use std::{any::TypeId, collections::HashMap};
 use bevy_app::App;
 use bevy_ecs::prelude::*;
 use bevy_reflect::TypeInfo;
-use bevy_synonymize::prelude::{ComponentsOnSave, TypeRegistryOnSave};
 use moonshine_save::save::Save;
 
-use crate::resources::SerializeFilter;
+use crate::resources::{ComponentsOnSave, SerializeFilter, TypeRegistryOnSave};
 
 
 /// adds the given type to the skipped types list when serializing

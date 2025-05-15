@@ -22,9 +22,9 @@ ref-cast = "1.0"
 gltf = "1.4"
 serde_json = {version = "1"}
 serde = {version = "1"}
-# bevy_rapier3d = "0.29"
-bevy_rapier3d = {git = "https://github.com/mnmaita/bevy_rapier", rev = "98da7beae596001a6daf59a62d3e1e19adb4811b"}
-rapier3d = "0.24.0"
+bevy_rapier3d = "0.30"
+# bevy_rapier3d = {git = "https://github.com/mnmaita/bevy_rapier", rev = "98da7beae596001a6daf59a62d3e1e19adb4811b"}
+rapier3d = "0.25.0"
 repr-trait = "1.0"
 bevy = "0.16"
 bevy_ecs = "0.16"

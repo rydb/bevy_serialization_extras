@@ -1,3 +1,5 @@
+use bevy_derive::Deref;
+use bytemuck::TransparentWrapper;
 use derive_more::derive::From;
 use crate::traits::*;
 
@@ -59,24 +61,58 @@ pub enum Mesh3dFlag {
     Pure(MeshWrapper),
 }
 
-#[derive(Reflect, From)]
-pub enum MeshWrapper {
-    Prefab(MeshPrefab),
-    Procedural(Mesh),
-}
+impl SynonymPaths for Mesh3dFlag {
+    type Pure = MeshWrapper;
 
-impl AssetSynonym for Mesh3dFlag {
-    type SynonymTarget = Mesh3d;
+    type Path = String;
 
-    type PureVariant = MeshWrapper;
-
-    fn asset_state(&self) -> AssetState<Self::PureVariant, String> {
+    fn asset_state(&self) -> AssetState<SelfPure<Self>, SelfPath<Self>> {
         match self {
             Self::Pure(material_wrapper) => AssetState::Pure(material_wrapper),
             Self::Path(path) => AssetState::Path(path),
         }
     }
 }
+
+#[derive(Reflect, From)]
+pub enum MeshWrapper {
+    Prefab(MeshPrefab),
+    Procedural(Mesh),
+}
+
+#[derive(TransparentWrapper, Deref)]
+#[repr(transparent)]
+pub struct Mesh3dRepr(Mesh3d);
+
+// impl AssetSynonymTarget for Mesh3dRepr {
+//     type Synonym = Mesh3dFlag;
+
+//     type AssetType = Mesh;
+
+//     fn from_synonym(value: &SynonymPure<Self>) -> Self::AssetType {
+//         match value {
+//             MeshWrapper::Prefab(mesh_prefab) => mesh_prefab.into(),
+//             MeshWrapper::Procedural(mesh) => mesh,
+//         }
+//     }
+
+//     fn from_asset(value: &Self::AssetType) -> SynonymPure<Self> {
+//         todo!()
+//     }
+// }
+
+// impl AssetSynonym for Mesh3dFlag {
+//     type SynonymTarget = Mesh3d;
+
+//     type PureVariant = MeshWrapper;
+
+//     fn asset_state(&self) -> AssetState<Self::PureVariant, String> {
+//         match self {
+//             Self::Pure(material_wrapper) => AssetState::Pure(material_wrapper),
+//             Self::Path(path) => AssetState::Path(path),
+//         }
+//     }
+// }
 
 /// TODO: Implement this a bevy <-> mesh converter for this library exists.
 ///
@@ -96,7 +132,3 @@ pub const FALLBACK_MESH: Cuboid = Cuboid {
         z: 0.1,
     },
 };
-
-impl AssetHandleComponent for Mesh3d {
-    type AssetType = Mesh;
-}

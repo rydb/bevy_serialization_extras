@@ -4,8 +4,9 @@ use bevy_app::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_asset::prelude::*;
 use bevy_log::warn;
-use crate::prelude::{material::Material3dFlag, mesh::Mesh3dFlag, AssetType};
-use crate::{systems::{desynonymize_assset, desynonymize, synonymize, try_synonymize_asset}, traits::{AssetState, AssetSynonym, ComponentSynonym}};
+use bevy_pbr::StandardMaterial;
+use crate::{prelude::{material::{Material3dFlag, MeshMaterial3dRepr}, mesh::Mesh3dFlag, InitializedSynonyms}, traits::{AssetSynonymTarget, SynonymPaths}};
+use crate::{systems::{desynonymize_assset, desynonymize, synonymize, try_synonymize_asset}, traits::{AssetState, ComponentSynonym}};
 
 
 
@@ -51,26 +52,39 @@ impl<T: ComponentSynonym> Plugin for SynonymizeComponent<T> {
 
 /// plugin for converting between synonymous asset component newtypes.
 #[derive(Default)]
-pub struct SynonymizeAsset<T: AssetSynonym> {
+pub struct SynonymizeAsset<T: AssetSynonymTarget + 'static> {
     thing: PhantomData<fn() -> T>,
 }
 
-impl<T: AssetSynonym> Plugin for SynonymizeAsset<T> {
+impl<T: AssetSynonymTarget> Plugin for SynonymizeAsset<T> {
     fn build(&self, app: &mut App) {
         //TODO: Move this to new crate
         //skip_serializing::<T::SynonymTarget>(app);
 
+        let synonym_id = TypeId::of::<T::Synonym>();
+        let initializing_repr = type_name::<T>().to_string();
+        if let Some(mut initialized_synonyms) = app.world_mut().get_resource_mut::<InitializedSynonyms>() {
+            if let Some(first_instance) = initialized_synonyms.get(&synonym_id) {
+                panic!("multi-initialization found for {:#?}. this is not allowed. First instance {:#}, Second instance {:#}", type_name::<T::Synonym>(), first_instance, initializing_repr)
+            }
+            initialized_synonyms.insert(synonym_id, initializing_repr);
+        } else {
+            let mut new_map = InitializedSynonyms::default();
+            new_map.insert(synonym_id, initializing_repr);
+            app.world_mut().insert_resource(new_map);
+        };
+        
         app.add_systems(
             PreUpdate,
             (try_synonymize_asset::<T>, desynonymize_assset::<T>).chain(),
         );
 
-        app.register_type::<T>()
+        app.register_type::<T::Synonym>()
             .world_mut()
-            .register_component_hooks::<T>()
+            .register_component_hooks::<T::Synonym>()
             .on_add(|mut world, hook_context| {
                 let comp = {
-                    match world.entity(hook_context.entity).get::<T>() {
+                    match world.entity(hook_context.entity).get::<T::Synonym>() {
                         Some(val) => val,
                         None => {
                             warn!(
@@ -96,17 +110,17 @@ impl<T: AssetSynonym> Plugin for SynonymizeAsset<T> {
                             let Some(assets) = world.get_resource::<AssetServer>() else {
                                 warn!(
                                     "no mut Assets<T> found for {:#}",
-                                    type_name::<Assets<AssetType<T>>>()
+                                    type_name::<Assets<T::AssetType>>()
                                 );
                                 return;
                             };
-                            let asset = AssetType::<T>::from(pure);
+                            let asset = T::from_synonym(pure);
                             assets.add(asset)
                         }
                     }
                 };
 
-                let componentized_asset = T::SynonymTarget::from(handle);
+                let componentized_asset = T::Target::from(handle);
                 world
                     .commands()
                     .entity(hook_context.entity)
@@ -120,7 +134,8 @@ pub struct SynonymizeBasePlugin;
 
 impl Plugin for SynonymizeBasePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(SynonymizeAsset::<Material3dFlag>::default())
-            .add_plugins(SynonymizeAsset::<Mesh3dFlag>::default());
+        app
+        .add_plugins(SynonymizeAsset::<MeshMaterial3dRepr<StandardMaterial>>::default())
+        ;
     }
 }

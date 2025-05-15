@@ -1,10 +1,9 @@
 use crate::{
-    prelude::{ComponentsOnSave, TypeRegistryOnSave},
     traits::*,
 };
 use std::{
-    any::{TypeId, type_name},
-    collections::HashMap,
+    any::{type_name, TypeId},
+    collections::HashMap, ops::Deref,
 };
 
 use bevy_asset::prelude::*;
@@ -38,37 +37,37 @@ pub fn synonymize<Synonym>(
 
 /// takes an asset handle, and spawns a serializable copy of it on its entity
 /// try to synonymize a component asset wrapper synonym 
-pub fn try_synonymize_asset<Synonym>(
-    assets: ResMut<Assets<AssetType<Synonym>>>,
+pub fn try_synonymize_asset<Impl>(
+    assets: ResMut<Assets<Impl::AssetType>>,
     things_query: Query<
-        (Entity, &Synonym::SynonymTarget),
+        (Entity, &SynonymTarget<Impl>),
         Or<(
-            Changed<Synonym::SynonymTarget>,
-            Added<Synonym::SynonymTarget>,
+            Changed<SynonymTarget<Impl>>,
+            Added<SynonymTarget<Impl>>,
         )>,
     >,
-    changed_wrapper: Query<Entity, Changed<Synonym>>,
+    changed_wrapper: Query<Entity, Changed<Impl::Synonym>>,
     mut commands: Commands,
 ) where
-    Synonym: AssetSynonym,
+    Impl: AssetSynonymTarget,
 {
     for (e, thing_handle) in things_query.iter() {
         // do not update on the same frame that the target has updated to prevent infinite update chain
         if changed_wrapper.contains(e) == false {
             let new_wrapper = if let Some(path) = thing_handle.path() {
-                Synonym::from(path.to_string())
+                Impl::Synonym::from(path.to_string())
             } else {
                 let Some(asset) = assets.get(&**thing_handle) else {
                     warn!(
                         "Attempted serialize non-file asset {:#} to {:#} while the asset was unloaded. Skipping attempt",
-                        type_name::<AssetType<Synonym>>(),
-                        type_name::<Synonym>()
+                        type_name::<Impl::AssetType>(),
+                        type_name::<Impl::Synonym>()
                     );
                     return;
                 };
-                let pure = Synonym::PureVariant::from(asset);
+                let pure = Impl::from_asset(asset);
 
-                Synonym::from(pure)
+                Impl::Synonym::from(pure)
             };
 
             commands.entity(e).try_insert(new_wrapper);
@@ -77,14 +76,14 @@ pub fn try_synonymize_asset<Synonym>(
 }
 
 // /// takes a wrapper component, and deserializes it back into its unserializable asset handle varaint
-pub fn desynonymize_assset<Synonym>(
-    mut assets: ResMut<Assets<AssetType<Synonym>>>,
-    wrapper_thing_query: Query<(Entity, &Synonym), Changed<Synonym>>,
-    changed_wrapper_targets: Query<Entity, Changed<Synonym::SynonymTarget>>,
+pub fn desynonymize_assset<Impl>(
+    mut assets: ResMut<Assets<Impl::AssetType>>,
+    wrapper_thing_query: Query<(Entity, &Impl::Synonym), Changed<Impl::Synonym>>,
+    changed_wrapper_targets: Query<Entity, Changed<SynonymTarget<Impl>>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) where
-    Synonym: AssetSynonym,
+    Impl: AssetSynonymTarget,
 {
     for (e, wrapper_thing) in wrapper_thing_query.iter() {
         log::trace!("converting wrapper thing {:#?}", e);
@@ -94,14 +93,17 @@ pub fn desynonymize_assset<Synonym>(
             let insert = match wrapper_thing.asset_state() {
                 AssetState::Path(wrapper_path) => {
                     let handle = asset_server.load(wrapper_path);
-                    Synonym::SynonymTarget::from(handle)
+                    SynonymTarget::<Impl>::from(handle)
                 }
                 AssetState::Pure(wrapper) => {
-                    let new_asset = AssetType::<Synonym>::from(wrapper);
+                    // let new_asset = Impl::AssetType::from(wrapper);
+                    let new_asset = Impl::from_synonym(wrapper);
+
                     let handle = assets.add(new_asset);
-                    Synonym::SynonymTarget::from(handle)
+                    SynonymTarget::<Impl>::from(handle)
                 }
             };
+            
             commands.entity(e).try_insert(insert);
         }
     }
